@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import {
   Bell,
   ClipboardList,
@@ -255,7 +255,13 @@ export function AreasPage() {
 }
 
 // ---------- UC11 / UC12 Register Household ----------
-export function NewHouseholdPage() {
+/** Every visit (also from the bottom bar while a card is showing) starts a fresh registration. */
+export function NewHouseholdRoute() {
+  const location = useLocation();
+  return <NewHouseholdPage key={location.key} />;
+}
+
+function NewHouseholdPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const toast = useToast();
@@ -341,7 +347,7 @@ export function NewHouseholdPage() {
           <Link className="btn btn-signal btn-lg" to={`/field/households/${saved.id}/distribute`}>
             {t('household.distribute')}
           </Link>
-          <button type="button" className="btn btn-quiet btn-lg" onClick={() => navigate(0)}>
+          <button type="button" className="btn btn-quiet btn-lg" onClick={() => navigate('/field/households/new')}>
             {t('field.actions.newHousehold')}
           </button>
         </div>

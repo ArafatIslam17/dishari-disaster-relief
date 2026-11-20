@@ -37,7 +37,7 @@ import {
   FieldSettingsPage,
   FieldUnservedPage,
   HouseholdPage,
-  NewHouseholdPage,
+  NewHouseholdRoute,
   SearchPage,
   SyncPage,
 } from './pages/field';
@@ -81,7 +81,7 @@ function RequireDashboard({ children }: { children: ReactNode }) {
   const { status, user } = useSession();
   const location = useLocation();
   if (status === 'booting') return <Booting />;
-  if (status === 'needs-pin') return <Navigate to="/set-pin" replace />;
+  // A coordinator's field PIN is asked for only when the field app is opened, not for the dashboard.
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   if (user.mustChangePassword) return <Navigate to="/change-password" replace />;
   if (user.role === 'FIELD_VOLUNTEER') return <Navigate to="/field" replace />;
@@ -91,9 +91,10 @@ function RequireDashboard({ children }: { children: ReactNode }) {
 function RootRedirect() {
   const { status, user, local } = useSession();
   if (status === 'booting') return <Booting />;
+  const role = user?.role ?? local?.role;
+  if (user && role && role !== 'FIELD_VOLUNTEER') return <Navigate to={homePath(role)} replace />;
   if (status === 'locked') return <Navigate to="/unlock" replace />;
   if (status === 'needs-pin') return <Navigate to="/set-pin" replace />;
-  const role = user?.role ?? local?.role;
   if (status === 'ready' && role) return <Navigate to={homePath(role)} replace />;
   return <Navigate to="/login" replace />;
 }
@@ -132,7 +133,7 @@ export const router = createBrowserRouter([
       { index: true, element: <FieldHome /> },
       { path: 'areas', element: <AreasPage /> },
       { path: 'search', element: <SearchPage /> },
-      { path: 'households/new', element: <NewHouseholdPage /> },
+      { path: 'households/new', element: <NewHouseholdRoute /> },
       { path: 'households/:id', element: <HouseholdPage /> },
       { path: 'households/:id/edit', element: <EditHouseholdPage /> },
       { path: 'households/:id/distribute', element: <DistributePage /> },

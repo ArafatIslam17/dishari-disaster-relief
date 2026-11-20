@@ -9,7 +9,7 @@
     "preview": "vite preview --port 5173",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "vite build && playwright test"
   },
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "5.3.0",

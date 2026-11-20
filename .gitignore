@@ -16,3 +16,4 @@ apps/web/dev-dist/
 Thumbs.db
 .hallmark/
 tmp/
+apps/web/test-results/

@@ -81,6 +81,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
   }, [loadMe]);
 
+  // Back online after working offline: resume the server session silently (refresh cookie), so sync can run.
+  useEffect(() => {
+    if (status !== 'ready' || user) return;
+    const resume = () => {
+      void refreshSession().then((ok) => (ok ? loadMe().catch(() => undefined) : undefined));
+    };
+    if (navigator.onLine) resume();
+    window.addEventListener('online', resume);
+    return () => window.removeEventListener('online', resume);
+  }, [status, user, loadMe]);
+
   useEffect(
     () =>
       onSessionExpired(() => {

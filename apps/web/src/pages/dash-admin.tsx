@@ -238,8 +238,7 @@ export function OperationsPage() {
     <>
       <h1>{t('operations.title')}</h1>
       <div className="grid-2">
-        <section className="panel">
-          <h2>{t('operations.title')}</h2>
+        <section className="panel" aria-label={t('operations.title')}>
           {mine.length === 0 ? (
             <p className="muted">{t('operations.none')}</p>
           ) : (
