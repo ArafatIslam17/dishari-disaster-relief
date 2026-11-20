@@ -77,21 +77,21 @@ Numbers C1–C15 match the brief's `<documentation_fixes>`. C16 onward come from
 - **A4.** An anonymous distribution records area, items and quantities only, with no household and no personal data (UC13 1.a).
 - **A5.** Closing an operation is irreversible (Fig 5.12 has no reopen transition). Events for a closed operation are acknowledged (so devices stop retrying) but rejected with reason `operation_closed`, and the volunteer is notified.
 - **A6.** The operation-wide summary for Observers excludes every per-household row and suppresses any area count below 5 as "<5" to prevent re-identification in very small wards.
-- **A7.** "Recent distributions" for area download (UC10 step 4) means the distributions of the downloaded households plus anonymous distributions of the area from the last 30 days.
+- **A7.** Area download (UC10 step 4) brings **all** distributions recorded in the selected areas, not only recent ones, so the phone shows the complete history offline. At 5,000 households this stays within the measured limits.
 - **A8.** A device is bound to one user. Logging in as a different user on the same browser registers a new device and wipes the previous user's local store only after their pending events are synced, and refuses otherwise.
 
 ## 4. Duplicate scoring (FR18, NFR17)
 
-Signals, each in [0,1]. When a signal is missing on either side, its weight is dropped and the others are renormalised.
+Signals, each in [0,1]. A phone missing on either side contributes a fixed **0.2**. Tuning on the labelled set showed that dropping and renormalising its weight made two different people with similar names in one ward score as "likely".
 
 | Signal | Rule | Weight |
 |---|---|---|
-| phone | equal normalised numbers (or equal HMACs) → 1; one edit apart (server only, raw numbers) → 0.7; otherwise 0 | 0.40 |
-| name | max(Jaro-Winkler(full), Jaro-Winkler(tokens sorted)) on names lower-cased, with punctuation stripped and honorific variants (md, mohammad, muhammad, mohd → md; begum/bibi kept) unified | 0.35 |
-| location | same ward → 1, same union different ward → 0.4. If both have GPS: distance ≤ 50 m → 1, ≤ 300 m → 0.6 (replaces ward when present) | 0.10 |
-| family size | equal → 1, ±1 → 0.6, ±2 → 0.25, otherwise 0 | 0.15 |
+| phone | equal normalised numbers (or equal HMACs) → 1; one edit apart (server only, raw numbers) → 0.7; different → 0; missing on either side → 0.2 | 0.40 |
+| name | max(Jaro-Winkler(full), Jaro-Winkler(tokens sorted)) on names lower-cased, with punctuation stripped and honorific variants (md, mohammad, muhammad, mohd → md; mst, mosammat → mst) unified and then **removed**, because they would share Jaro-Winkler's prefix boost between strangers | 0.40 |
+| location | same ward → 1, same union different ward → 0.4. If both have GPS: distance ≤ 50 m → 1, ≤ 300 m → 0.6 (replaces ward when present) | 0.15 |
+| family size | equal → 1, ±1 → 0.6, ±2 → 0.25, otherwise 0 | 0.05 |
 
-A score of 0.80 or more is labelled **likely**, a score from 0.65 up to 0.80 is labelled **possible**, and anything lower is not stored. Candidates are drawn from the same operation and union where `similarity(name_norm) ≥ 0.3` or the phone HMAC is equal. Pairs are stored once with `household_a_id < household_b_id`. Nothing is ever merged automatically. The tuned weights and the measured numbers are in `docs/EVALUATION.md`.
+A score of 0.80 or more is labelled **likely**, a score from 0.65 up to 0.80 is labelled **possible**, and anything lower is not stored. Candidates are drawn from the same operation and union where `similarity(name_norm) ≥ 0.3` or the phone HMAC is equal. Pairs are stored once with `household_a_id < household_b_id`. Nothing is ever merged automatically. **Tuning:** `apps/api/sim/tune.ts` grid-searched 96 weight and missing-phone combinations on three labelled synthetic sets of 950 households each, at the fixed 0.80 and 0.65 thresholds. The first design (0.40/0.35/0.10/0.15, missing phone renormalised away) reached 0.98 recall but only 0.65 precision. Family size is noisy (±1 is common and strangers often share a size), so its weight moved to name and location. The chosen weights 0.40/0.40/0.15/0.05 with a missing phone of 0.2 reached 0.998 precision and 0.933 recall offline. The live end-to-end measurement is in `docs/EVALUATION.md`.
 
 ## 5. Sync protocol summary
 
@@ -99,3 +99,13 @@ A score of 0.80 or more is labelled **likely**, a score from 0.65 up to 0.80 is 
 - Upload: `POST /api/sync/push` with ≤ 100 events per batch (bounded to ~64 KB). For each event, the server inserts into `sync_event` with `ON CONFLICT (event_id) DO NOTHING`. A repeated event returns its original outcome, which gives exactly-once storage. The server applies the event to the materialised tables in the same transaction and returns one ack per event (`applied`, `duplicate`, `conflict`, `rejected` with reason). The client marks acknowledged events as done and resumes from the first unacknowledged event.
 - Out-of-order safety: an update or void that arrives before its create is parked (`status = deferred`) and replayed when the create arrives. Field merges compare `base_version` against per-field version stamps, so arrival order does not change the outcome.
 - Download: `GET /api/sync/pull?cursor=` returns materialised rows with `server_seq > cursor` for the device's selected areas, plus releases, items, areas and notifications. The cursor is a single monotonic `bigint`. The client replaces its server snapshot and re-applies its own still-pending events on top. Every device therefore converges to the server state (NFR10).
+
+## 6. Implementation decisions made during the build
+
+- **D1 Workspace runner.** Root scripts call `node scripts/workspace.mjs <package> <script>` instead of nested `pnpm -r`/`pnpm --filter`. On this machine pnpm re-invokes itself through a path that contains a space (the Windows user profile), and `cmd` cannot run it. The runner works the same on Windows, macOS and Linux.
+- **D2 Coordinator PIN.** A Group Coordinator is asked to set a field PIN only when opening the field app, not to use the dashboard on an office laptop. The PIN protects the phone's offline store, which the dashboard does not use.
+- **D3 Set-based coverage queries.** Coverage and unserved lists compute "served" through sets (served households, then served link groups, then counts per area) rather than correlated subqueries, which were quadratic and would break the 3-second target at 20,000 households.
+- **D4 End-to-end server.** Playwright runs against the real API on PGlite, seeded and serving the production PWA from one origin, so the service worker and offline mode behave as deployed. This needs no database credentials (BLOCKERS B1).
+- **D5 Light theme only.** Field use is outdoors in strong light. One high-contrast light theme is maintained and verified (WCAG AA), rather than a second dark theme that would halve testing for no field benefit.
+- **D6 Session resume.** When the connection returns after an offline PIN unlock, the app silently refreshes the server session from the httpOnly refresh cookie, so sync resumes without a second log-in while the refresh token is valid (30 days, rotating).
+- **D7 Bundle.** The PWA ships as one 749 KB (222 KB gzip) script plus fonts, precached at install (1.18 MB). Route-level code splitting was not added, because the whole app must be available offline after the first visit anyway.

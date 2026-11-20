@@ -37,9 +37,9 @@ export interface DuplicateScore {
 /** Weights from DECISIONS §4, tuned on the labelled synthetic set (docs/EVALUATION.md). */
 export const DUPLICATE_WEIGHTS = {
   phone: 0.4,
-  name: 0.35,
-  location: 0.1,
-  familySize: 0.15,
+  name: 0.4,
+  location: 0.15,
+  familySize: 0.05,
 } as const;
 
 export function phoneSignal(a: ScoringHousehold, b: ScoringHousehold): number | null {
@@ -70,17 +70,25 @@ export function familySizeSignal(a: number, b: number): number {
   return 0;
 }
 
+/**
+ * A missing phone on either side is uncertainty, not a neutral signal: renormalising it away
+ * let two different people with similar names in one ward score "likely" (tuned on the labelled
+ * set, docs/EVALUATION.md). It contributes a fixed low value instead.
+ */
+export const MISSING_PHONE_SIGNAL = 0.2;
+
 export function labelFor(score: number): PairLabel | null {
   if (score >= DUPLICATE_LIKELY_THRESHOLD) return 'likely';
   if (score >= DUPLICATE_POSSIBLE_THRESHOLD) return 'possible';
   return null;
 }
 
-/** Weighted similarity; a missing signal's weight is dropped and the rest renormalised. */
+/** Weighted similarity over phone, name, location and family size (DECISIONS section 4). */
 export function scoreHouseholds(
   a: ScoringHousehold,
   b: ScoringHousehold,
   weights: Record<keyof typeof DUPLICATE_WEIGHTS, number> = DUPLICATE_WEIGHTS,
+  missingPhone: number = MISSING_PHONE_SIGNAL,
 ): DuplicateScore {
   const signals: SignalScores = {
     phone: phoneSignal(a, b),
@@ -91,8 +99,7 @@ export function scoreHouseholds(
   let total = 0;
   let weightSum = 0;
   for (const key of Object.keys(weights) as (keyof typeof DUPLICATE_WEIGHTS)[]) {
-    const v = signals[key];
-    if (v === null) continue;
+    const v = key === 'phone' ? (signals.phone ?? missingPhone) : signals[key];
     total += v * weights[key];
     weightSum += weights[key];
   }

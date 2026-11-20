@@ -75,10 +75,18 @@ export function jaroWinkler(a: string, b: string): number {
   return j + prefix * 0.1 * (1 - j);
 }
 
-/** Name similarity: best of full-string and token-sorted Jaro-Winkler on normalised names. */
+/** Honorifics carry no identity and would share Jaro-Winkler's prefix boost between strangers. */
+const HONORIFIC_TOKENS = new Set(['md', 'mst']);
+function identity(name: string): string {
+  const tokens = normaliseName(name).split(' ');
+  const core = tokens.filter((t) => !HONORIFIC_TOKENS.has(t));
+  return (core.length > 0 ? core : tokens).join(' ');
+}
+
+/** Name similarity: best of full-string and token-sorted Jaro-Winkler, honorifics removed. */
 export function nameSimilarity(a: string, b: string): number {
-  const na = normaliseName(a);
-  const nb = normaliseName(b);
+  const na = identity(a);
+  const nb = identity(b);
   if (!na || !nb) return 0;
   const sorted = (s: string) => s.split(' ').sort().join(' ');
   return Math.max(jaroWinkler(na, nb), jaroWinkler(sorted(na), sorted(nb)));

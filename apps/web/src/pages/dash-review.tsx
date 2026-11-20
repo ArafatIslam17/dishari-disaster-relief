@@ -935,7 +935,8 @@ export function HouseholdDetailPage() {
           <ol className="list">
             {history.data.history.map((e) => (
               <li key={e.id} style={{ padding: '10px 0' }}>
-                <strong>{e.action}</strong> <span className="muted">{formatTime(e.createdAt)}</span>
+                <strong>{t(`households.actions.${e.action.replace(/\./g, '_')}`, { defaultValue: e.action })}</strong>{' '}
+                <span className="muted">{formatTime(e.createdAt)}</span>
                 <br />
                 <span className="small">
                   {[e.userName, e.organisationName, e.deviceLabel].filter(Boolean).join(', ')}

@@ -144,10 +144,14 @@ describe('duplicate scoring (FR18, C12)', () => {
     const r = scoreHouseholds(base, { ...base, headName: 'Shahana Begum', phone: '01898765432', memberCount: 2 });
     expect(r.label).toBeNull();
   });
-  it('renormalises when phone is missing on one side', () => {
+  it('treats a missing phone as uncertainty: an otherwise identical record is only "possible"', () => {
     const r = scoreHouseholds(base, { ...base, phone: null });
     expect(r.signals.phone).toBeNull();
-    expect(r.score).toBe(1);
+    expect(r.label).toBe('possible');
+  });
+  it('ignores honorific prefixes when comparing names', () => {
+    expect(nameSimilarity('Md Abdul Karim', 'Mohammad Abdul Karim')).toBe(1);
+    expect(nameSimilarity('Md Anwar Hossain', 'Md Abdul Karim')).toBeLessThan(0.7);
   });
   it('uses the phone HMAC when raw numbers are unavailable', () => {
     const a = { ...base, phone: null, phoneHmac: 'h1' };

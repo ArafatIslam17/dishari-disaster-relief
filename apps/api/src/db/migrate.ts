@@ -29,7 +29,7 @@ export async function ensureDatabase(url: string): Promise<{ created: boolean; n
 export async function dropDatabase(url: string): Promise<void> {
   const target = new URL(url);
   const name = decodeURIComponent(target.pathname.replace(/^\//, ''));
-  if (!/^relief_(test|restore)_[a-z0-9_]+$/.test(name)) throw new Error(`Refusing to drop non-test database ${name}`);
+  if (!/^relief_(test|restore|eval)_[a-z0-9_]+$/.test(name)) throw new Error(`Refusing to drop non-test database ${name}`);
   const admin = new URL(url);
   admin.pathname = '/postgres';
   const client = new pg.Client({ connectionString: admin.toString() });

@@ -54,21 +54,31 @@ export async function coverageSummary(
     last_at: Date | null;
   }>(
     ctx.db,
-    sql`with grp as (
-          select h.area_id, coalesce(h.link_group_id, h.household_id) as gid,
-                 bool_or(exists (select 1 from distribution d
-                                  join household x on x.household_id = d.household_id
-                                 where d.status = 'recorded' and coalesce(x.link_group_id, x.household_id) = coalesce(h.link_group_id, h.household_id)
-                                 ${distWindow})) as served
+    sql`with served_hh as (
+          select distinct d.household_id from distribution d
+           where d.operation_id = ${operationId} and d.status = 'recorded' and d.household_id is not null ${distWindow}
+        ), grp as (
+          select h.area_id, h.household_id, coalesce(h.link_group_id, h.household_id) as gid
             from household h where h.operation_id = ${operationId}
-           group by h.area_id, coalesce(h.link_group_id, h.household_id)
+        ), served_groups as (
+          select distinct g.gid from grp g join served_hh s on s.household_id = g.household_id
+        ), area_counts as (
+          select g.area_id, count(distinct g.gid)::int as registered,
+                 count(distinct g.gid) filter (where sg.gid is not null)::int as served
+            from grp g left join served_groups sg on sg.gid = g.gid
+           group by g.area_id
+        ), area_dist as (
+          select d.area_id, count(*) filter (where d.is_anonymous)::int as anonymous, max(d.distributed_at) as last_at
+            from distribution d
+           where d.operation_id = ${operationId} and d.status = 'recorded' ${distWindow}
+           group by d.area_id
         )
         select a.area_id, a.upazila, a.union_name, a.ward, a.upazila_bn, a.union_bn,
-               coalesce((select count(*) from grp where grp.area_id = a.area_id), 0)::int as registered,
-               coalesce((select count(*) from grp where grp.area_id = a.area_id and grp.served), 0)::int as served,
-               (select count(*) from distribution d where d.area_id = a.area_id and d.is_anonymous and d.status = 'recorded' ${distWindow})::int as anonymous,
-               (select max(d.distributed_at) from distribution d where d.area_id = a.area_id and d.status = 'recorded' ${distWindow}) as last_at
+               coalesce(ac.registered, 0) as registered, coalesce(ac.served, 0) as served,
+               coalesce(ad.anonymous, 0) as anonymous, ad.last_at
           from area a
+          left join area_counts ac on ac.area_id = a.area_id
+          left join area_dist ad on ad.area_id = a.area_id
          where ${sql.join(where, sql` and `)}
          order by a.upazila, a.union_name, a.ward`,
   );
@@ -96,6 +106,14 @@ export async function coverageSummary(
       servedPercent: servedPercent(r.registered, r.served),
     })),
   };
+}
+
+/** Link groups (or single households) with at least one recorded distribution in the operation. */
+function servedGroups(operationId: string) {
+  return sql`select coalesce(x.link_group_id, x.household_id) from household x
+              where x.operation_id = ${operationId}
+                and x.household_id in (select d.household_id from distribution d
+                                        where d.operation_id = ${operationId} and d.status = 'recorded' and d.household_id is not null)`;
 }
 
 /** Observers see area-level figures only; small counts are suppressed (NFR06, A6). */
@@ -146,9 +164,7 @@ export async function coverageRoutes(app: FastifyInstance): Promise<void> {
     const rows = await selectHouseholds(
       ctx.db,
       sql`h.operation_id = ${id} and h.area_id = ${areaId}
-          and not exists (select 1 from distribution d join household x on x.household_id = d.household_id
-                           where d.status = 'recorded'
-                             and coalesce(x.link_group_id, x.household_id) = coalesce(h.link_group_id, h.household_id))`,
+          and coalesce(h.link_group_id, h.household_id) not in (${servedGroups(id)})`,
       sql`order by h.created_at`,
     );
     const [last] = await query<{ last: Date | null }>(
@@ -173,9 +189,7 @@ export async function coverageRoutes(app: FastifyInstance): Promise<void> {
       ctx.db,
       sql`select h.household_id as id from household h
            where h.area_id = ${areaId}
-             and not exists (select 1 from distribution d join household x on x.household_id = d.household_id
-                              where d.status = 'recorded'
-                                and coalesce(x.link_group_id, x.household_id) = coalesce(h.link_group_id, h.household_id))`,
+             and coalesce(h.link_group_id, h.household_id) not in (${servedGroups(id)})`,
     );
     const releaseId = uuidv7();
     await ctx.db.transaction(async (tx) => {

@@ -2,9 +2,11 @@
  * Synthetic data for seeding, simulation and evaluation. Names are realistic Bangladeshi names
  * written in English letters (the proposal's scope); no real person's data is used.
  */
-export const MALE_FIRST = ['Abdul', 'Rafiqul', 'Jamal', 'Kamal', 'Shahidul', 'Mizanur', 'Habibur', 'Anwar', 'Nurul', 'Mostafa', 'Rashed', 'Belal', 'Sohel', 'Monir', 'Faruk', 'Delwar', 'Jahangir', 'Alamgir', 'Shafiqul', 'Aminul', 'Harun', 'Selim', 'Ruhul', 'Zakir', 'Mahbub'];
-export const FEMALE_FIRST = ['Rahima', 'Nasima', 'Shahana', 'Rokeya', 'Hasina', 'Jesmin', 'Momena', 'Ayesha', 'Fatema', 'Khadija', 'Rina', 'Shirin', 'Parvin', 'Nazma', 'Sufia', 'Laily', 'Salma', 'Taslima', 'Rehana', 'Shapla'];
-export const SURNAMES = ['Islam', 'Uddin', 'Hossain', 'Ahmed', 'Rahman', 'Mia', 'Khan', 'Sarkar', 'Chowdhury', 'Miah', 'Karim', 'Haque', 'Ali', 'Bhuiyan', 'Majumder', 'Patwary', 'Akter', 'Begum', 'Khatun', 'Sheikh'];
+export const MALE_FIRST = ['Abdul', 'Rafiqul', 'Jamal', 'Kamal', 'Shahidul', 'Mizanur', 'Habibur', 'Anwar', 'Nurul', 'Mostafa', 'Rashed', 'Belal', 'Sohel', 'Monir', 'Faruk', 'Delwar', 'Jahangir', 'Alamgir', 'Shafiqul', 'Aminul', 'Harun', 'Selim', 'Ruhul', 'Zakir', 'Mahbub', 'Abul', 'Badiul', 'Golam', 'Saiful', 'Tofazzal', 'Nazrul', 'Mofizul', 'Khorshed', 'Nizam', 'Obaidul', 'Rezaul', 'Sirajul', 'Tariqul', 'Wahid', 'Yunus', 'Ashraf', 'Bashir', 'Dulal', 'Ershad', 'Fazlul', 'Ibrahim', 'Jalal', 'Kabir', 'Lutfor', 'Mokbul', 'Nasir', 'Osman', 'Rafiq', 'Sattar', 'Taher', 'Ziaur', 'Akkas', 'Barek', 'Hashem', 'Motaleb'];
+export const FEMALE_FIRST = ['Rahima', 'Nasima', 'Shahana', 'Rokeya', 'Hasina', 'Jesmin', 'Momena', 'Ayesha', 'Fatema', 'Khadija', 'Rina', 'Shirin', 'Parvin', 'Nazma', 'Sufia', 'Laily', 'Salma', 'Taslima', 'Rehana', 'Shapla', 'Amena', 'Bilkis', 'Delowara', 'Feroza', 'Golapi', 'Halima', 'Josna', 'Kohinoor', 'Lovely', 'Mahmuda', 'Nurjahan', 'Rabeya', 'Sahera', 'Tahmina', 'Monowara', 'Rashida', 'Shamsun', 'Hamida', 'Khaleda', 'Anowara'];
+/** Optional second given name, common in Bangladeshi names. */
+export const MIDDLE = ['', '', '', 'Abdul', 'Nur', 'Mohon', 'Alam', 'Haque', 'Kabir', 'Uddin', 'Rahman', 'Ara', 'Nahar', 'Sultana'];
+export const SURNAMES = ['Islam', 'Uddin', 'Hossain', 'Ahmed', 'Rahman', 'Mia', 'Khan', 'Sarkar', 'Chowdhury', 'Miah', 'Karim', 'Haque', 'Ali', 'Bhuiyan', 'Majumder', 'Patwary', 'Akter', 'Begum', 'Khatun', 'Sheikh', 'Talukder', 'Mollah', 'Howlader', 'Biswas', 'Mondal', 'Pramanik', 'Sikder', 'Dewan', 'Bepari', 'Gazi', 'Fakir', 'Sardar', 'Munshi', 'Akand', 'Matubbar', 'Kazi'];
 const PREFIX_M = ['', '', 'Md ', 'Mohammad ', 'Md. '];
 const PREFIX_F = ['', '', 'Mst ', 'Mosammat '];
 
@@ -43,8 +45,9 @@ export function personName(r: () => number): string {
   const female = r() < 0.35;
   const first = female ? pick(r, FEMALE_FIRST) : pick(r, MALE_FIRST);
   const prefix = female ? pick(r, PREFIX_F) : pick(r, PREFIX_M);
+  const middle = pick(r, MIDDLE);
   const last = female ? pick(r, ['Akter', 'Begum', 'Khatun', ...SURNAMES]) : pick(r, SURNAMES);
-  return `${prefix}${first} ${last}`.replace(/\s+/g, ' ').trim();
+  return `${prefix}${first} ${middle} ${last}`.replace(/\s+/g, ' ').trim();
 }
 
 export function mobile(r: () => number): string {

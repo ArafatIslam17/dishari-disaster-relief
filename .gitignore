@@ -17,3 +17,4 @@ Thumbs.db
 .hallmark/
 tmp/
 apps/web/test-results/
+tmp-*
