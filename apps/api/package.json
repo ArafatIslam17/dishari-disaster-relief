@@ -26,7 +26,7 @@
     "@fastify/cors": "^11.1.0",
     "@fastify/helmet": "^13.0.2",
     "@fastify/rate-limit": "^10.3.0",
-    "@fastify/static": "^8.2.0",
+    "@fastify/static": "^10.1.12",
     "@fontsource/noto-sans-bengali": "5.3.0",
     "@node-rs/argon2": "2.2.2",
     "@relief/shared": "workspace:*",
@@ -38,7 +38,7 @@
     "jose": "6.2.18",
     "pdfkit": "0.21.0",
     "pg": "^8.16.3",
-    "zod": "3.25.76"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

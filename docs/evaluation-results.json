@@ -1,0 +1,387 @@
+{
+  "meta": {
+    "generatedAt": "2026-11-20T20:19:56.345Z",
+    "engine": "PGlite (PostgreSQL in WebAssembly, single connection) - see docs/BLOCKERS.md B1",
+    "scale": "full",
+    "machine": "AMD Ryzen 5 3400G with Radeon Vega Graphics     x8, 13.9 GiB RAM, Node v24.16.0",
+    "rerun": [
+      "E1"
+    ]
+  },
+  "duplicates": {
+    "households": 950,
+    "injectedDuplicates": 150,
+    "flaggedPairs": 143,
+    "truePositives": 141,
+    "precision": 0.986013986013986,
+    "recall": 0.94,
+    "likely": {
+      "flagged": 101,
+      "truePositives": 101
+    },
+    "possible": {
+      "flagged": 42,
+      "truePositives": 40
+    },
+    "detectionMs": 9059,
+    "pairsScoredOffline": 225775,
+    "grid": [
+      {
+        "weights": {
+          "phone": 0.4,
+          "name": 0.4,
+          "location": 0.15,
+          "familySize": 0.05
+        },
+        "threshold": 0.6,
+        "precision": 0.4964788732394366,
+        "recall": 0.94
+      },
+      {
+        "weights": {
+          "phone": 0.4,
+          "name": 0.4,
+          "location": 0.15,
+          "familySize": 0.05
+        },
+        "threshold": 0.65,
+        "precision": 0.986013986013986,
+        "recall": 0.94
+      },
+      {
+        "weights": {
+          "phone": 0.4,
+          "name": 0.4,
+          "location": 0.15,
+          "familySize": 0.05
+        },
+        "threshold": 0.7,
+        "precision": 1,
+        "recall": 0.7066666666666667
+      },
+      {
+        "weights": {
+          "phone": 0.4,
+          "name": 0.4,
+          "location": 0.15,
+          "familySize": 0.05
+        },
+        "threshold": 0.75,
+        "precision": 1,
+        "recall": 0.7066666666666667
+      },
+      {
+        "weights": {
+          "phone": 0.4,
+          "name": 0.4,
+          "location": 0.15,
+          "familySize": 0.05
+        },
+        "threshold": 0.8,
+        "precision": 1,
+        "recall": 0.6733333333333333
+      },
+      {
+        "weights": {
+          "phone": 0.5,
+          "name": 0.3,
+          "location": 0.05,
+          "familySize": 0.15
+        },
+        "threshold": 0.6,
+        "precision": 1,
+        "recall": 0.8533333333333334
+      },
+      {
+        "weights": {
+          "phone": 0.5,
+          "name": 0.3,
+          "location": 0.05,
+          "familySize": 0.15
+        },
+        "threshold": 0.65,
+        "precision": 1,
+        "recall": 0.7066666666666667
+      },
+      {
+        "weights": {
+          "phone": 0.5,
+          "name": 0.3,
+          "location": 0.05,
+          "familySize": 0.15
+        },
+        "threshold": 0.7,
+        "precision": 1,
+        "recall": 0.7066666666666667
+      },
+      {
+        "weights": {
+          "phone": 0.5,
+          "name": 0.3,
+          "location": 0.05,
+          "familySize": 0.15
+        },
+        "threshold": 0.75,
+        "precision": 1,
+        "recall": 0.7
+      },
+      {
+        "weights": {
+          "phone": 0.5,
+          "name": 0.3,
+          "location": 0.05,
+          "familySize": 0.15
+        },
+        "threshold": 0.8,
+        "precision": 1,
+        "recall": 0.6266666666666667
+      },
+      {
+        "weights": {
+          "phone": 0.35,
+          "name": 0.4,
+          "location": 0.1,
+          "familySize": 0.15
+        },
+        "threshold": 0.6,
+        "precision": 0.3047034764826176,
+        "recall": 0.9933333333333333
+      },
+      {
+        "weights": {
+          "phone": 0.35,
+          "name": 0.4,
+          "location": 0.1,
+          "familySize": 0.15
+        },
+        "threshold": 0.65,
+        "precision": 0.6807511737089202,
+        "recall": 0.9666666666666667
+      },
+      {
+        "weights": {
+          "phone": 0.35,
+          "name": 0.4,
+          "location": 0.1,
+          "familySize": 0.15
+        },
+        "threshold": 0.7,
+        "precision": 0.9924242424242424,
+        "recall": 0.8733333333333333
+      },
+      {
+        "weights": {
+          "phone": 0.35,
+          "name": 0.4,
+          "location": 0.1,
+          "familySize": 0.15
+        },
+        "threshold": 0.75,
+        "precision": 1,
+        "recall": 0.7066666666666667
+      },
+      {
+        "weights": {
+          "phone": 0.35,
+          "name": 0.4,
+          "location": 0.1,
+          "familySize": 0.15
+        },
+        "threshold": 0.8,
+        "precision": 1,
+        "recall": 0.68
+      },
+      {
+        "weights": {
+          "phone": 0.3,
+          "name": 0.4,
+          "location": 0.15,
+          "familySize": 0.15
+        },
+        "threshold": 0.6,
+        "precision": 0.08408071748878924,
+        "recall": 1
+      },
+      {
+        "weights": {
+          "phone": 0.3,
+          "name": 0.4,
+          "location": 0.15,
+          "familySize": 0.15
+        },
+        "threshold": 0.65,
+        "precision": 0.4164305949008499,
+        "recall": 0.98
+      },
+      {
+        "weights": {
+          "phone": 0.3,
+          "name": 0.4,
+          "location": 0.15,
+          "familySize": 0.15
+        },
+        "threshold": 0.7,
+        "precision": 0.7784090909090909,
+        "recall": 0.9133333333333333
+      },
+      {
+        "weights": {
+          "phone": 0.3,
+          "name": 0.4,
+          "location": 0.15,
+          "familySize": 0.15
+        },
+        "threshold": 0.75,
+        "precision": 1,
+        "recall": 0.86
+      },
+      {
+        "weights": {
+          "phone": 0.3,
+          "name": 0.4,
+          "location": 0.15,
+          "familySize": 0.15
+        },
+        "threshold": 0.8,
+        "precision": 1,
+        "recall": 0.68
+      },
+      {
+        "weights": {
+          "phone": 0.45,
+          "name": 0.35,
+          "location": 0.1,
+          "familySize": 0.1
+        },
+        "threshold": 0.6,
+        "precision": 0.9448275862068966,
+        "recall": 0.9133333333333333
+      },
+      {
+        "weights": {
+          "phone": 0.45,
+          "name": 0.35,
+          "location": 0.1,
+          "familySize": 0.1
+        },
+        "threshold": 0.65,
+        "precision": 1,
+        "recall": 0.7066666666666667
+      },
+      {
+        "weights": {
+          "phone": 0.45,
+          "name": 0.35,
+          "location": 0.1,
+          "familySize": 0.1
+        },
+        "threshold": 0.7,
+        "precision": 1,
+        "recall": 0.7066666666666667
+      },
+      {
+        "weights": {
+          "phone": 0.45,
+          "name": 0.35,
+          "location": 0.1,
+          "familySize": 0.1
+        },
+        "threshold": 0.75,
+        "precision": 1,
+        "recall": 0.7066666666666667
+      },
+      {
+        "weights": {
+          "phone": 0.45,
+          "name": 0.35,
+          "location": 0.1,
+          "familySize": 0.1
+        },
+        "threshold": 0.8,
+        "precision": 1,
+        "recall": 0.6733333333333333
+      }
+    ]
+  },
+  "exactlyOnce": {
+    "devices": 8,
+    "eventsGenerated": 480,
+    "eventsStored": 480,
+    "distinctStored": 480,
+    "deferredLeft": 0,
+    "lostEvents": 0,
+    "duplicateUploadsAbsorbed": 35,
+    "failedSyncAttempts": 14,
+    "injection": {
+      "dropBeforeCommit": 0.15,
+      "lostResponseAfterCommit": 0.15,
+      "repeatedBatch": 0.1
+    },
+    "converged": true,
+    "wallMs": 9721
+  },
+  "conflicts": {
+    "injectedSameField": 50,
+    "detected": 50,
+    "detectionRate": 1,
+    "differentFieldEdits": 50,
+    "falseConflicts": 0,
+    "autoMerged": 50
+  },
+  "slowLink": {
+    "records": 500,
+    "bandwidthKbps": 400,
+    "latencyMs": 300,
+    "totalMs": 23634,
+    "requests": 6,
+    "bytesUp": 254201,
+    "bytesDown": 322771,
+    "batches": 5,
+    "withinTarget": true
+  },
+  "concurrency": {
+    "devices": 50,
+    "eventsPerDevice": 40,
+    "succeeded": 50,
+    "wallMs": 30120,
+    "requestP50Ms": 23068,
+    "requestP95Ms": 23123
+  },
+  "dashboard": {
+    "households": 20000,
+    "loadMs": 597122,
+    "coverage": {
+      "medianMs": 158,
+      "maxMs": 183,
+      "bytes": 10494
+    },
+    "unservedArea": {
+      "medianMs": 50,
+      "maxMs": 54,
+      "bytes": 58
+    },
+    "householdSearch": {
+      "medianMs": 114,
+      "maxMs": 115,
+      "bytes": 56544
+    },
+    "duplicatesList": {
+      "medianMs": 7,
+      "maxMs": 9,
+      "bytes": 12
+    },
+    "conflictsList": {
+      "medianMs": 11,
+      "maxMs": 13,
+      "bytes": 16
+    },
+    "operationSummaryCsv": {
+      "ms": 258,
+      "status": 200
+    },
+    "auditPage": {
+      "ms": 70,
+      "status": 200
+    }
+  }
+}

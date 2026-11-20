@@ -20,6 +20,7 @@ import { areaKeys } from '../src/routes/operations.js';
 import { seedDemo } from '../src/seed.js';
 import { mistypePhone, mobile, personName, rng, varyName } from '../src/synthetic.js';
 import { HttpTransport, SimDevice, percentile, simLogin, type SimSession } from './lib.js';
+import { writeEvaluationReport } from './report.js';
 
 const QUICK = process.env.EVAL_SCALE === 'quick';
 /** EVAL_ONLY=E1,E3 re-runs selected experiments and merges them into the existing results file. */
@@ -414,7 +415,8 @@ const meta = {
 const resultsFile = resolve(REPO_ROOT, 'docs', 'evaluation-results.json');
 const previous = ONLY.size > 0 && existsSync(resultsFile) ? (JSON.parse(readFileSync(resultsFile, 'utf8')) as Record<string, unknown>) : {};
 writeFileSync(resultsFile, JSON.stringify({ ...previous, meta: { ...meta, rerun: [...ONLY] }, ...results }, null, 2));
-log('wrote docs/evaluation-results.json');
+writeEvaluationReport();
+log('wrote docs/evaluation-results.json and docs/EVALUATION.md');
 await app.close();
 await runtime.close();
 await dbInfo.cleanup();

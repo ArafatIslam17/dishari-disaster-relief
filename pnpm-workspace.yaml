@@ -6,3 +6,5 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - pdfkit@0.21.0
   - lucide-react@1.77.0
+overrides:
+  tinypool: ^2.2.0
