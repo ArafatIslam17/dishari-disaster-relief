@@ -14,8 +14,8 @@ console.info(`
 
 const { result } = concurrently(
   [
-    { command: 'pnpm --filter @relief/api dev', name: 'api', prefixColor: 'cyan' },
-    { command: 'pnpm --filter @relief/web dev', name: 'web', prefixColor: 'magenta' },
+    { command: 'node scripts/workspace.mjs api dev', name: 'api', prefixColor: 'cyan' },
+    { command: 'node scripts/workspace.mjs web dev', name: 'web', prefixColor: 'magenta' },
   ],
   { killOthersOn: ['failure'], restartTries: 0 },
 );

@@ -12,12 +12,12 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed.ts",
-    "seed:perf": "tsx scripts/seed-perf.ts",
     "admin:create": "tsx scripts/create-admin.ts",
     "backup": "tsx scripts/backup.ts",
     "backup:verify": "tsx scripts/backup.ts --verify",
     "simulate": "tsx sim/simulate.ts",
-    "evaluate": "tsx sim/evaluate.ts"
+    "evaluate": "tsx sim/evaluate.ts",
+    "e2e:server": "tsx scripts/e2e-server.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.17",

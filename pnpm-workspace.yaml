@@ -5,3 +5,4 @@ allowBuilds:
   esbuild: true
 minimumReleaseAgeExclude:
   - pdfkit@0.21.0
+  - lucide-react@1.77.0
