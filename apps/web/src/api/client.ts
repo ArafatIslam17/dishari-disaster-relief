@@ -15,8 +15,31 @@ let accessToken: string | null = null;
 let refreshing: Promise<boolean> | null = null;
 const listeners = new Set<() => void>();
 
+/**
+ * A non-secret hint that this browser holds a refresh cookie. Without it the app skips the refresh
+ * call at start-up, so a first visit or a signed-out browser makes no request that is bound to fail
+ * with 401 (UI audit F01). The cookie itself stays httpOnly and is the only credential.
+ */
+const SIGNED_IN_KEY = 'relief.signedIn';
+function setSignedInHint(on: boolean): void {
+  try {
+    if (on) localStorage.setItem(SIGNED_IN_KEY, '1');
+    else localStorage.removeItem(SIGNED_IN_KEY);
+  } catch {
+    /* storage unavailable: refresh is then always attempted */
+  }
+}
+function mayHaveSession(): boolean {
+  try {
+    return localStorage.getItem(SIGNED_IN_KEY) === '1';
+  } catch {
+    return true;
+  }
+}
+
 export function setAccessToken(token: string | null): void {
   accessToken = token;
+  setSignedInHint(token !== null);
 }
 export function hasAccessToken(): boolean {
   return accessToken !== null;
@@ -28,15 +51,19 @@ export function onSessionExpired(fn: () => void): () => void {
 }
 
 async function doRefresh(): Promise<boolean> {
+  if (!mayHaveSession()) return false;
   try {
     const res = await fetch('/api/auth/refresh', {
       method: 'POST',
       credentials: 'include',
       headers: { 'X-Relief-Client': '1' },
     });
-    if (!res.ok) return false;
+    if (!res.ok) {
+      if (res.status === 401) setSignedInHint(false);
+      return false;
+    }
     const body = (await res.json()) as { accessToken: string };
-    accessToken = body.accessToken;
+    setAccessToken(body.accessToken);
     return true;
   } catch {
     return false;

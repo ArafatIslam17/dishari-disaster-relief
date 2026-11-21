@@ -1,10 +1,29 @@
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+
+/** Preloads the two critical faces (Roboto Flex Latin, Baloo Da 2 Bengali) from the hashed build output. */
+function preloadFonts(): Plugin {
+  return {
+    name: 'relief-preload-fonts',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, ctx) {
+        if (!ctx.bundle) return html;
+        const fonts = Object.keys(ctx.bundle).filter((f) => /(roboto-flex-latin-standard|baloo-da-2-bengali).*\.woff2$/.test(f));
+        return {
+          html,
+          tags: fonts.map((f) => ({ tag: 'link', attrs: { rel: 'preload', as: 'font', type: 'font/woff2', href: `/${f}`, crossorigin: '' }, injectTo: 'head' as const })),
+        };
+      },
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
     react(),
+    preloadFonts(),
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
@@ -18,8 +37,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#F3F6F5',
-        theme_color: '#0E5A66',
+        background_color: '#f1f7f8',
+        theme_color: '#012831',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -29,7 +48,7 @@ export default defineConfig({
       },
       workbox: {
         // The whole app shell and the bundled fonts are precached: a cold start works with no network.
-        globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         cleanupOutdatedCaches: true,

@@ -6,15 +6,18 @@ import {
   useId,
   useRef,
   useState,
+  useSyncExternalStore,
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, CheckCircle2, Info, Minus, Plus, WifiOff } from 'lucide-react';
+import { Link } from 'react-router';
+import { AlertTriangle, ArrowLeft, CheckCircle2, Info, Minus, Monitor, Moon, Plus, Sun, WifiOff, X } from 'lucide-react';
 import { formatShortCode, type CoverageLabel } from '@relief/shared';
 import { ApiError } from '../api/client';
 import { setLang, type Lang } from '../i18n';
+import { getTheme, setTheme, subscribeTheme, type ThemeChoice } from '../theme';
 
 /** Translates an API or validation error code into a sentence. */
 export function useErrorText() {
@@ -50,6 +53,90 @@ export function useIssueText() {
   };
 }
 
+// ---------- signal marks: every data state has its own shape (DESIGN.md, Overview) ----------
+export type MarkKind =
+  | 'served'
+  | 'partly'
+  | 'not_served'
+  | 'no_records'
+  | 'pending'
+  | 'synced'
+  | 'failed'
+  | 'conflict'
+  | 'duplicate'
+  | 'neutral';
+
+/** A 12 px geometric mark, drawn in currentColor; always paired with a text label. */
+export function StatusMark({ kind, size = 12 }: { kind: MarkKind; size?: number }) {
+  const common = { width: size, height: size, viewBox: '0 0 12 12', 'aria-hidden': true as const, focusable: 'false' as const, className: `mark mark-${kind}` };
+  switch (kind) {
+    case 'served':
+      return (
+        <svg {...common}>
+          <rect x="1" y="1" width="10" height="10" fill="currentColor" />
+        </svg>
+      );
+    case 'partly':
+      return (
+        <svg {...common}>
+          <rect x="1.6" y="1.6" width="8.8" height="8.8" fill="none" stroke="currentColor" strokeWidth="1.2" />
+          <path d="M1.6 1.6V10.4H10.4Z" fill="currentColor" />
+        </svg>
+      );
+    case 'not_served':
+      return (
+        <svg {...common}>
+          <circle cx="6" cy="6" r="4.4" fill="none" stroke="currentColor" strokeWidth="1.6" />
+        </svg>
+      );
+    case 'no_records':
+      return (
+        <svg {...common}>
+          <path d="M0.5 6H11.5" stroke="currentColor" strokeWidth="2" strokeDasharray="2.2 1.6" />
+        </svg>
+      );
+    case 'pending':
+      return (
+        <svg {...common}>
+          <path d="M6 1.2 10.8 6 6 10.8 1.2 6Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      );
+    case 'synced':
+      return (
+        <svg {...common}>
+          <rect x="1" y="1" width="10" height="10" fill="currentColor" />
+          <path d="M3.3 6.1 5.2 8 8.8 4.2" fill="none" stroke="var(--mark-knock, var(--surface))" strokeWidth="1.5" />
+        </svg>
+      );
+    case 'failed':
+      return (
+        <svg {...common}>
+          <rect x="1" y="1" width="10" height="10" fill="currentColor" />
+          <path d="M3.8 3.8 8.2 8.2M8.2 3.8 3.8 8.2" stroke="var(--mark-knock, var(--surface))" strokeWidth="1.5" />
+        </svg>
+      );
+    case 'conflict':
+      return (
+        <svg {...common}>
+          <path d="M1 1.5 5.6 6 1 10.5ZM11 1.5 6.4 6 11 10.5Z" fill="currentColor" />
+        </svg>
+      );
+    case 'duplicate':
+      return (
+        <svg {...common}>
+          <circle cx="4.4" cy="6" r="3.3" fill="none" stroke="currentColor" strokeWidth="1.4" />
+          <circle cx="7.6" cy="6" r="3.3" fill="none" stroke="currentColor" strokeWidth="1.4" />
+        </svg>
+      );
+    default:
+      return (
+        <svg {...common}>
+          <circle cx="6" cy="6" r="2.4" fill="currentColor" />
+        </svg>
+      );
+  }
+}
+
 // ---------- form controls ----------
 interface FieldProps {
   label: string;
@@ -57,11 +144,11 @@ interface FieldProps {
   help?: string;
 }
 
-export function TextField({ label, error, help, ...rest }: FieldProps & InputHTMLAttributes<HTMLInputElement>) {
+export function TextField({ label, error, help, className, ...rest }: FieldProps & InputHTMLAttributes<HTMLInputElement>) {
   const id = useId();
-  const describedBy = [error ? `${id}-err` : null, help ? `${id}-help` : null].filter(Boolean).join(' ') || undefined;
+  const describedBy = [help ? `${id}-help` : null, error ? `${id}-err` : null].filter(Boolean).join(' ') || undefined;
   return (
-    <div className="field">
+    <div className={`field${className ? ` ${className}` : ''}`}>
       <label htmlFor={id}>{label}</label>
       {help && (
         <span id={`${id}-help`} className="help">
@@ -71,6 +158,7 @@ export function TextField({ label, error, help, ...rest }: FieldProps & InputHTM
       <input id={id} aria-invalid={error ? 'true' : undefined} aria-describedby={describedBy} {...rest} />
       {error && (
         <span id={`${id}-err`} className="error">
+          <AlertTriangle size={14} aria-hidden />
           {error}
         </span>
       )}
@@ -78,17 +166,23 @@ export function TextField({ label, error, help, ...rest }: FieldProps & InputHTM
   );
 }
 
-export function SelectField({ label, error, help, children, ...rest }: FieldProps & SelectHTMLAttributes<HTMLSelectElement>) {
+export function SelectField({ label, error, help, children, className, ...rest }: FieldProps & SelectHTMLAttributes<HTMLSelectElement>) {
   const id = useId();
+  const describedBy = [help ? `${id}-help` : null, error ? `${id}-err` : null].filter(Boolean).join(' ') || undefined;
   return (
-    <div className="field">
+    <div className={`field${className ? ` ${className}` : ''}`}>
       <label htmlFor={id}>{label}</label>
-      {help && <span className="help">{help}</span>}
-      <select id={id} aria-invalid={error ? 'true' : undefined} aria-describedby={error ? `${id}-err` : undefined} {...rest}>
+      {help && (
+        <span id={`${id}-help`} className="help">
+          {help}
+        </span>
+      )}
+      <select id={id} aria-invalid={error ? 'true' : undefined} aria-describedby={describedBy} {...rest}>
         {children}
       </select>
       {error && (
         <span id={`${id}-err`} className="error">
+          <AlertTriangle size={14} aria-hidden />
           {error}
         </span>
       )}
@@ -103,6 +197,7 @@ export function Stepper({
   min = 1,
   max = 50,
   error,
+  hideLabel = false,
 }: {
   label: string;
   value: number;
@@ -110,18 +205,22 @@ export function Stepper({
   min?: number;
   max?: number;
   error?: string;
+  hideLabel?: boolean;
 }) {
   const id = useId();
   return (
     <div className="field">
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id} className={hideLabel ? 'visually-hidden' : undefined}>
+        {label}
+      </label>
       <div className="stepper">
-        <button type="button" className="btn btn-quiet" aria-label={`${label}: −1`} onClick={() => onChange(Math.max(min, value - 1))}>
+        <button type="button" className="btn btn-quiet" aria-label={`${label}: −1`} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))}>
           <Minus size={20} aria-hidden />
         </button>
         <input
           id={id}
           inputMode="numeric"
+          autoComplete="off"
           value={Number.isFinite(value) ? String(value) : ''}
           aria-invalid={error ? 'true' : undefined}
           aria-describedby={error ? `${id}-err` : undefined}
@@ -130,12 +229,13 @@ export function Stepper({
             onChange(Number.isNaN(n) ? 0 : Math.min(max, n));
           }}
         />
-        <button type="button" className="btn btn-quiet" aria-label={`${label}: +1`} onClick={() => onChange(Math.min(max, value + 1))}>
+        <button type="button" className="btn btn-quiet" aria-label={`${label}: +1`} disabled={value >= max} onClick={() => onChange(Math.min(max, value + 1))}>
           <Plus size={20} aria-hidden />
         </button>
       </div>
       {error && (
         <span id={`${id}-err`} className="error">
+          <AlertTriangle size={14} aria-hidden />
           {error}
         </span>
       )}
@@ -144,59 +244,102 @@ export function Stepper({
 }
 
 // ---------- display ----------
+const COVERAGE_MARK: Record<CoverageLabel, MarkKind> = {
+  fully_served: 'served',
+  partly_served: 'partly',
+  not_served: 'not_served',
+  no_records: 'no_records',
+};
+
 export function CoverageChip({ label }: { label: CoverageLabel }) {
   const { t } = useTranslation();
-  return <span className={`chip chip-${label}`}>{t(`coverage.${label}`)}</span>;
+  return (
+    <span className={`chip chip-${label}`}>
+      <StatusMark kind={COVERAGE_MARK[label]} />
+      {t(`coverage.${label}`)}
+    </span>
+  );
 }
 
-const OK = ['active', 'approved', 'resolved', 'linked', 'justified', 'ok', 'recorded'];
-const BAD = ['rejected', 'deactivated', 'revoked', 'voided', 'failed', 'repeat', 'locked'];
-const WAIT = ['pending', 'pending_review', 'open', 'possible', 'running', 'likely'];
+const STATUS_MARK: Record<string, MarkKind> = {
+  active: 'synced',
+  approved: 'synced',
+  resolved: 'synced',
+  justified: 'synced',
+  ok: 'synced',
+  recorded: 'synced',
+  synced: 'synced',
+  linked: 'duplicate',
+  possible: 'duplicate',
+  likely: 'duplicate',
+  rejected: 'failed',
+  deactivated: 'failed',
+  revoked: 'failed',
+  voided: 'failed',
+  failed: 'failed',
+  repeat: 'failed',
+  locked: 'failed',
+  pending: 'pending',
+  pending_review: 'pending',
+  running: 'pending',
+  open: 'conflict',
+};
 
-export function StatusTag({ status }: { status: string }) {
+export function StatusTag({ status, label }: { status: string; label?: string }) {
   const { t } = useTranslation();
-  const tone = OK.includes(status) ? 'tag-ok' : BAD.includes(status) ? 'tag-danger' : WAIT.includes(status) ? 'tag-warn' : '';
-  return <span className={`tag ${tone}`}>{t(`statuses.${status}`, { defaultValue: status })}</span>;
+  const kind = STATUS_MARK[status] ?? 'neutral';
+  return (
+    <span className={`tag tag-${kind}`}>
+      <StatusMark kind={kind} />
+      {label ?? t(`statuses.${status}`, { defaultValue: status })}
+    </span>
+  );
 }
 
 export function ShortCode({ code, size = 'lg' }: { code: string; size?: 'lg' | 'sm' }) {
   const formatted = formatShortCode(code);
   return size === 'lg' ? (
-    <p className="short-code" aria-label={code.split('').join(' ')}>
+    <p className="short-code" aria-label={code.split('').join(' ')} translate="no">
       {formatted}
     </p>
   ) : (
-    <span className="short-code-sm">{formatted}</span>
+    <span className="short-code-sm" translate="no">
+      {formatted}
+    </span>
   );
 }
 
 export function Notice({ tone = 'info', children }: { tone?: 'info' | 'warn' | 'error' | 'ok' | 'offline'; children: ReactNode }) {
   const Icon = tone === 'ok' ? CheckCircle2 : tone === 'offline' ? WifiOff : tone === 'info' ? Info : AlertTriangle;
-  const cls = tone === 'offline' ? 'notice-warn' : tone === 'info' ? '' : `notice-${tone}`;
   return (
-    <div className={`notice ${cls}`} role={tone === 'error' ? 'alert' : undefined}>
+    <div className={`notice notice-${tone}`} role={tone === 'error' ? 'alert' : undefined}>
       <Icon size={20} aria-hidden />
-      <div>{children}</div>
+      <div className="notice-body">{children}</div>
     </div>
   );
 }
 
-export function Empty({ title, children }: { title: string; children?: ReactNode }) {
+/** A designed empty state: a mark, one line, one sentence, one next action. */
+export function Empty({ title, children, mark = 'neutral', action }: { title: string; children?: ReactNode; mark?: MarkKind; action?: ReactNode }) {
   return (
     <div className="empty">
-      <h3>{title}</h3>
-      {children}
+      <span className={`empty-mark tone-${mark}`} aria-hidden>
+        <StatusMark kind={mark} size={20} />
+      </span>
+      <h2 className="empty-title">{title}</h2>
+      {children && <div className="empty-body">{children}</div>}
+      {action && <div className="empty-action">{action}</div>}
     </div>
   );
 }
 
-export function Loading({ rows = 3 }: { rows?: number }) {
+export function Loading({ rows = 3, label }: { rows?: number; label?: string }) {
   const { t } = useTranslation();
   return (
-    <div aria-busy="true">
-      <span className="visually-hidden">{t('app.loading')}</span>
+    <div className="loading" aria-busy="true" role="status">
+      <span className="visually-hidden">{label ?? t('app.loading')}</span>
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="skeleton" style={{ width: `${90 - i * 12}%` }} />
+        <div key={i} className="skeleton" style={{ width: `${92 - ((i * 17) % 40)}%` }} />
       ))}
     </div>
   );
@@ -209,7 +352,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
     <Notice tone="error">
       <p>{text(error)}</p>
       {onRetry && (
-        <button type="button" className="btn btn-quiet" onClick={onRetry}>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={onRetry}>
           {t('common.retry')}
         </button>
       )}
@@ -217,9 +360,51 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
   );
 }
 
-export function LangSwitch() {
+/** Page title row: optional back link, the h1, a lead sentence and actions on the right. */
+export function PageHead({ title, lead, actions, back, meta }: { title: ReactNode; lead?: ReactNode; actions?: ReactNode; back?: { to: string; label?: string }; meta?: ReactNode }) {
+  const { t } = useTranslation();
+  return (
+    <header className="page-head">
+      {back && (
+        <Link className="back-link" to={back.to}>
+          <ArrowLeft size={16} aria-hidden />
+          {back.label ?? t('common.back')}
+        </Link>
+      )}
+      <div className="page-head-row">
+        <h1>{title}</h1>
+        {actions && <div className="page-head-actions">{actions}</div>}
+      </div>
+      {meta && <div className="page-head-meta">{meta}</div>}
+      {lead && <p className="lead">{lead}</p>}
+    </header>
+  );
+}
+
+/** Segmented filter (not tabs: it filters one list in place and the URL keeps the choice). */
+export function Segmented<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void }) {
+  return (
+    <div className="segmented" role="group" aria-label={label}>
+      {options.map((o) => (
+        <button key={o.value} type="button" aria-pressed={value === o.value} onClick={() => onChange(o.value)}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function LangSwitch({ compact = false }: { compact?: boolean }) {
   const { i18n, t } = useTranslation();
   const choose = (l: Lang) => setLang(l);
+  if (compact) {
+    const next: Lang = i18n.language === 'bn' ? 'en' : 'bn';
+    return (
+      <button type="button" className="lang-toggle" onClick={() => choose(next)} lang={next} aria-label={`${t('app.language')}: ${next === 'bn' ? 'বাংলা' : 'English'}`}>
+        {next === 'bn' ? 'বাং' : 'EN'}
+      </button>
+    );
+  }
   return (
     <div className="lang-switch" role="group" aria-label={t('app.language')}>
       <button type="button" aria-pressed={i18n.language === 'bn'} onClick={() => choose('bn')} lang="bn">
@@ -229,6 +414,24 @@ export function LangSwitch() {
         EN
       </button>
     </div>
+  );
+}
+
+export function useThemeChoice(): ThemeChoice {
+  return useSyncExternalStore(subscribeTheme, getTheme, () => 'system' as ThemeChoice);
+}
+
+/** Cycles system → light → dark. The label names the current choice and what a press does. */
+export function ThemeToggle({ onShell = false }: { onShell?: boolean }) {
+  const { t } = useTranslation();
+  const choice = useThemeChoice();
+  const next: ThemeChoice = choice === 'system' ? 'light' : choice === 'light' ? 'dark' : 'system';
+  const Icon = choice === 'dark' ? Moon : choice === 'light' ? Sun : Monitor;
+  const label = t('theme.label', { current: t(`theme.${choice}`), next: t(`theme.${next}`) });
+  return (
+    <button type="button" className={`icon-btn${onShell ? ' on-shell' : ''}`} onClick={() => setTheme(next)} aria-label={label} title={label}>
+      <Icon size={18} aria-hidden />
+    </button>
   );
 }
 
@@ -256,7 +459,7 @@ export function useApiData<T>(load: (signal: AbortSignal) => Promise<T>, deps: u
   return { ...state, reload };
 }
 
-// ---------- toasts (aria-live) ----------
+// ---------- toasts: polite for outcomes, assertive for errors ----------
 interface Toast {
   id: number;
   text: string;
@@ -266,40 +469,68 @@ const ToastContext = createContext<(text: string, tone?: 'ok' | 'error') => void
 export const useToast = () => useContext(ToastContext);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const push = useCallback((text: string, tone: 'ok' | 'error' = 'ok') => {
-    const id = Date.now() + Math.random();
-    setToasts((ts) => [...ts.slice(-2), { id, text, tone }]);
-    setTimeout(() => setToasts((ts) => ts.filter((x) => x.id !== id)), 5000);
-  }, []);
+  const dismiss = useCallback((id: number) => setToasts((ts) => ts.filter((x) => x.id !== id)), []);
+  const push = useCallback(
+    (text: string, tone: 'ok' | 'error' = 'ok') => {
+      const id = Date.now() + Math.random();
+      setToasts((ts) => [...ts.slice(-2), { id, text, tone }]);
+      setTimeout(() => dismiss(id), tone === 'error' ? 8000 : 5000);
+    },
+    [dismiss],
+  );
+  const render = (tone: Toast['tone']) =>
+    toasts
+      .filter((x) => x.tone === tone)
+      .map((x) => (
+        <div key={x.id} className={`toast toast-${x.tone}`}>
+          {x.tone === 'ok' ? <CheckCircle2 size={18} aria-hidden /> : <AlertTriangle size={18} aria-hidden />}
+          <span className="toast-text">{x.text}</span>
+          <button type="button" className="toast-close" aria-label={t('common.close')} onClick={() => dismiss(x.id)}>
+            <X size={16} aria-hidden />
+          </button>
+        </div>
+      ));
   return (
     <ToastContext.Provider value={push}>
       {children}
-      <div className="toast-region" role="status" aria-live="polite">
-        {toasts.map((x) => (
-          <div key={x.id} className={`toast ${x.tone === 'error' ? 'toast-error' : ''}`}>
-            {x.text}
-          </div>
-        ))}
+      <div className="toast-region">
+        <div role="status" aria-live="polite" className="toast-stack">
+          {render('ok')}
+        </div>
+        <div role="alert" aria-live="assertive" className="toast-stack">
+          {render('error')}
+        </div>
       </div>
     </ToastContext.Provider>
   );
 }
 
-// ---------- confirmation (native dialog) ----------
+// ---------- confirmation (native dialog: focus trap, Escape, focus returns to the trigger) ----------
+interface ConfirmRequest {
+  text: string;
+  withReason: boolean;
+  danger: boolean;
+  confirmLabel?: string;
+  resolve: (value: string | false) => void;
+}
+
 export function useConfirm() {
-  const [request, setRequest] = useState<{ text: string; withReason: boolean; resolve: (value: string | false) => void } | null>(null);
+  const [request, setRequest] = useState<ConfirmRequest | null>(null);
   const [reason, setReason] = useState('');
   const ref = useRef<HTMLDialogElement>(null);
+  const opener = useRef<HTMLElement | null>(null);
   const { t } = useTranslation();
   useEffect(() => {
     if (request && ref.current && !ref.current.open) ref.current.showModal();
   }, [request]);
   const ask = useCallback(
-    (text: string, withReason = false) =>
+    (text: string, withReason = false, opts: { danger?: boolean; confirmLabel?: string } = {}) =>
       new Promise<string | false>((resolve) => {
+        opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         setReason('');
-        setRequest({ text, withReason, resolve });
+        setRequest({ text, withReason, danger: opts.danger ?? true, confirmLabel: opts.confirmLabel, resolve });
       }),
     [],
   );
@@ -307,21 +538,30 @@ export function useConfirm() {
     ref.current?.close();
     request?.resolve(ok ? (request.withReason ? reason.trim() : 'yes') : false);
     setRequest(null);
+    opener.current?.focus();
   };
   const dialog = request ? (
-    <dialog ref={ref} onCancel={() => close(false)} aria-labelledby="confirm-text">
-      <p id="confirm-text">{request.text}</p>
-      {request.withReason && (
-        <TextField label={t('common.reason')} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} autoFocus />
-      )}
-      <div className="form-actions">
-        <button type="button" className="btn btn-primary" disabled={request.withReason && reason.trim().length < 3} onClick={() => close(true)}>
-          {t('common.confirm')}
-        </button>
-        <button type="button" className="btn btn-quiet" onClick={() => close(false)}>
-          {t('common.cancel')}
-        </button>
-      </div>
+    <dialog ref={ref} onCancel={() => close(false)} aria-labelledby="confirm-text" className="confirm">
+      <form
+        method="dialog"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!request.withReason || reason.trim().length >= 3) close(true);
+        }}
+      >
+        <p id="confirm-text" className="confirm-text">
+          {request.text}
+        </p>
+        {request.withReason && <TextField label={t('common.reason')} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} help={t('common.reasonHelp')} />}
+        <div className="form-actions form-actions-end">
+          <button type="button" className="btn btn-secondary" onClick={() => close(false)}>
+            {t('common.cancel')}
+          </button>
+          <button type="submit" className={`btn ${request.danger ? 'btn-danger-solid' : 'btn-primary'}`} disabled={request.withReason && reason.trim().length < 3}>
+            {request.confirmLabel ?? t('common.confirm')}
+          </button>
+        </div>
+      </form>
     </dialog>
   ) : null;
   return { ask, dialog };

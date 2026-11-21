@@ -1,51 +1,104 @@
-import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import {
+  Archive,
   Bell,
+  Building2,
+  ClipboardList,
   CloudUpload,
+  Copy,
+  FileText,
+  GitCompareArrows,
   Home,
+  LayoutDashboard,
+  ListChecks,
+  LogOut,
+  Map as MapIcon,
   Menu,
   PlusCircle,
   RefreshCw,
   Search,
+  ShieldAlert,
   Smartphone,
+  Tags,
+  UserCog,
+  Users,
+  UserRound,
   Wifi,
   WifiOff,
+  X,
+  type LucideIcon,
 } from 'lucide-react';
 import type { Role } from '@relief/shared';
 import { api } from './api/client';
 import { useSession } from './auth/session';
-import { formatTime } from './i18n';
+import { formatNumber, formatTime } from './i18n';
 import { syncManager } from './local/sync';
-import { LangSwitch, useApiData } from './ui/kit';
+import { LangSwitch, StatusMark, ThemeToggle, useApiData, type MarkKind } from './ui/kit';
 
 // ---------- field app shell ----------
 export function useSyncStatus() {
   return useSyncExternalStore(syncManager.subscribe, syncManager.getStatus);
 }
 
+/** Announces the outcome of every sync (manual or automatic) to screen readers once. */
+function useSyncAnnouncement(): string {
+  const { t } = useTranslation();
+  const status = useSyncStatus();
+  const [text, setText] = useState('');
+  const last = useRef(status.lastResult);
+  useEffect(() => {
+    if (status.lastResult && status.lastResult !== last.current) {
+      setText(status.lastResult.ok ? t('sync.completed') : t('sync.interrupted'));
+    }
+    last.current = status.lastResult;
+  }, [status.lastResult, t]);
+  return text;
+}
+
 export function FieldLayout() {
   const { t } = useTranslation();
   const status = useSyncStatus();
   const { serverSession } = useSession();
+  const announcement = useSyncAnnouncement();
   useEffect(() => syncManager.start(() => serverSession), [serverSession]);
+  const failed = !!status.lastResult && !status.lastResult.ok && status.pending > 0;
+  const state: 'running' | 'failed' | 'pending' | 'synced' = status.running ? 'running' : failed ? 'failed' : status.pending > 0 ? 'pending' : 'synced';
+  const mark: MarkKind = state === 'synced' ? 'synced' : state === 'failed' ? 'failed' : 'pending';
   return (
     <div className="field-shell">
       <a className="skip-link" href="#main">
         {t('app.skip')}
       </a>
-      <header className="status-bar" aria-label={t('nav.sync')}>
-        <span className={`net ${status.online ? '' : 'net-offline'}`}>
-          {status.online ? <Wifi size={16} aria-hidden /> : <WifiOff size={16} aria-hidden />}
-          {status.online ? t('status.online') : t('status.offline')}
+      <header className="status-bar">
+        <div className="status-row">
+          <span className="net" data-online={status.online}>
+            {status.online ? <Wifi size={18} aria-hidden /> : <WifiOff size={18} aria-hidden />}
+            {status.online ? t('status.online') : t('status.offline')}
+          </span>
+          <Link to="/field/sync" className="sync-chip" data-state={state}>
+            <StatusMark kind={mark} size={14} />
+            <span className="sync-chip-text">
+              <span className="sync-chip-main">
+                {state === 'running' ? t('status.syncing') : status.pending > 0 ? t('status.pending', { count: status.pending }) : t('status.allSynced')}
+              </span>
+              <span className="sync-chip-sub">{status.lastSyncAt ? t('status.lastSync', { time: formatTime(status.lastSyncAt) }) : t('status.neverSynced')}</span>
+            </span>
+          </Link>
+          <span className="status-actions">
+            <LangSwitch compact />
+            <ThemeToggle onShell />
+          </span>
+        </div>
+        {(!serverSession || status.needsLogin) && (
+          <p className="status-login">
+            <Link to="/login">{t('status.loginToSync')}</Link>
+          </p>
+        )}
+        <span className="visually-hidden" role="status" aria-live="polite">
+          {announcement}
         </span>
-        <span aria-live="polite">
-          {status.running ? t('status.syncing') : status.pending > 0 ? t('status.pending', { count: status.pending }) : t('status.allSynced')}
-        </span>
-        <span className="grow">{status.lastSyncAt ? t('status.lastSync', { time: formatTime(status.lastSyncAt) }) : t('status.neverSynced')}</span>
-        {(!serverSession || status.needsLogin) && <Link to="/login">{t('status.loginToSync')}</Link>}
-        <LangSwitch />
       </header>
       <main id="main" className="field-main">
         <Outlet />
@@ -58,24 +111,23 @@ export function FieldLayout() {
 function FieldBottomBar({ pending }: { pending: number }) {
   const { t } = useTranslation();
   return (
-    <nav className="bottom-bar" aria-label={t('nav.menu')}>
+    <nav className="bottom-bar" aria-label={t('nav.fieldMenu')}>
       <NavLink to="/field" end>
-        <Home size={24} aria-hidden />
+        <Home size={22} aria-hidden />
         {t('nav.home')}
       </NavLink>
       <NavLink to="/field/search">
-        <Search size={24} aria-hidden />
+        <Search size={22} aria-hidden />
         {t('nav.search')}
       </NavLink>
       <NavLink to="/field/households/new" className="primary-action">
-        <PlusCircle size={24} aria-hidden />
+        <PlusCircle size={22} aria-hidden />
         {t('nav.newHousehold')}
       </NavLink>
       <NavLink to="/field/sync">
-        <CloudUpload size={24} aria-hidden />
-        <span>
-          {t('nav.sync')} {pending > 0 && <span className="badge-count">{pending}</span>}
-        </span>
+        <CloudUpload size={22} aria-hidden />
+        {t('nav.sync')}
+        {pending > 0 && <span className="badge-count nav-badge">{formatNumber(pending)}</span>}
       </NavLink>
     </nav>
   );
@@ -140,11 +192,14 @@ export function OperationProvider({ children }: { children: ReactNode }) {
 }
 
 // ---------- dashboard shell ----------
+type QueueKey = 'conflicts' | 'duplicates' | 'flags';
 interface NavItem {
   to: string;
   label: string;
+  icon: LucideIcon;
   roles: Role[];
   group: 'main' | 'review' | 'setup' | 'admin';
+  queue?: QueueKey;
 }
 
 const GC: Role = 'GROUP_COORDINATOR';
@@ -152,30 +207,73 @@ const OA: Role = 'OPERATION_ADMINISTRATOR';
 const SA: Role = 'SYSTEM_ADMINISTRATOR';
 const OB: Role = 'OBSERVER';
 
+/** Open review items per queue, so the rail shows where decisions wait (UI audit F41). */
+function useQueueCounts(role: Role | null, operationId: string | undefined, path: string) {
+  return useApiData(
+    async (signal): Promise<Partial<Record<QueueKey, number>>> => {
+      if (!operationId || (role !== GC && role !== OA)) return {};
+      const q = `operationId=${operationId}`;
+      const flags = api
+        .get<{ flags: unknown[] }>(`/api/flags?${q}&status=pending`, signal)
+        .then((r) => r.flags.length)
+        .catch(() => 0);
+      if (role === OA) return { flags: await flags };
+      const [conflicts, duplicates, f] = await Promise.all([
+        api
+          .get<{ conflicts: unknown[] }>(`/api/conflicts?${q}&status=open`, signal)
+          .then((r) => r.conflicts.length)
+          .catch(() => 0),
+        api
+          .get<{ pairs: unknown[] }>(`/api/duplicates?${q}&status=pending_review`, signal)
+          .then((r) => r.pairs.length)
+          .catch(() => 0),
+        flags,
+      ]);
+      return { conflicts, duplicates, flags: f };
+    },
+    [role, operationId, path],
+  );
+}
+
 export function DashboardLayout() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { role, user, logout, isFieldUser } = useSession();
   const { operations, current, select } = useOperation();
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const navRef = useRef<HTMLElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => {
+    if (!open) return;
+    navRef.current?.querySelector<HTMLElement>('a, button')?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        toggleRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
   const unread = useApiData((signal) => api.get<{ unread: number }>('/api/notifications', signal), [location.pathname]);
+  const queues = useQueueCounts(role ?? null, current?.id, location.pathname);
 
   const items: NavItem[] = [
-    { to: '/app/coverage', label: t('nav.coverage'), roles: [GC, OA, OB, SA], group: 'main' },
-    { to: '/app/households', label: t('nav.households'), roles: [GC, OA, SA], group: 'main' },
-    { to: '/app/reports', label: t('nav.reports'), roles: [GC, OA, OB], group: 'main' },
-    { to: '/app/conflicts', label: t('nav.conflicts'), roles: [GC], group: 'review' },
-    { to: '/app/duplicates', label: t('nav.duplicates'), roles: [GC], group: 'review' },
-    { to: '/app/flags', label: t('nav.flags'), roles: [GC, OA], group: 'review' },
-    { to: '/app/members', label: t('nav.members'), roles: [GC], group: 'setup' },
-    { to: '/app/operations', label: t('nav.operations'), roles: [OA], group: 'setup' },
-    { to: '/app/join', label: t('nav.join'), roles: [GC], group: 'setup' },
-    { to: '/app/audit', label: t('nav.audit'), roles: [OA, SA], group: 'admin' },
-    { to: '/app/admin/organisations', label: t('nav.organisations'), roles: [SA], group: 'admin' },
-    { to: '/app/admin/users', label: t('nav.users'), roles: [SA], group: 'admin' },
-    { to: '/app/admin/disaster-types', label: t('nav.disasterTypes'), roles: [SA], group: 'admin' },
-    { to: '/app/admin/system', label: t('nav.system'), roles: [SA], group: 'admin' },
+    { to: '/app/coverage', label: t('nav.coverage'), icon: MapIcon, roles: [GC, OA, OB, SA], group: 'main' },
+    { to: '/app/households', label: t('nav.households'), icon: Users, roles: [GC, OA, SA], group: 'main' },
+    { to: '/app/reports', label: t('nav.reports'), icon: FileText, roles: [GC, OA, OB], group: 'main' },
+    { to: '/app/conflicts', label: t('nav.conflicts'), icon: GitCompareArrows, roles: [GC], group: 'review', queue: 'conflicts' },
+    { to: '/app/duplicates', label: t('nav.duplicates'), icon: Copy, roles: [GC], group: 'review', queue: 'duplicates' },
+    { to: '/app/flags', label: t('nav.flags'), icon: ShieldAlert, roles: [GC, OA], group: 'review', queue: 'flags' },
+    { to: '/app/members', label: t('nav.members'), icon: UserCog, roles: [GC], group: 'setup' },
+    { to: '/app/operations', label: t('nav.operations'), icon: LayoutDashboard, roles: [OA], group: 'setup' },
+    { to: '/app/join', label: t('nav.join'), icon: ListChecks, roles: [GC], group: 'setup' },
+    { to: '/app/audit', label: t('nav.audit'), icon: ClipboardList, roles: [OA, SA], group: 'admin' },
+    { to: '/app/admin/organisations', label: t('nav.organisations'), icon: Building2, roles: [SA], group: 'admin' },
+    { to: '/app/admin/users', label: t('nav.users'), icon: Users, roles: [SA], group: 'admin' },
+    { to: '/app/admin/disaster-types', label: t('nav.disasterTypes'), icon: Tags, roles: [SA], group: 'admin' },
+    { to: '/app/admin/system', label: t('nav.system'), icon: Archive, roles: [SA], group: 'admin' },
   ];
   const visible = items.filter((i) => role && i.roles.includes(role));
   const groups: [NavItem['group'], string | null][] = [
@@ -192,76 +290,107 @@ export function DashboardLayout() {
       <a className="skip-link" href="#main">
         {t('app.skip')}
       </a>
-      <aside className="dash-nav" data-open={open} aria-label={t('nav.menu')}>
+      <aside className="dash-nav" data-open={open} aria-label={t('nav.menu')} ref={navRef}>
+        <div className="dash-nav-inner">
         <Link to="/app/coverage" className="brand">
-          <img src="/icon.svg" alt="" width={28} height={28} />
+          <img src="/icon.svg" alt="" width={32} height={32} />
           {t('app.name')}
         </Link>
-        <nav>
+        <nav aria-label={t('nav.sections')}>
           {groups.map(([g, title]) => {
             const entries = visible.filter((i) => i.group === g);
             if (entries.length === 0) return null;
             return (
               <div key={g}>
                 {title && <p className="group-title">{title}</p>}
-                {entries.map((i) => (
-                  <NavLink key={i.to} to={i.to}>
-                    {i.label}
-                  </NavLink>
-                ))}
+                {entries.map(({ to, label, icon: Icon, queue }) => {
+                  const n = queue ? (queues.data?.[queue] ?? 0) : 0;
+                  return (
+                    <NavLink key={to} to={to}>
+                      <Icon size={18} aria-hidden />
+                      <span className="nav-label">{label}</span>
+                      {n > 0 && (
+                        <span className="nav-count">
+                          {formatNumber(n)}
+                          <span className="visually-hidden"> {t('nav.waiting')}</span>
+                        </span>
+                      )}
+                    </NavLink>
+                  );
+                })}
               </div>
             );
           })}
-          <p className="group-title">{user?.fullName}</p>
-          <NavLink to="/app/notifications">
-            {t('nav.notifications')}
-            {unreadCount > 0 && <span className="badge-count">{unreadCount}</span>}
-          </NavLink>
-          <NavLink to="/app/account">{t('nav.account')}</NavLink>
-          {isFieldUser && (
-            <NavLink to="/field">
-              <span>
-                <Smartphone size={16} aria-hidden /> {t('nav.fieldApp')}
-              </span>
-            </NavLink>
-          )}
         </nav>
+        <div className="nav-foot">
+          <p className="who">
+            {user?.fullName}
+            <span>
+              {role ? t(`roles.${role}`) : ''}
+              {user?.organisationName ? `, ${user.organisationName}` : ''}
+            </span>
+          </p>
+          <nav aria-label={t('nav.you')}>
+            <NavLink to="/app/notifications">
+              <Bell size={18} aria-hidden />
+              <span className="nav-label">{t('nav.notifications')}</span>
+              {unreadCount > 0 && <span className="nav-count">{formatNumber(unreadCount)}</span>}
+            </NavLink>
+            <NavLink to="/app/account">
+              <UserRound size={18} aria-hidden />
+              <span className="nav-label">{t('nav.account')}</span>
+            </NavLink>
+            {isFieldUser && (
+              <NavLink to="/field">
+                <Smartphone size={18} aria-hidden />
+                <span className="nav-label">{t('nav.fieldApp')}</span>
+              </NavLink>
+            )}
+          </nav>
+        </div>
+        </div>
       </aside>
-      <div>
+      <button type="button" className="drawer-scrim" data-open={open} aria-label={t('nav.closeMenu')} tabIndex={-1} onClick={() => setOpen(false)} />
+      <div className="dash-body">
         <header className="dash-top">
-          <button type="button" className="btn btn-quiet menu-toggle" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-            <Menu size={20} aria-hidden />
-            {t('nav.menu')}
+          <button
+            ref={toggleRef}
+            type="button"
+            className="icon-btn menu-toggle"
+            aria-expanded={open}
+            aria-label={open ? t('nav.closeMenu') : t('nav.menu')}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
           </button>
-          <label className="visually-hidden" htmlFor="op-select">
-            {t('nav.operation')}
-          </label>
-          {usable.length > 0 ? (
-            <select id="op-select" value={current?.id ?? ''} onChange={(e) => select(e.target.value)}>
-              {usable.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.name}
-                  {o.status === 'closed' ? ` (${t('statuses.closed')})` : ''}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span className="muted">{t('nav.noOperation')}</span>
-          )}
-          <span className="grow" />
-          <Link to="/app/notifications" className="btn btn-quiet" aria-label={`${t('nav.notifications')}: ${unreadCount}`}>
-            <Bell size={18} aria-hidden />
-            {unreadCount > 0 && <span className="badge-count">{unreadCount}</span>}
+          <div className="op-select">
+            <label htmlFor="op-select">{t('nav.operation')}</label>
+            {usable.length > 0 ? (
+              <select id="op-select" value={current?.id ?? ''} onChange={(e) => select(e.target.value)}>
+                {usable.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                    {o.status === 'closed' ? ` (${t('statuses.closed')})` : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="muted small">{t('nav.noOperation')}</span>
+            )}
+          </div>
+          <span className="spacer" />
+          <Link to="/app/notifications" className="icon-btn" aria-label={t('nav.notificationsCount', { count: unreadCount })}>
+            <Bell size={20} aria-hidden />
+            {unreadCount > 0 && <span className="badge-count">{formatNumber(unreadCount)}</span>}
           </Link>
+          <ThemeToggle />
           <LangSwitch />
-          <span className="small muted">
-            {user?.fullName}, {role ? t(`roles.${role}`) : ''}
-          </span>
-          <button type="button" className="btn btn-quiet" onClick={() => void logout()}>
-            {t('auth.logout')}
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => void logout()}>
+            <LogOut size={16} aria-hidden />
+            <span className="logout-label">{t('auth.logout')}</span>
           </button>
         </header>
-        <main id="main" className="dash-main" lang={i18n.language}>
+        <main id="main" className="dash-main">
           <Outlet />
         </main>
       </div>

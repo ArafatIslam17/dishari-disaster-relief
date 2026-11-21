@@ -1,65 +1,92 @@
-# Design system
+# Design system: "Signal"
 
-## Where this came from
+Replaced on 2026-11-22 by the UI redesign. `DESIGN.md` at the repository root is the visual system in DESIGN.md form; this file holds the working detail. The tokens live in `apps/web/src/styles/tokens.css`, the base and component styles in `apps/web/src/styles/app.css`, and the shared components in `apps/web/src/ui/kit.tsx`.
 
-1. **ui-ux-pro-max** (`--design-system`, query "humanitarian field operations offline data dashboard", density 7) returned *Data-Dense Dashboard* with navy and blue, an amber accent, and Fira Code with Fira Sans. Its rules are kept: 4.5:1 contrast minimum, 44 px touch targets, visible focus, reduced motion, tables before cards, filters on every list, SVG icons and no emoji.
-2. **frontend-design review.** Its palette and fonts are the generic analytics default and would fit any SaaS console, so both were replaced with choices drawn from the subject:
-   - Volunteers work outdoors in flood water, in strong sun, often one-handed.
-   - They copy a short code by hand onto a card.
-   - Coordinators read a coverage ledger that must never make an empty area look served.
-3. **Hallmark (app-screen scope).** The theme supplies only palette, type and surfaces. The shell is a plain top bar and a bottom action bar on the phone, and a sidebar on the dashboard because it has more than 7 destinations; the sidebar collapses under 60 rem. Every data region has loading, empty, error and full states. State lives in the URL. Motion is state only.
+## Where it came from
 
-**Signature object: the household card.** The 9-character short code is set large in Atkinson Hyperlegible Mono, in three groups (`K7M 4QX 9TC`), on a stamped card. A volunteer reads it aloud and copies it onto the family's paper card. This is the one memorable element; everything around it stays quiet.
+1. **Reference DESIGN.md: IBM (Carbon), from VoltAgent/awesome-design-md.** It was chosen over Linear, Mercury, Stripe, Wise and Sentry because it is built for dense operational data (DECISIONS U2). Only its structure is borrowed: flat tiles, 1 px hairline elevation, a 4 px grid, one assertive accent, filled inputs with a bottom rule and a 2 px focus underline, sentence-case labels, and density by design. IBM's name, Plex type and blue are not used.
+2. **Impeccable direction (`concept-seed`, seed `seed:1a012f43aa84e522`).** The roll assigned candidate 3, Bangladesh's port cyclone-warning signals: a public system where shape carries meaning. That became the signature: every data state has a geometric **signal mark** (below). The direction contract is in `apps/web/.impeccable/surfaces/src.md`.
+3. **The brief's pins:** Roboto Flex and Baloo Da 2, self-hosted; an ink-teal base with one warm accent (marigold); tinted OKLCH neutrals; light and dark themes; status never by colour alone.
+4. **Secondary checks:** ui-ux-pro-max's accessibility rules (4.5:1 text contrast, 44/48 px targets, visible focus, reduced motion) and frontend-design's warning against templated defaults.
 
-## Colour tokens (`apps/web/src/styles/tokens.css`)
+## Taste dials
 
-Light only, chosen for outdoor legibility. Every pair below was checked against WCAG 2.2 AA.
+The installed Taste Skill (`design-taste-frontend` 2.5.1) has no dials. Its upstream changelog names them from v1/v2: `DESIGN_VARIANCE`, `MOTION_INTENSITY` and `VISUAL_DENSITY`, on a 1–10 scale (DECISIONS U4). They are set per surface:
 
-| Token | Hex | Use | Contrast |
+| Surface | DESIGN_VARIANCE | MOTION_INTENSITY | VISUAL_DENSITY | What it means here |
+|---|---|---|---|---|
+| Field app (phone, outdoors, one hand) | 5 | 2 | 3 | One column; 48 px targets; one marigold action per screen; 56 px list rows; state transitions only (press, toast, sync spin). |
+| Coordination dashboard (desktop, many rows) | 5 | 2 | 8 | Condensed table type (`font-stretch` 92%), 10 px cell padding, sticky headers, a summary strip instead of cards, queue counts in the rail; no entrance motion. |
+| Login, onboarding and empty states | 7 | 4 | 5 | Split frame: an ink panel with the product promise and the signal legend, and the form on paper. The form's children rise in on load (240 ms, staggered by 40 ms). Empty states get a drawn mark, a line, a sentence and an action. |
+
+`MOTION_INTENSITY` stays at 4 or below everywhere, so no surface claims motion it doesn't ship, and every animation has a reduced-motion path. The 2.5.1 controls map to `data-radius="sharp"` (its rule for fintech and developer tools: 2 px here) and `data-motion` default (never `live`).
+
+## Colour (OKLCH, light and dark)
+
+Strategy: restrained. Cool neutrals tinted toward the teal hue, an ink-teal shell (the dashboard rail and the field status bar), and one marigold "hoist". Status colours appear only on status. Dark theme: the ground drops to L 0.185, surfaces step up by about 0.04, text rises to L 0.95, and status hues keep their angle with lightness raised to about 0.8 on dark tints. The theme follows `prefers-color-scheme` unless the user picks light or dark; the toggle sits in the field status bar, the dashboard top bar and the public pages, and the choice is stored per device (`relief.theme`).
+
+| Token | Light | Use | Measured contrast (light / dark) |
 |---|---|---|---|
-| `--ink` | `#10202A` | body text, icons | 15.9:1 on paper |
-| `--paper` | `#F3F6F5` | app background (cool, never cream) | n/a |
-| `--surface` | `#FFFFFF` | panels, inputs | n/a |
-| `--muted` | `#4A5A63` | secondary text | 6.8:1 on paper |
-| `--line` | `#C5D0D4` | borders, rules | decorative |
-| `--river` | `#0E5A66` | primary actions, links, selection | 7.4:1 with white |
-| `--river-strong` | `#08434C` | pressed and hover | 10.3:1 with white |
-| `--marigold` | `#F2B705` | the one high-visibility action per field screen (Save, Sync now), always with ink text | 10.1:1 with ink |
-| `--served` / `--served-bg` | `#1B6B3A` / `#DDEFE3` | Fully served | 5.9:1 |
-| `--partly` / `--partly-bg` | `#7A4600` / `#FBE8C7` | Partly served | 6.5:1 |
-| `--unserved` / `--unserved-bg` | `#A3241A` / `#FBE3E0` | Not served, errors | 6.3:1 |
-| `--norecords` / `--norecords-bg` | `#47555D` / hatched `#E6EBED` | No records, which is never green or amber | 7.0:1 |
-| `--offline` | `#7A4600` | offline banner | 6.5:1 on partly-bg |
+| `--ink` | `oklch(0.235 0.035 222)` | text | 15.3 / 16.1 on paper |
+| `--ink-2` | `oklch(0.42 0.03 220)` | secondary text | 7.7 / 10.7 on paper |
+| `--ink-3` | `oklch(0.50 0.026 220)` | placeholders, tertiary | 5.5 / 7.6 on paper |
+| `--paper`, `--surface`, `--surface-2`, `--surface-3` | L 0.972 / 0.995 / 0.948 / 0.915, hue 205 | ground, tiles, filled inputs and hover, pressed | — |
+| `--line` / `--line-strong` | L 0.885 / 0.60 | hairlines / control boundaries | line-strong 3.9 / 3.7 on surface (≥ 3:1) |
+| `--shell` | `oklch(0.255 0.045 218)` | rail, status bar | on-shell text 14.4 / 17.1 |
+| `--teal` | `oklch(0.42 0.08 205)` | primary button, links | 7.5 / 9.7 on paper; on-teal text 7.9 / 9.7 |
+| `--marigold` | `oklch(0.81 0.155 76)` | the hoist: field primary action, pending counts, current marker | on-marigold text 9.0 / 10.1 |
+| `--focus` | `oklch(0.50 0.13 220)` | focus rings | 5.1 / 10.4 on paper |
+| `--served` | `oklch(0.46 0.11 155)` | fully served, synced | 5.9 / 8.1 on its tint |
+| `--partly` | `oklch(0.50 0.105 62)` | partly served | 5.4 / 8.0 on its tint |
+| `--unserved` | `oklch(0.51 0.175 27)` | not served, failed, errors | 5.4 / 6.6 on its tint |
+| `--norecords` | `oklch(0.47 0.02 245)` | no records, neutral | 5.8 / 7.3 on its tint |
+| `--pending` | `oklch(0.50 0.11 70)` | pending, waiting to sync, warnings | 5.4 / 8.3 on its tint |
+| `--conflict` | `oklch(0.48 0.15 340)` | conflict | 6.2 / 7.1 on its tint |
+| `--duplicate` | `oklch(0.47 0.12 255)` | possible duplicate, linked | 5.9 / 7.6 on its tint |
 
-Colour never carries meaning alone. Every coverage chip also has its text label and a distinct shape: a filled dot for served, a half dot for partly, a ring for not served and a dash for no records.
+`node apps/web/scripts/contrast.mjs` recomputes all 44 pairs per theme from the token file and exits non-zero on any failure. Current result: all pairs pass WCAG 2.2 AA in both themes.
 
-## Type
+## Signal marks (status never by colour alone)
 
-- **Atkinson Hyperlegible** for all Latin UI text. It was designed for low-vision readers and keeps 0/O and 1/l/I distinct.
-- **Noto Sans Bengali** for Bangla, through the same font stack (`"Atkinson Hyperlegible", "Noto Sans Bengali", system-ui, sans-serif`), so mixed strings render without switching classes.
-- **Atkinson Hyperlegible Mono** only for short codes and phone numbers, where mono is the material.
-- All fonts are bundled through `@fontsource` and precached by the service worker, so they work offline.
-- Scale, ratio 1.2 with a 16 px base, which is 17 px on the field app: 13.3 / 16 / 19.2 / 23 / 27.6 / 33.2 px. Line height is 1.5 for body and 1.2 for headings. Headings use one weight (700) and one colour.
-- Labels are sentence case and untracked. There are no all-caps eyebrows.
+Drawn as 12 px SVG in `currentColor` (`StatusMark` in `ui/kit.tsx`), always next to a word:
 
-## Space, size, shape
+| State | Mark | Where |
+|---|---|---|
+| Fully served | filled square | coverage chips, coverage bar legend |
+| Partly served | square outline with the lower-left half filled | coverage |
+| Not served | hollow ring | coverage |
+| No records | dashed bar, dashed chip border | coverage (never looks served) |
+| Pending / waiting | hollow diamond | sync chip, outbox rows, pending approvals |
+| Synced / approved / resolved | filled square with a knocked-out check | sync chip, status tags |
+| Failed / rejected / voided | filled square with a knocked-out cross | sync chip, outbox rows, status tags |
+| Conflict | two triangles meeting | conflict queue, status tags |
+| Possible duplicate / linked | two overlapping rings | duplicate queue, similar households |
 
-- Spacing steps: 4, 8, 12, 16, 24, 32, 48.
-- Field controls are 48 px tall, dashboard controls 40 px, and every hit target is at least 44 × 44 px.
-- Radius: 6 px for controls, 10 px for panels, 14 px for the household card. Panels sit on the paper background; there are no cards inside cards.
-- Containers: the field app is capped at 36 rem and centred; the dashboard content is capped at 88 rem.
+## Typography
 
-## Components
+- **Latin and UI: Roboto Flex Variable** (`@fontsource-variable/roboto-flex` 5.3.0, the "standard" axes wght 100–1000, wdth 25–151, opsz 8–144, Latin subset only, 250 KB woff2).
+- **Bangla: Baloo Da 2 Variable** (`@fontsource-variable/baloo-da-2` 5.3.0, wght 400–800, Bengali subset only, 90 KB woff2). The stack `'Roboto Flex Variable', 'Baloo Da 2 Variable', system-ui` sends Bengali code points to Baloo Da 2 by `unicode-range`, so no Bangla glyph falls back to a system font.
+- Both are declared with our own `@font-face` (`font-display: swap`) in `tokens.css`, emitted by Vite as hashed assets, precached by the service worker and preloaded from `index.html` in production. There are no runtime requests to Google Fonts or a CDN.
+- **Scale** (fluid where it helps reading, fixed for UI chrome): xs 0.78 rem · sm 0.875 · base 1 · md 1.125 · lg clamp(1.3–1.45) · xl clamp(1.55–1.9) · 2xl clamp(1.9–2.5) · figure clamp(1.9–2.4).
+- **Headings:** weight 640, `opsz` 28–60, tracking −0.018 em, `text-wrap: balance`. **Body:** 400, line height 1.55, tracking +0.005 em (Carbon's small positive body tracking).
+- **Bangla:** line height 1.72 (headings 1.35), tracking 0, headings at 600; chip and table-header sizes go up one step so conjuncts stay legible.
+- **Data:** tables at `font-stretch: 92%` (condensed), tabular numerals, right-aligned figures. **Summary figures:** weight 300 at `opsz` 72, tabular. **Short codes:** wide axis (112%), weight 560, tracking 0.06 em, no monospace costume.
 
-`Button` comes in primary (river), signal (marigold, at most one per field screen), quiet and danger variants, each with a visible `:focus-visible` ring (3 px `--river` with a 2 px offset). The other components are `Field` (visible label, help text, inline error with `aria-describedby`), `Select`, `Toggle` (consent and GPS), `Stepper` (quantities and family size, 48 px buttons), `DataTable` (sticky header, row headers), `CoverageChip`, `ShortCode`, `StatusBar`, `EmptyState`, `ErrorState`, `Skeleton`, `ConfirmDialog` (native `<dialog>`) and `Toast` (`aria-live="polite"`).
+## Space, shape, depth, motion, layers
 
-## Field app rules (NFR19)
+- Space: 4 px base: `--s1` 4 · `--s2` 8 · `--s3` 12 · `--s4` 16 · `--s5` 24 · `--s6` 32 · `--s7` 48 · `--s8` 64.
+- Radius: `--r-1` 2 px (controls, tiles, chips), `--r-2` 4 px (dialogs, toasts); pills only for count badges.
+- Elevation: 0 flat; 1 hairline border; 2 the surface-2 fill; 3 `--shadow-float` (an offset, soft, ink-tinted shadow) for dialogs, toasts and the drawer only.
+- Motion: `--dur-1` 120 ms (micro), `--dur-2` 180 ms, `--dur-3` 240 ms; ease `cubic-bezier(0.2, 0.7, 0.2, 1)`. Used for button press, hover fills, toast and dialog entry, the drawer slide, the sync chip's spin while syncing, the skeleton pulse, and the public form's one entrance. Under `prefers-reduced-motion: reduce`, all animation stops and only colour and opacity transitions remain.
+- Layers: sticky 20 · rail 30 · bars 40 · drawer 50 · toast 60 · dialog 70 · skip link 80.
+- Targets: 44 px minimum on the dashboard, 48 px in the field (steppers, list rows 56 px, bottom bar 56 px, hoist 76 px).
 
-- One-handed use: primary actions sit in the bottom bar (Home, Search, New household, Sync) within thumb reach. The bar has 4 items, below the limit of 5.
-- The status bar is always visible. It shows online or offline, the pending count and the last sync time (FR13).
-- Registration fits on one screen: consent, name, mobile, family size and ward. A similar-household warning appears inline before saving (FR09).
-- Long tasks never block input. Saving responds in under 100 ms and is confirmed with a toast and the short-code card.
+## Components (`ui/kit.tsx`, `layouts.tsx`)
 
-## Accessibility checklist (WCAG 2.2 AA)
+`PageHead` (back link, h1, actions, lead) · `StatusMark` · `CoverageChip` · `StatusTag` · `Notice` (full border, tint and icon; never a side stripe) · `Empty` (mark, h2, sentence, action) · `Loading` (skeleton rows, `role=status`) · `ErrorState` (message and retry) · `TextField`, `SelectField`, `Stepper` (filled, underline focus, inline error with icon) · `Segmented` (filters as pressed buttons, not fake tabs) · `LangSwitch` (full and compact) · `ThemeToggle` · toasts (polite region for outcomes, assertive for errors, dismissible, above the bottom bar on phones and bottom-right on desktop) · `useConfirm` (native `<dialog>`: focus trap, Escape, focus returns to the trigger, danger tone, optional reason) · field shell (ink status bar with network state, sync chip with signal mark, pending count and last-sync time, compact language and theme toggles, and a polite announcement of every sync result; bottom navigation with the marigold centre action) · dashboard shell (ink rail with icons, groups and queue counts, sticky top bar with the operation selector, a drawer below 64 rem with scrim, Escape and focus management).
 
-Contrast as tabled above. Keyboard reachable in DOM order with a skip link. Focus is never obscured by the bottom bar (scroll padding). Target size of 44 px or more. No drag-only interactions. Error identification sits next to each field. Language is set on `<html lang>` and switches with the UI. `prefers-reduced-motion` disables all transitions. Status changes are announced through a live region. Authentication does not require a cognitive test, and paste is allowed in password fields.
+Tables use `.stack-table` below 48 rem: each row becomes a labelled block (`data-label` per cell), so nothing scrolls sideways on a phone.
+
+## Icons
+
+One set: Lucide, stroke 1.75 (set globally in CSS), sizes 16 (inline), 18 (navigation, buttons), 20–22 (field), 24 (hoist). No emoji or Unicode glyphs as icons. The signal marks are the only custom drawings.

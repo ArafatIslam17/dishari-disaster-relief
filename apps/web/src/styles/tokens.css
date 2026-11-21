@@ -1,0 +1,216 @@
+/* Relief Coordination · design tokens. Source of truth for DESIGN.md and docs/design-system.md.
+ * Colours are OKLCH. Every text and control pair is checked by `node apps/web/scripts/contrast.mjs`.
+ * Theme: light by default; dark follows the system unless the user picked one (html[data-theme]). */
+
+/* ---------- fonts: self-hosted, subset to Latin (Roboto Flex) and Bengali (Baloo Da 2) ---------- */
+@font-face {
+  font-family: 'Roboto Flex Variable';
+  font-style: oblique 0deg 10deg;
+  font-display: swap;
+  font-weight: 100 1000;
+  font-stretch: 25% 151%;
+  src: url('../../node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-standard-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Baloo Da 2 Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 800;
+  src: url('../../node_modules/@fontsource-variable/baloo-da-2/files/baloo-da-2-bengali-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+1CD0, U+1CD2, U+1CD5-1CD6, U+1CD8, U+1CE1, U+1CEA, U+1CED, U+1CF2, U+1CF5-1CF7, U+200C-200D, U+20B9, U+25CC, U+A8F1;
+}
+
+:root {
+  color-scheme: light;
+
+  /* neutrals: cool, tinted from the teal hue, never pure grey */
+  --paper: oklch(0.972 0.007 205);
+  --surface: oklch(0.995 0.003 205);
+  --surface-2: oklch(0.948 0.011 205);
+  --surface-3: oklch(0.915 0.015 205);
+  --line: oklch(0.885 0.013 210);
+  --line-strong: oklch(0.6 0.022 215);
+  --ink: oklch(0.235 0.035 222);
+  --ink-2: oklch(0.42 0.03 220);
+  --ink-3: oklch(0.5 0.026 220);
+
+  /* brand */
+  --shell: oklch(0.255 0.045 218);
+  --shell-2: oklch(0.31 0.048 216);
+  --shell-line: oklch(0.38 0.04 215);
+  --on-shell: oklch(0.97 0.01 200);
+  --on-shell-2: oklch(0.82 0.025 205);
+  --teal: oklch(0.42 0.08 205);
+  --teal-strong: oklch(0.345 0.072 208);
+  --teal-tint: oklch(0.935 0.028 200);
+  --on-teal: oklch(0.99 0.005 200);
+  --link: var(--teal);
+  --marigold: oklch(0.81 0.155 76);
+  --marigold-strong: oklch(0.755 0.16 68);
+  --marigold-tint: oklch(0.955 0.05 85);
+  --on-marigold: oklch(0.235 0.035 222);
+  --focus: oklch(0.5 0.13 220);
+
+  /* status: text colour (fg) and tint (bg) */
+  --served: oklch(0.46 0.11 155);
+  --served-bg: oklch(0.95 0.035 155);
+  --partly: oklch(0.5 0.105 62);
+  --partly-bg: oklch(0.955 0.045 80);
+  --unserved: oklch(0.51 0.175 27);
+  --unserved-bg: oklch(0.955 0.03 25);
+  --norecords: oklch(0.47 0.02 245);
+  --norecords-bg: oklch(0.945 0.008 245);
+  --pending: oklch(0.5 0.11 70);
+  --pending-bg: oklch(0.96 0.05 85);
+  --conflict: oklch(0.48 0.15 340);
+  --conflict-bg: oklch(0.955 0.03 340);
+  --duplicate: oklch(0.47 0.12 255);
+  --duplicate-bg: oklch(0.95 0.03 255);
+
+  /* type */
+  --font-ui: 'Roboto Flex Variable', 'Baloo Da 2 Variable', system-ui, 'Segoe UI', sans-serif;
+  --font-bn: 'Baloo Da 2 Variable', 'Roboto Flex Variable', system-ui, sans-serif;
+  --t-xs: 0.78rem;
+  --t-sm: 0.875rem;
+  --t-base: 1rem;
+  --t-md: 1.125rem;
+  --t-lg: clamp(1.3rem, 1.2rem + 0.4vw, 1.45rem);
+  --t-xl: clamp(1.55rem, 1.35rem + 0.9vw, 1.9rem);
+  --t-2xl: clamp(1.9rem, 1.55rem + 1.6vw, 2.5rem);
+  --t-figure: clamp(1.9rem, 1.6rem + 1.2vw, 2.4rem);
+  --lh-body: 1.55;
+  --lh-bn: 1.72;
+  --lh-head: 1.18;
+  --track-head: -0.018em;
+  --track-body: 0.005em;
+  --w-body: 400;
+  --w-strong: 600;
+  --w-head: 640;
+
+  /* space: 4 px base */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 64px;
+
+  /* shape and depth */
+  --r-1: 2px;
+  --r-2: 4px;
+  --r-pill: 999px;
+  --shadow-float: 0 10px 28px -8px oklch(0.235 0.035 222 / 0.28), 0 2px 6px -2px oklch(0.235 0.035 222 / 0.18);
+  --scrim: oklch(0.2 0.03 222 / 0.5);
+
+  /* motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-1: 120ms;
+  --dur-2: 180ms;
+  --dur-3: 240ms;
+
+  /* sizes */
+  --target: 44px;
+  --target-field: 48px;
+  --bar-h: 64px;
+  --rail-w: 248px;
+
+  /* layers */
+  --z-sticky: 20;
+  --z-rail: 30;
+  --z-bar: 40;
+  --z-drawer: 50;
+  --z-toast: 60;
+  --z-dialog: 70;
+  --z-skip: 80;
+}
+
+/* ---------- dark theme: the system setting, unless the user chose light ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --paper: oklch(0.185 0.02 220);
+    --surface: oklch(0.222 0.022 220);
+    --surface-2: oklch(0.262 0.024 220);
+    --surface-3: oklch(0.3 0.026 220);
+    --line: oklch(0.33 0.022 220);
+    --line-strong: oklch(0.56 0.025 215);
+    --ink: oklch(0.95 0.01 205);
+    --ink-2: oklch(0.82 0.018 210);
+    --ink-3: oklch(0.72 0.02 210);
+    --shell: oklch(0.145 0.022 222);
+    --shell-2: oklch(0.2 0.026 220);
+    --shell-line: oklch(0.29 0.026 220);
+    --on-shell: oklch(0.95 0.01 205);
+    --on-shell-2: oklch(0.78 0.02 210);
+    --teal: oklch(0.78 0.1 195);
+    --teal-strong: oklch(0.86 0.08 195);
+    --teal-tint: oklch(0.3 0.045 205);
+    --on-teal: oklch(0.18 0.03 222);
+    --marigold: oklch(0.82 0.15 76);
+    --marigold-strong: oklch(0.87 0.13 80);
+    --marigold-tint: oklch(0.3 0.06 75);
+    --on-marigold: oklch(0.2 0.03 222);
+    --focus: oklch(0.8 0.12 210);
+    --served: oklch(0.8 0.13 155);
+    --served-bg: oklch(0.28 0.05 155);
+    --partly: oklch(0.83 0.12 75);
+    --partly-bg: oklch(0.3 0.05 70);
+    --unserved: oklch(0.78 0.13 27);
+    --unserved-bg: oklch(0.3 0.06 25);
+    --norecords: oklch(0.78 0.025 245);
+    --norecords-bg: oklch(0.28 0.018 245);
+    --pending: oklch(0.84 0.13 78);
+    --pending-bg: oklch(0.3 0.06 75);
+    --conflict: oklch(0.8 0.12 340);
+    --conflict-bg: oklch(0.3 0.06 340);
+    --duplicate: oklch(0.8 0.1 255);
+    --duplicate-bg: oklch(0.29 0.05 255);
+    --shadow-float: 0 12px 32px -8px oklch(0 0 0 / 0.6), 0 2px 6px -2px oklch(0 0 0 / 0.5);
+    --scrim: oklch(0.08 0.02 222 / 0.65);
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: oklch(0.185 0.02 220);
+  --surface: oklch(0.222 0.022 220);
+  --surface-2: oklch(0.262 0.024 220);
+  --surface-3: oklch(0.3 0.026 220);
+  --line: oklch(0.33 0.022 220);
+  --line-strong: oklch(0.56 0.025 215);
+  --ink: oklch(0.95 0.01 205);
+  --ink-2: oklch(0.82 0.018 210);
+  --ink-3: oklch(0.72 0.02 210);
+  --shell: oklch(0.145 0.022 222);
+  --shell-2: oklch(0.2 0.026 220);
+  --shell-line: oklch(0.29 0.026 220);
+  --on-shell: oklch(0.95 0.01 205);
+  --on-shell-2: oklch(0.78 0.02 210);
+  --teal: oklch(0.78 0.1 195);
+  --teal-strong: oklch(0.86 0.08 195);
+  --teal-tint: oklch(0.3 0.045 205);
+  --on-teal: oklch(0.18 0.03 222);
+  --marigold: oklch(0.82 0.15 76);
+  --marigold-strong: oklch(0.87 0.13 80);
+  --marigold-tint: oklch(0.3 0.06 75);
+  --on-marigold: oklch(0.2 0.03 222);
+  --focus: oklch(0.8 0.12 210);
+  --served: oklch(0.8 0.13 155);
+  --served-bg: oklch(0.28 0.05 155);
+  --partly: oklch(0.83 0.12 75);
+  --partly-bg: oklch(0.3 0.05 70);
+  --unserved: oklch(0.78 0.13 27);
+  --unserved-bg: oklch(0.3 0.06 25);
+  --norecords: oklch(0.78 0.025 245);
+  --norecords-bg: oklch(0.28 0.018 245);
+  --pending: oklch(0.84 0.13 78);
+  --pending-bg: oklch(0.3 0.06 75);
+  --conflict: oklch(0.8 0.12 340);
+  --conflict-bg: oklch(0.3 0.06 340);
+  --duplicate: oklch(0.8 0.1 255);
+  --duplicate-bg: oklch(0.29 0.05 255);
+  --shadow-float: 0 12px 32px -8px oklch(0 0 0 / 0.6), 0 2px 6px -2px oklch(0 0 0 / 0.5);
+  --scrim: oklch(0.08 0.02 222 / 0.65);
+}

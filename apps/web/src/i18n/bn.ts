@@ -2,6 +2,7 @@ import type { Messages } from './en';
 
 export const bn: Messages = {
   app: { name: 'ত্রাণ সমন্বয়', skip: 'মূল অংশে যান', language: 'ভাষা', loading: 'লোড হচ্ছে…' },
+  theme: { label: 'থিম: {{current}}। {{next}} করতে চাপুন', system: 'ফোনের মতো', light: 'আলো', dark: 'অন্ধকার' },
   common: {
     save: 'সংরক্ষণ করুন',
     cancel: 'বাতিল',
@@ -20,6 +21,7 @@ export const bn: Messages = {
     approve: 'অনুমোদন',
     reject: 'প্রত্যাখ্যান',
     reason: 'কারণ',
+    reasonHelp: 'অন্তত ৩টি অক্ষর। এটি অডিট রেকর্ডে থাকবে।',
     note: 'মন্তব্য',
     status: 'অবস্থা',
     actions: 'কাজ',
@@ -256,6 +258,13 @@ export const bn: Messages = {
     groupAdmin: 'প্রশাসন',
     operation: 'কার্যক্রম',
     noOperation: 'এখনো কোনো কার্যক্রম নেই',
+    fieldMenu: 'মাঠের অ্যাপ',
+    sections: 'বিভাগ',
+    you: 'আপনার অ্যাকাউন্ট',
+    closeMenu: 'মেনু বন্ধ করুন',
+    waiting: 'সিদ্ধান্তের অপেক্ষায়',
+    notificationsCount_one: 'বিজ্ঞপ্তি, {{count}}টি পড়া হয়নি',
+    notificationsCount_other: 'বিজ্ঞপ্তি, {{count}}টি পড়া হয়নি',
   },
   field: {
     homeTitle: 'মাঠের কাজ',

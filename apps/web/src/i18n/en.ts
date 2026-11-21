@@ -1,5 +1,6 @@
 export const en = {
   app: { name: 'Relief Coordination', skip: 'Skip to content', language: 'Language', loading: 'Loading…' },
+  theme: { label: 'Theme: {{current}}. Switch to {{next}}', system: 'system', light: 'light', dark: 'dark' },
   common: {
     save: 'Save',
     cancel: 'Cancel',
@@ -18,6 +19,7 @@ export const en = {
     approve: 'Approve',
     reject: 'Reject',
     reason: 'Reason',
+    reasonHelp: 'At least 3 characters. It is kept in the audit trail.',
     note: 'Note',
     status: 'Status',
     actions: 'Actions',
@@ -254,6 +256,13 @@ export const en = {
     groupAdmin: 'Administration',
     operation: 'Operation',
     noOperation: 'No operation yet',
+    fieldMenu: 'Field app',
+    sections: 'Sections',
+    you: 'Your account',
+    closeMenu: 'Close menu',
+    waiting: 'waiting for a decision',
+    notificationsCount_one: 'Notifications, {{count}} unread',
+    notificationsCount_other: 'Notifications, {{count}} unread',
   },
   field: {
     homeTitle: 'Field work',

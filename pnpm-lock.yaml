@@ -287,13 +287,10 @@ importers:
 
   apps/web:
     dependencies:
-      '@fontsource/atkinson-hyperlegible':
+      '@fontsource-variable/baloo-da-2':
         specifier: 5.3.0
         version: 5.3.0
-      '@fontsource/atkinson-hyperlegible-mono':
-        specifier: 5.3.0
-        version: 5.3.0
-      '@fontsource/noto-sans-bengali':
+      '@fontsource-variable/roboto-flex':
         specifier: 5.3.0
         version: 5.3.0
       '@relief/shared':
@@ -1592,11 +1589,11 @@ packages:
   '@fastify/static@10.1.12':
     resolution: {integrity: sha512-D0pmf8OgurIsKiIjxC8ZJP/bCYnUSAiU6PS/se/6Me63UoliAu8FqrzDRX8FdgJMqFMXy45ISlfUZ1Gi6AJnqA==}
 
-  '@fontsource/atkinson-hyperlegible-mono@5.3.0':
-    resolution: {integrity: sha512-7Iha5azCRXJVk4NdxbVdKAE+4p/rMJoW6dslvhktugDFPSp7kxFRGAavBtwtSTrnyNhKXW8w1NHgMnrh/6OshA==}
+  '@fontsource-variable/baloo-da-2@5.3.0':
+    resolution: {integrity: sha512-EWMH2MQ5k8P+XFVxiC/ohtgLC8OwRQZLFawF6OkvF4TfZJbpXDL3dEWR9792YE79H04QoT3TJQoD4T5Di0Ti6A==}
 
-  '@fontsource/atkinson-hyperlegible@5.3.0':
-    resolution: {integrity: sha512-Sp8Ve8+rQmENY2Lv02VH7sLpntzTTvnncnJMTbRE7DX6TLxGraN4ykZfzaUWIoCFmaomwkvNiqmlPkrKBuDoSA==}
+  '@fontsource-variable/roboto-flex@5.3.0':
+    resolution: {integrity: sha512-bOxckUy0qXNRjhV6e4pcHGSvptix4ZRD1uaj5Za8h+p3qrb2GL4U4TQdpVmPSy0SmqwldfD+JJqEKdF68EyiAw==}
 
   '@fontsource/noto-sans-bengali@5.3.0':
     resolution: {integrity: sha512-EFBMU0UvzyFSc1ERK369zfqEu6DMRuWmCQ2+2ahhQTQAIDPEyN1UYlQdQeFkheu2DWG2hfdwrhiLlGFl2sSr/A==}
@@ -5313,9 +5310,9 @@ snapshots:
       fastq: 1.20.3
       glob: 14.0.6
 
-  '@fontsource/atkinson-hyperlegible-mono@5.3.0': {}
+  '@fontsource-variable/baloo-da-2@5.3.0': {}
 
-  '@fontsource/atkinson-hyperlegible@5.3.0': {}
+  '@fontsource-variable/roboto-flex@5.3.0': {}
 
   '@fontsource/noto-sans-bengali@5.3.0': {}
 

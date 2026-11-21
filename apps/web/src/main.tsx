@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { useTranslation } from 'react-i18next';
 import { RouterProvider } from 'react-router';
 import { registerSW } from 'virtual:pwa-register';
+import './theme';
 import './i18n';
 import './styles/app.css';
 import { SessionProvider } from './auth/session';
@@ -35,10 +36,10 @@ function UpdatePrompt() {
   }, []);
   if (!ready) return null;
   return (
-    <div className="toast-region">
+    <div className="toast-region" style={{ bottom: 'auto', top: 'calc(var(--s3) + env(safe-area-inset-top))' }}>
       <div className="toast" role="status">
-        {t('settings.update')}{' '}
-        <button type="button" className="btn btn-signal" onClick={() => void applyUpdate?.()}>
+        <span className="toast-text">{t('settings.update')}</span>
+        <button type="button" className="btn btn-signal btn-sm" onClick={() => void applyUpdate?.()}>
           {t('settings.reload')}
         </button>
       </div>

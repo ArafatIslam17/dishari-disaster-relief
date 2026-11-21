@@ -12,9 +12,8 @@
     "test:e2e": "vite build && playwright test"
   },
   "dependencies": {
-    "@fontsource/atkinson-hyperlegible": "5.3.0",
-    "@fontsource/atkinson-hyperlegible-mono": "5.3.0",
-    "@fontsource/noto-sans-bengali": "5.3.0",
+    "@fontsource-variable/baloo-da-2": "5.3.0",
+    "@fontsource-variable/roboto-flex": "5.3.0",
     "@relief/shared": "workspace:*",
     "dexie": "4.4.7",
     "i18next": "25.10.10",
