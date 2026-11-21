@@ -2,7 +2,9 @@
 
 Items that could not be resolved autonomously. Each entry has the exact fix and the workaround in use.
 
-## B1. No PostgreSQL credentials on this machine
+## B1. No PostgreSQL credentials on this machine (resolved 2026-11-22)
+
+- **Resolution:** a `.env` with the password existed, but the password contains `#`. dotenv reads an unquoted `#` as the start of a comment, and `#` also ends the host part of a URL, so the connection string was cut short. Percent-encode it in `DATABASE_URL` (`#` becomes `%23`). `pnpm db:migrate`, `pnpm seed` and `pnpm dev` now run against the native PostgreSQL 19 (DECISIONS U6).
 
 - **Found:** 2026-11-20, at the start of M1.
 - **Symptom:** `psql -h localhost -U postgres -w` → `fe_sendauth: no password supplied`. There is no `.env`, no `pgpass.conf` and no `PG*` environment variable. Guessing a password is not acceptable.
