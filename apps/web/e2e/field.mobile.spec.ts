@@ -121,3 +121,24 @@ test('Scenario 3: synchronise after an interrupted upload, at 400 kbps', async (
   await shot(page, 'sync-complete');
   expect(ms).toBeLessThan(60_000);
 });
+
+test('F14, F25: one-row status bar in Bangla at 360 px; switching user asks inside the app', async () => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.getByRole('link', { name: 'Home' }).click();
+  await page.getByRole('button', { name: /বাং/ }).click(); // compact language toggle
+  await expect(page.getByRole('heading', { name: 'মাঠের কাজ' })).toBeVisible();
+  const barHeight = await page.locator('.status-bar').evaluate((el) => el.getBoundingClientRect().height);
+  expect(barHeight).toBeLessThanOrEqual(72); // was 136 px before the redesign (five wrapped lines)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  await expectAccessible(page);
+  await page.getByRole('button', { name: /: EN$/ }).click();
+  await page.getByRole('link', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: 'Log out' }).click();
+  await expect(page.getByRole('heading', { name: 'Unlock' })).toBeVisible();
+  await page.getByRole('button', { name: 'Log in as someone else' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('This removes the previous volunteer’s data from this phone.');
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+  await unlock(page);
+});

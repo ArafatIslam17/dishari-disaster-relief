@@ -317,7 +317,7 @@ export const bn: Messages = {
     stats: { areas: 'ফোনে থাকা এলাকা', households: 'সংরক্ষিত খানা', waiting: 'সিঙ্কের অপেক্ষায়' },
     getAreas: 'আমার এলাকা নামান',
     hoistSub: 'আগে সম্মতির কথাগুলো পড়ে শোনান',
-    groupWork: 'মাঠের কাজ',
+    groupWork: 'খানা ও বিতরণ',
     groupPhone: 'এই ফোনে',
   },
   areas: {

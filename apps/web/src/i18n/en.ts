@@ -315,7 +315,7 @@ export const en = {
     stats: { areas: 'Areas on this phone', households: 'Households stored', waiting: 'Waiting to sync' },
     getAreas: 'Get my areas',
     hoistSub: 'Read the consent aloud first',
-    groupWork: 'In the field',
+    groupWork: 'Households and relief',
     groupPhone: 'On this phone',
   },
   areas: {
