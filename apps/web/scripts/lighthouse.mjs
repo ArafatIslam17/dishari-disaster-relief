@@ -3,7 +3,6 @@
 // Serve the build first: `node scripts/workspace.mjs api e2e:server` (seeded PGlite + PWA on 4173).
 // A persistent Chromium profile is logged in through Playwright, so Lighthouse audits real
 // signed-in pages with storage kept between runs (disableStorageReset).
-/* global navigator, localStorage */
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';

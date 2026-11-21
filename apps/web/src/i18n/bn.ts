@@ -27,6 +27,7 @@ export const bn: Messages = {
     no: 'না',
     open: 'খুলুন',
     choose: 'বাছাই করুন…',
+    tableOf: '{{name}}-এর সারণি',
     add: 'যোগ করুন',
     remove: 'সরান',
     download: 'ডাউনলোড',

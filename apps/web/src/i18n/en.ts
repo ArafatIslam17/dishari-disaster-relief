@@ -25,6 +25,7 @@ export const en = {
     no: 'No',
     open: 'Open',
     choose: 'Choose…',
+    tableOf: '{{name}} table',
     add: 'Add',
     remove: 'Remove',
     download: 'Download',

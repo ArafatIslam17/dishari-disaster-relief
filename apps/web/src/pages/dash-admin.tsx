@@ -431,7 +431,7 @@ export function OperationDetailPage() {
         <h2 id="joins-title">{t('operations.joinRequests')}</h2>
         {joins.data && joins.data.requests.length === 0 && <p className="muted">{t('operations.noRequests')}</p>}
         {joins.data && joins.data.requests.length > 0 && (
-          <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={t('operations.joinRequests')}>
+          <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={t('common.tableOf', { name: t('operations.joinRequests') })}>
             <table>
               <caption className="visually-hidden">{t('operations.joinRequests')}</caption>
               <thead>
@@ -533,7 +533,7 @@ export function OperationDetailPage() {
           </Notice>
         )}
         {areas.data && areas.data.areas.length > 0 && (
-          <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={t('operations.areas')}>
+          <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={t('common.tableOf', { name: t('operations.areas') })}>
             <table>
               <caption className="visually-hidden">{t('operations.areas')}</caption>
               <thead>
@@ -1097,7 +1097,7 @@ export function SystemPage() {
           </button>
         </div>
         {backups.data && backups.data.runs.length > 0 && (
-          <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={t('admin.backups')}>
+          <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={t('common.tableOf', { name: t('admin.backups') })}>
             <table>
               <caption className="visually-hidden">{t('admin.backups')}</caption>
               <thead>
