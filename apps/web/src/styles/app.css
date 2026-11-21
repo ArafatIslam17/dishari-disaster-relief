@@ -2323,18 +2323,6 @@ dialog::backdrop {
   background: var(--ink);
   color: var(--paper);
 }
-.pin-input {
-  font-size: 1.75rem;
-  letter-spacing: 0.5em;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-  padding-left: 0.5em;
-}
-.done-state {
-  display: grid;
-  justify-items: start;
-  gap: var(--s3);
-}
 
 /* ---------- conflict and duplicate comparison ---------- */
 .compare {

@@ -17,7 +17,6 @@ import {
   Map as MapIcon,
   Menu,
   PlusCircle,
-  RefreshCw,
   Search,
   ShieldAlert,
   Smartphone,
@@ -398,6 +397,3 @@ export function DashboardLayout() {
   );
 }
 
-export function RefreshIcon() {
-  return <RefreshCw size={18} aria-hidden />;
-}
