@@ -1,16 +1,20 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import {
   Bell,
+  ChevronRight,
   ClipboardList,
   Download,
   HandHeart,
   LayoutDashboard,
   MapPin,
+  PencilLine,
+  RefreshCw,
   Search as SearchIcon,
   Settings as SettingsIcon,
   UserPlus,
+  type LucideIcon,
 } from 'lucide-react';
 import { HEAD_NAME_RE, normalisePhone, type Gps, type ReliefItemDTO } from '@relief/shared';
 import { api } from '../api/client';
@@ -21,7 +25,8 @@ import type { DistributionRow, LocalArea, NoticeRow } from '../local/db';
 import { localStore, type HouseholdView, type SimilarMatch } from '../local/store';
 import { syncManager } from '../local/sync';
 import { SetPinPage } from './public';
-import { Empty, Notice, SelectField, ShortCode, Stepper, TextField, useConfirm, useErrorText, useToast } from '../ui/kit';
+import { useNotificationText } from '../ui/notifications';
+import { Empty, Notice, PageHead, SelectField, ShortCode, StatusMark, StatusTag, Stepper, TextField, useConfirm, useErrorText, useToast } from '../ui/kit';
 
 /** Re-runs `load` whenever the local store changes. */
 function useLocalData<T>(load: () => Promise<T>, deps: unknown[]): T | undefined {
@@ -56,6 +61,29 @@ function itemLabel(item: ReliefItemDTO | undefined, lang: string): string {
   return lang === 'bn' && item.itemNameBn ? item.itemNameBn : item.itemName;
 }
 
+function MenuLink({ to, icon: Icon, label, end }: { to: string; icon: LucideIcon; label: string; end?: ReactNode }) {
+  return (
+    <li>
+      <Link to={to}>
+        <Icon size={22} aria-hidden />
+        <span className="menu-label">{label}</span>
+        {end}
+        <ChevronRight size={18} className="chev" aria-hidden />
+      </Link>
+    </li>
+  );
+}
+
+function NotOnPhone() {
+  const { t } = useTranslation();
+  return (
+    <>
+      <PageHead title={t('household.notFoundTitle')} back={{ to: '/field/search' }} />
+      <Notice tone="warn">{t('household.notFound')}</Notice>
+    </>
+  );
+}
+
 // ---------- Home ----------
 interface OperationRow {
   id: string;
@@ -73,6 +101,7 @@ export function FieldHome() {
   const [error, setError] = useState<unknown>(null);
   const opName = useLocalData(async () => (await localStore.db.meta.get('operationName'))?.value as string | undefined, []);
   const counts = useLocalData(async () => ({ areas: (await localStore.selectedAreas()).length, households: localStore.householdCount() }), []);
+  const unreadNotices = useLocalData(async () => (await localStore.notices()).filter((n) => n.read !== 1).length, []);
 
   useEffect(() => {
     if (local?.operationId || !serverSession) return;
@@ -90,18 +119,26 @@ export function FieldHome() {
   if (!local?.operationId) {
     return (
       <>
-        <h1>{t('field.homeTitle')}</h1>
+        <PageHead title={t('field.homeTitle')} lead={t('field.chooseIntro')} />
         {error ? <Notice tone="error">{errorText(error)}</Notice> : null}
         {!serverSession && <Notice tone="offline">{t('areas.needOnline')}</Notice>}
-        {ops && ops.length === 0 && <Notice>{t('field.noOperations')}</Notice>}
+        {ops && ops.length === 0 && (
+          <Empty title={t('field.noOperationsTitle')} mark="pending">
+            {t('field.noOperations')}
+          </Empty>
+        )}
         {ops && ops.length > 0 && (
-          <section className="panel">
-            <h2>{t('field.chooseOperation')}</h2>
-            <ul className="list">
+          <section aria-labelledby="choose-op">
+            <h2 id="choose-op" className="menu-group-title">
+              {t('field.chooseOperation')}
+            </h2>
+            <ul className="menu-list">
               {ops.map((o) => (
                 <li key={o.id}>
-                  <button type="button" className="btn btn-quiet btn-block" onClick={() => void choose(o)}>
-                    {o.name}
+                  <button type="button" className="menu-button" onClick={() => void choose(o)}>
+                    <MapPin size={22} aria-hidden />
+                    <span className="menu-label">{o.name}</span>
+                    <ChevronRight size={18} className="chev" aria-hidden />
                   </button>
                 </li>
               ))}
@@ -112,35 +149,76 @@ export function FieldHome() {
     );
   }
 
-  const tiles = [
-    { to: '/field/households/new', icon: UserPlus, label: t('field.actions.newHousehold') },
-    { to: '/field/search', icon: SearchIcon, label: t('field.actions.search') },
-    { to: '/field/anonymous', icon: HandHeart, label: t('field.actions.anonymous') },
-    { to: '/field/areas', icon: Download, label: t('field.actions.areas') },
-    { to: '/field/unserved', icon: ClipboardList, label: t('field.actions.unserved') },
-    { to: '/field/notifications', icon: Bell, label: t('field.actions.notifications') },
-    { to: '/field/settings', icon: SettingsIcon, label: t('field.actions.settings') },
-  ];
-  if (role === 'GROUP_COORDINATOR') tiles.push({ to: '/app/coverage', icon: LayoutDashboard, label: t('field.openDashboard') });
-
   return (
     <>
-      <h1>{t('field.homeTitle')}</h1>
-      <p className="muted">
-        {t('field.operation')}: <strong>{opName}</strong>
-        <br />
-        {t('field.areasDownloaded', { n: formatNumber(counts?.areas ?? 0) })}, {t('field.householdsStored', { n: formatNumber(counts?.households ?? 0) })}
-      </p>
+      <header className="home-head">
+        <h1>{t('field.homeTitle')}</h1>
+        <p className="home-op">
+          {t('field.operation')}: <strong>{opName}</strong>
+        </p>
+      </header>
+      <dl className="home-stats">
+        <div>
+          <dt className="visually-hidden">{t('field.stats.areas')}</dt>
+          <dd className="figure">{formatNumber(counts?.areas ?? 0)}</dd>
+          <dd className="figure-label" aria-hidden>
+            {t('field.stats.areas')}
+          </dd>
+        </div>
+        <div>
+          <dt className="visually-hidden">{t('field.stats.households')}</dt>
+          <dd className="figure">{formatNumber(counts?.households ?? 0)}</dd>
+          <dd className="figure-label" aria-hidden>
+            {t('field.stats.households')}
+          </dd>
+        </div>
+        <div>
+          <dt className="visually-hidden">{t('field.stats.waiting')}</dt>
+          <dd className="figure">{formatNumber(status.pending)}</dd>
+          <dd className="figure-label" aria-hidden>
+            <StatusMark kind={status.pending > 0 ? 'pending' : 'synced'} />
+            {t('field.stats.waiting')}
+          </dd>
+        </div>
+      </dl>
       {status.skewMinutes !== 0 && <Notice tone="warn">{t('status.skew', { minutes: Math.abs(status.skewMinutes) })}</Notice>}
-      {counts && counts.areas === 0 && <Notice tone="warn">{t('field.downloadFirst')}</Notice>}
-      <div className="action-grid">
-        {tiles.map(({ to, icon: Icon, label }) => (
-          <Link key={to} to={to} className="action-tile">
-            <Icon size={28} aria-hidden />
-            {label}
+      {counts && counts.areas === 0 && (
+        <Notice tone="warn">
+          <p>{t('field.downloadFirst')}</p>
+          <Link className="btn btn-secondary btn-sm" to="/field/areas">
+            <Download size={16} aria-hidden />
+            {t('field.getAreas')}
           </Link>
-        ))}
-      </div>
+        </Notice>
+      )}
+      <Link to="/field/households/new" className="hoist">
+        <span className="hoist-icon">
+          <UserPlus size={26} aria-hidden />
+        </span>
+        <span className="hoist-text">
+          {t('field.actions.newHousehold')}
+          <span className="hoist-sub">{t('field.hoistSub')}</span>
+        </span>
+        <ChevronRight size={22} aria-hidden />
+      </Link>
+      <h2 className="menu-group-title">{t('field.groupWork')}</h2>
+      <ul className="menu-list">
+        <MenuLink to="/field/search" icon={SearchIcon} label={t('field.actions.search')} />
+        <MenuLink to="/field/anonymous" icon={HandHeart} label={t('field.actions.anonymous')} />
+        <MenuLink to="/field/unserved" icon={ClipboardList} label={t('field.actions.unserved')} />
+      </ul>
+      <h2 className="menu-group-title">{t('field.groupPhone')}</h2>
+      <ul className="menu-list">
+        <MenuLink to="/field/areas" icon={Download} label={t('field.actions.areas')} />
+        <MenuLink
+          to="/field/notifications"
+          icon={Bell}
+          label={t('field.actions.notifications')}
+          end={unreadNotices ? <span className="badge-count">{formatNumber(unreadNotices)}</span> : null}
+        />
+        <MenuLink to="/field/settings" icon={SettingsIcon} label={t('field.actions.settings')} />
+        {role === 'GROUP_COORDINATOR' && <MenuLink to="/app/coverage" icon={LayoutDashboard} label={t('field.openDashboard')} />}
+      </ul>
     </>
   );
 }
@@ -210,46 +288,61 @@ export function AreasPage() {
 
   return (
     <>
-      <h1>{t('areas.title')}</h1>
-      <p className="muted">{t('areas.intro')}</p>
+      <PageHead title={t('areas.title')} lead={t('areas.intro')} back={{ to: '/field' }} />
       {!serverSession && <Notice tone="offline">{t('areas.needOnline')}</Notice>}
       {message && <Notice tone={message.tone}>{message.text}</Notice>}
-      <TextField label={t('areas.filter')} value={filter} onChange={(e) => setFilter(e.target.value)} />
-      <ul className="list panel">
-        {rows.map((a) => {
-          const have = downloaded.get(a.id);
-          return (
-            <li key={a.id}>
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={selected.has(a.id)}
-                  onChange={(e) => {
-                    const next = new Set(selected);
-                    if (e.target.checked) next.add(a.id);
-                    else next.delete(a.id);
-                    setSelected(next);
-                  }}
-                />
-                <span>
-                  <strong>{areaLabel(a)}</strong>
-                  <br />
-                  <span className="small muted">
-                    {t('areas.households', { n: formatNumber(a.householdCount) })},{' '}
-                    {have?.downloadedAt
-                      ? t('areas.downloaded', { time: formatTime(have.downloadedAt), n: formatNumber(localStore.households().filter((h) => h.areaId === a.id).length) })
-                      : t('areas.notDownloaded')}
+      <TextField label={t('areas.filter')} type="search" value={filter} onChange={(e) => setFilter(e.target.value)} autoComplete="off" spellCheck={false} />
+      {boot && rows.length === 0 && <Empty title={t('areas.noMatch')} />}
+      {!boot && serverSession && !message && (
+        <div className="loading" aria-busy="true" role="status">
+          <span className="visually-hidden">{t('app.loading')}</span>
+          <div className="skeleton" style={{ width: '88%' }} />
+          <div className="skeleton" style={{ width: '72%' }} />
+          <div className="skeleton" style={{ width: '80%' }} />
+        </div>
+      )}
+      {rows.length > 0 && (
+        <ul className="list panel choice-list">
+          {rows.map((a) => {
+            const have = downloaded.get(a.id);
+            return (
+              <li key={a.id}>
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(a.id)}
+                    onChange={(e) => {
+                      const next = new Set(selected);
+                      if (e.target.checked) next.add(a.id);
+                      else next.delete(a.id);
+                      setSelected(next);
+                    }}
+                  />
+                  <span className="check-text">
+                    <strong>{areaLabel(a)}</strong>
+                    <span className="small muted">
+                      {t('areas.households', { n: formatNumber(a.householdCount) })}
+                      {' · '}
+                      {have?.downloadedAt
+                        ? t('areas.downloaded', { time: formatTime(have.downloadedAt), n: formatNumber(localStore.households().filter((h) => h.areaId === a.id).length) })
+                        : t('areas.notDownloaded')}
+                    </span>
                   </span>
-                </span>
-              </label>
-            </li>
-          );
-        })}
-      </ul>
-      <button type="button" className="btn btn-signal btn-block btn-lg" disabled={busy || selected.size === 0 || !serverSession} onClick={() => void download()}>
-        <Download size={20} aria-hidden />
-        {busy ? t('areas.downloading') : t('areas.download')}
-      </button>
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <div className="action-stack">
+        <button type="button" className="btn btn-signal btn-block btn-lg" disabled={busy || selected.size === 0 || !serverSession} onClick={() => void download()}>
+          <Download size={20} aria-hidden />
+          {busy ? t('areas.downloading') : t('areas.download')}
+        </button>
+        <p className="small muted" aria-live="polite">
+          {t('areas.selected', { count: selected.size })}
+        </p>
+      </div>
     </>
   );
 }
@@ -288,6 +381,9 @@ function NewHouseholdPage() {
     if (form.memberCount < 1 || form.memberCount > 50) e.memberCount = t('validation.required');
     if (!form.areaId) e.areaId = t('validation.choose_area');
     setErrors(e);
+    // Focus the first field that needs attention (WDG: focus the first error on submit).
+    const first = ['headName', 'mobile', 'memberCount', 'areaId'].find((k) => e[k]);
+    if (first) requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-field="${first}"] input, [data-field="${first}"] select`)?.focus());
     return Object.keys(e).length === 0;
   };
 
@@ -332,23 +428,28 @@ function NewHouseholdPage() {
   if (saved) {
     return (
       <>
-        <h1>{t('household.saved')}</h1>
-        <div className="hh-card">
-          <span className="small muted">{t('household.shortCode')}</span>
-          <ShortCode code={saved.shortCode} />
-          <p>
-            <strong>{saved.headName}</strong>
-            <br />
-            {t('household.members')}: {formatNumber(saved.memberCount)}
-          </p>
-          <p className="small">{t('household.writeCode')}</p>
-        </div>
-        <div className="form-actions">
-          <Link className="btn btn-signal btn-lg" to={`/field/households/${saved.id}/distribute`}>
+        <PageHead title={t('household.saved')} />
+        <article className="hh-card">
+          <div className="hh-card-head">
+            <span className="hh-card-label">{t('household.shortCode')}</span>
+            <ShortCode code={saved.shortCode} />
+          </div>
+          <dl className="dl">
+            <dt>{t('household.headName')}</dt>
+            <dd>{saved.headName}</dd>
+            <dt>{t('household.members')}</dt>
+            <dd>{formatNumber(saved.memberCount)}</dd>
+          </dl>
+          <p className="hh-meta">{t('household.writeCode')}</p>
+        </article>
+        <div className="action-stack">
+          <Link className="btn btn-signal btn-lg btn-block" to={`/field/households/${saved.id}/distribute`}>
+            <HandHeart size={20} aria-hidden />
             {t('household.distribute')}
           </Link>
-          <button type="button" className="btn btn-quiet btn-lg" onClick={() => navigate('/field/households/new')}>
-            {t('field.actions.newHousehold')}
+          <button type="button" className="btn btn-secondary btn-lg btn-block" onClick={() => navigate('/field/households/new')}>
+            <UserPlus size={20} aria-hidden />
+            {t('household.registerAnother')}
           </button>
         </div>
       </>
@@ -358,18 +459,18 @@ function NewHouseholdPage() {
   if (consent !== 'given') {
     return (
       <>
-        <h1>{t('household.newTitle')}</h1>
-        <section className="panel">
-          <h2>{t('household.consentTitle')}</h2>
+        <PageHead title={t('household.newTitle')} back={{ to: '/field' }} />
+        <section className="consent" aria-labelledby="consent-title">
+          <h2 id="consent-title">{t('household.consentTitle')}</h2>
           <p className="small muted">{t('household.consentRead')}</p>
-          <p lang="bn" style={{ fontSize: '1.1rem' }}>
+          <p lang="bn" className="consent-text">
             {t('household.consentText')}
           </p>
           <button type="button" className="link-button" onClick={() => setShowEnglish((v) => !v)} aria-expanded={showEnglish}>
-            English
+            {showEnglish ? t('household.hideEnglish') : t('household.showEnglish')}
           </button>
           {showEnglish && (
-            <p lang="en" className="muted">
+            <p lang="en" className="consent-en">
               {t('household.consentEnglish')}
             </p>
           )}
@@ -378,15 +479,16 @@ function NewHouseholdPage() {
           <>
             <Notice tone="warn">{t('household.refusedHelp')}</Notice>
             <Link className="btn btn-signal btn-block btn-lg" to="/field/anonymous">
+              <HandHeart size={20} aria-hidden />
               {t('field.actions.anonymous')}
             </Link>
           </>
         ) : (
-          <div className="form-actions">
+          <div className="action-stack">
             <button type="button" className="btn btn-signal btn-lg btn-block" onClick={() => setConsent('given')}>
               {t('household.consentGiven')}
             </button>
-            <button type="button" className="btn btn-quiet btn-lg btn-block" onClick={() => setConsent('refused')}>
+            <button type="button" className="btn btn-secondary btn-lg btn-block" onClick={() => setConsent('refused')}>
               {t('household.consentRefused')}
             </button>
           </div>
@@ -398,83 +500,106 @@ function NewHouseholdPage() {
   if (matches) {
     return (
       <>
-        <h1>{t('household.similarTitle')}</h1>
-        <p>{t('household.similarIntro')}</p>
-        <ul className="list panel">
+        <PageHead title={t('household.similarTitle')} lead={t('household.similarIntro')} />
+        <ul className="list">
           {matches.map((m) => (
             <li key={m.household.id} className="match">
-              <div className="list-row">
-                <div>
-                  <span className="list-title">{m.household.headName}</span> <ShortCode code={m.household.shortCode} size="sm" />
-                  <br />
-                  <span className="small muted">
-                    {areaLabel(localStore.area(m.household.areaId))}, {t('household.members')} {formatNumber(m.household.memberCount)},{' '}
-                    {m.household.organisationName}
-                  </span>
-                  <br />
-                  <span className={`tag ${m.label === 'likely' ? 'tag-danger' : 'tag-warn'}`}>{t(`statuses.${m.label}`)}</span>{' '}
-                  <span className="small">{t('household.score', { score: formatNumber(Math.round(m.score * 100)) + '%' })}</span>
-                </div>
-                <Link className="btn btn-quiet" to={`/field/households/${m.household.id}`}>
-                  {t('household.useExisting')}
-                </Link>
+              <div className="row">
+                <span className="list-title">{m.household.headName}</span>
+                <ShortCode code={m.household.shortCode} size="sm" />
               </div>
+              <span className="small muted">
+                {areaLabel(localStore.area(m.household.areaId))} · {t('household.members')} {formatNumber(m.household.memberCount)} · {m.household.organisationName}
+              </span>
+              <div className="row">
+                <StatusTag status={m.label} />
+                <span className="small">{t('household.score', { score: formatNumber(Math.round(m.score * 100)) + '%' })}</span>
+              </div>
+              <Link className="btn btn-secondary btn-block" to={`/field/households/${m.household.id}`}>
+                {t('household.useExisting')}
+              </Link>
             </li>
           ))}
         </ul>
-        <button type="button" className="btn btn-signal btn-block btn-lg" onClick={() => void save()}>
-          {t('household.confirmNew')}
-        </button>
-        <button type="button" className="btn btn-quiet btn-block" style={{ marginTop: 12 }} onClick={() => setMatches(null)}>
-          {t('common.back')}
-        </button>
+        <div className="action-stack mt-5">
+          <button type="button" className="btn btn-signal btn-block btn-lg" onClick={() => void save()}>
+            {t('household.confirmNew')}
+          </button>
+          <button type="button" className="btn btn-ghost btn-block" onClick={() => setMatches(null)}>
+            {t('household.backToForm')}
+          </button>
+        </div>
       </>
     );
   }
 
   return (
     <>
-      <h1>{t('household.newTitle')}</h1>
-      {areas && areas.length === 0 && <Notice tone="warn">{t('field.downloadFirst')}</Notice>}
+      <PageHead title={t('household.newTitle')} meta={<StatusTag status="ok" label={t('household.consentRecorded')} />} />
+      {areas && areas.length === 0 && (
+        <Notice tone="warn">
+          <p>{t('field.downloadFirst')}</p>
+          <Link className="btn btn-secondary btn-sm" to="/field/areas">
+            {t('field.getAreas')}
+          </Link>
+        </Notice>
+      )}
       <form onSubmit={check} noValidate>
-        <TextField
-          label={t('household.headName')}
-          value={form.headName}
-          onChange={(e) => setForm({ ...form, headName: e.target.value })}
-          autoComplete="off"
-          autoCapitalize="words"
-          lang="en"
-          error={errors.headName}
-        />
-        <TextField
-          label={`${t('household.mobile')}`}
-          type="tel"
-          inputMode="tel"
-          value={form.mobile}
-          onChange={(e) => setForm({ ...form, mobile: e.target.value })}
-          error={errors.mobile}
-        />
-        <Stepper label={t('household.members')} value={form.memberCount} onChange={(n) => setForm({ ...form, memberCount: n })} error={errors.memberCount} />
-        <SelectField label={t('household.area')} value={form.areaId} onChange={(e) => setForm({ ...form, areaId: e.target.value })} error={errors.areaId}>
-          <option value="">—</option>
-          {areas?.map((a) => (
-            <option key={a.id} value={a.id}>
-              {areaLabel(a)}
-            </option>
-          ))}
-        </SelectField>
+        <div data-field="headName">
+          <TextField
+            label={t('household.headName')}
+            value={form.headName}
+            onChange={(e) => setForm({ ...form, headName: e.target.value })}
+            autoComplete="off"
+            autoCapitalize="words"
+            spellCheck={false}
+            lang="en"
+            name="headName"
+            error={errors.headName}
+          />
+        </div>
+        <div data-field="mobile">
+          <TextField
+            label={t('household.mobile')}
+            help={t('household.mobileHelp')}
+            type="tel"
+            inputMode="tel"
+            autoComplete="off"
+            name="mobile"
+            value={form.mobile}
+            onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+            error={errors.mobile}
+          />
+        </div>
+        <div data-field="memberCount">
+          <Stepper label={t('household.members')} value={form.memberCount} onChange={(n) => setForm({ ...form, memberCount: n })} error={errors.memberCount} />
+        </div>
+        <div data-field="areaId">
+          <SelectField label={t('household.area')} value={form.areaId} onChange={(e) => setForm({ ...form, areaId: e.target.value })} error={errors.areaId} name="areaId">
+            <option value="">{t('common.choose')}</option>
+            {areas?.map((a) => (
+              <option key={a.id} value={a.id}>
+                {areaLabel(a)}
+              </option>
+            ))}
+          </SelectField>
+        </div>
         <label className="check">
           <input type="checkbox" checked={gpsState !== 'off'} onChange={(e) => takeGps(e.target.checked)} />
-          <span>
+          <span className="check-text">
             {t('household.gpsConsent')}
-            {gpsState === 'taking' && <span className="small muted"> {t('household.gpsTaking')}</span>}
-            {gpsState === 'saved' && <span className="small"> {t('household.gpsSaved')}</span>}
-            {gpsState === 'failed' && <span className="small"> {t('household.gpsFailed')}</span>}
+            <span className="small muted" aria-live="polite">
+              {gpsState === 'taking' && t('household.gpsTaking')}
+              {gpsState === 'saved' && t('household.gpsSaved')}
+              {gpsState === 'failed' && t('household.gpsFailed')}
+            </span>
           </span>
         </label>
-        <button type="submit" className="btn btn-signal btn-block btn-lg">
-          {t('household.saveNew')}
-        </button>
+        <div className="form-actions">
+          <button type="submit" className="btn btn-signal btn-block btn-lg">
+            {t('household.saveNew')}
+          </button>
+        </div>
       </form>
     </>
   );
@@ -495,19 +620,32 @@ export function SearchPage() {
   }, [q]);
   return (
     <>
-      <h1>{t('search.title')}</h1>
-      <TextField label={t('search.label')} help={t('search.hint')} type="search" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
-      {results && (
-        <p role="status" className="muted">
-          {results.length > 0 ? t('search.results', { count: results.length }) : t('search.none')}
-        </p>
-      )}
+      <PageHead title={t('search.title')} />
+      <TextField
+        label={t('search.label')}
+        help={t('search.hint')}
+        type="search"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        autoComplete="off"
+        spellCheck={false}
+        enterKeyHint="search"
+      />
+      <p role="status" className="small muted">
+        {results && results.length > 0 ? t('search.results', { count: results.length }) : !results ? t('search.startHint') : ''}
+      </p>
       {results && results.length === 0 && (
-        <Empty title={t('search.none')}>
-          <p>{t('search.noneHint')}</p>
-          <Link className="btn btn-quiet" to="/field/households/new">
-            {t('search.registerNew')}
-          </Link>
+        <Empty
+          title={t('search.none')}
+          mark="not_served"
+          action={
+            <Link className="btn btn-secondary" to="/field/households/new">
+              <UserPlus size={18} aria-hidden />
+              {t('search.registerNew')}
+            </Link>
+          }
+        >
+          {t('search.noneHint')}
         </Empty>
       )}
       {results && results.length > 0 && (
@@ -515,14 +653,16 @@ export function SearchPage() {
           {results.map((h) => (
             <li key={h.id}>
               <Link className="list-row" to={`/field/households/${h.id}`}>
-                <span>
+                <span className="list-main">
                   <span className="list-title">{h.headName ?? t('household.redacted')}</span>
-                  <br />
-                  <span className="small muted">
-                    {areaLabel(localStore.area(h.areaId))}, {h.organisationName}
+                  <span className="list-sub">
+                    {areaLabel(localStore.area(h.areaId))} · {h.organisationName}
                   </span>
                 </span>
-                <ShortCode code={h.shortCode} size="sm" />
+                <span className="list-end">
+                  <ShortCode code={h.shortCode} size="sm" />
+                  <ChevronRight size={18} className="chev" aria-hidden />
+                </span>
               </Link>
             </li>
           ))}
@@ -550,11 +690,11 @@ export function HouseholdPage() {
   }, [id]);
   if (!data) return null;
   const { h, ds, items, voidable } = data;
-  if (!h) return <Notice tone="warn">{t('household.notFound')}</Notice>;
+  if (!h) return <NotOnPhone />;
   const own = h.organisationId === local?.organisationId;
 
   const cancel = async (d: DistributionRow) => {
-    const reason = await confirm.ask(`${t('distribution.cancel')}. ${t('distribution.cancelWindow')}`, true);
+    const reason = await confirm.ask(`${t('distribution.cancel')}. ${t('distribution.cancelWindow')}`, true, { confirmLabel: t('distribution.cancel') });
     if (!reason) return;
     await localStore.voidDistribution(d.id, reason);
     toast(t('distribution.cancelled'));
@@ -563,15 +703,16 @@ export function HouseholdPage() {
 
   return (
     <>
-      <div className="hh-card">
-        <span className="small muted">{t('household.shortCode')}</span>
-        <ShortCode code={h.shortCode} />
+      <PageHead title={h.redacted ? t('household.redactedTitle') : h.headName} back={{ to: '/field/search' }} />
+      <article className="hh-card">
+        <div className="hh-card-head">
+          <span className="hh-card-label">{t('household.shortCode')}</span>
+          <ShortCode code={h.shortCode} />
+        </div>
         {h.redacted ? (
           <p>{t('household.redacted')}</p>
         ) : (
           <dl className="dl">
-            <dt>{t('household.headName')}</dt>
-            <dd>{h.headName}</dd>
             <dt>{t('household.mobile')}</dt>
             <dd>{own ? (h.mobile ?? '—') : h.mobileMasked ? `${h.mobileMasked}` : t('household.mobileHidden')}</dd>
             <dt>{t('household.members')}</dt>
@@ -580,49 +721,51 @@ export function HouseholdPage() {
             <dd>{areaLabel(localStore.area(h.areaId))}</dd>
           </dl>
         )}
-        <p className="small muted" style={{ marginTop: 12 }}>
+        <p className="hh-meta">
           {t('household.registeredBy', { org: h.organisationName })}
-          {h.pending === 1 && (
-            <>
-              {' '}
-              <span className="tag tag-warn">{t('household.pendingSync')}</span>
-            </>
-          )}
+          {h.pending === 1 && <StatusTag status="pending" label={t('household.pendingSync')} />}
         </p>
         {h.linked.length > 0 && (
-          <p className="small">
+          <p className="hh-meta">
+            <StatusTag status="linked" />
             {t('household.linked', {
               codes: h.linked.map((l) => localStore.getHousehold(l)?.shortCode ?? '').filter(Boolean).join(', ') || h.linked.length,
             })}
           </p>
         )}
-      </div>
+      </article>
       {!h.redacted && (
-        <div className="form-actions" style={{ marginBottom: 16 }}>
-          <Link className="btn btn-signal btn-lg" to={`/field/households/${h.id}/distribute`}>
+        <div className="action-stack">
+          <Link className="btn btn-signal btn-lg btn-block" to={`/field/households/${h.id}/distribute`}>
+            <HandHeart size={20} aria-hidden />
             {t('household.distribute')}
           </Link>
-          <Link className="btn btn-quiet btn-lg" to={`/field/households/${h.id}/edit`}>
+          <Link className="btn btn-secondary btn-block" to={`/field/households/${h.id}/edit`}>
+            <PencilLine size={18} aria-hidden />
             {t('household.edit')}
           </Link>
         </div>
       )}
-      <section className="panel">
-        <h2>{t('household.pastDistributions')}</h2>
+      <section className="panel mt-5" aria-labelledby="past-title">
+        <h2 id="past-title">{t('household.pastDistributions')}</h2>
         {ds.length === 0 ? (
           <p className="muted">{t('household.noDistributions')}</p>
         ) : (
-          <ul className="list">
+          <ul className="list history-list">
             {ds.map((d) => (
-              <li key={d.id} style={{ padding: '12px 0' }}>
-                <strong>{formatTime(d.distributedAt)}</strong> <span className="small muted">{t('distribution.by', { org: d.organisationName })}</span>
-                {d.status === 'voided' && <span className="tag tag-danger"> {t('distribution.voided', { reason: d.cancelReason ?? '' })}</span>}
-                {d.pending === 1 && <span className="tag tag-warn"> {t('household.pendingSync')}</span>}
-                <br />
-                {d.items.map((i) => `${itemLabel(items.get(i.itemId), i18n.language)} ${formatNumber(i.quantity)} ${items.get(i.itemId)?.unit ?? ''}`).join(', ')}
+              <li key={d.id} className={d.status === 'voided' ? 'voided' : undefined}>
+                <div className="history-head">
+                  <strong className="tabular">{formatTime(d.distributedAt)}</strong>
+                  <span className="small muted">{t('distribution.by', { org: d.organisationName })}</span>
+                  {d.status === 'voided' && <StatusTag status="voided" label={t('distribution.voided', { reason: d.cancelReason ?? '' })} />}
+                  {d.pending === 1 && <StatusTag status="pending" label={t('household.pendingSync')} />}
+                </div>
+                <span className="history-items">
+                  {d.items.map((i) => `${itemLabel(items.get(i.itemId), i18n.language)} ${formatNumber(i.quantity)} ${items.get(i.itemId)?.unit ?? ''}`).join(', ')}
+                </span>
                 {voidable.has(d.id) && (
                   <div>
-                    <button type="button" className="btn btn-danger" style={{ marginTop: 8 }} onClick={() => void cancel(d)}>
+                    <button type="button" className="btn btn-danger btn-sm" onClick={() => void cancel(d)}>
                       {t('distribution.cancel')}
                     </button>
                   </div>
@@ -653,7 +796,7 @@ export function EditHouseholdPage() {
     areaId: h?.areaId ?? '',
   }));
   const [errors, setErrors] = useState<Record<string, string>>({});
-  if (!h) return <Notice tone="warn">{t('household.notFound')}</Notice>;
+  if (!h) return <NotOnPhone />;
   const own = h.organisationId === local?.organisationId;
 
   const submit = async (e: FormEvent) => {
@@ -675,14 +818,21 @@ export function EditHouseholdPage() {
   };
   return (
     <>
-      <h1>{t('household.editTitle')}</h1>
-      <ShortCode code={h.shortCode} size="sm" />
-      <form onSubmit={submit} noValidate style={{ marginTop: 16 }}>
-        <TextField label={t('household.headName')} value={form.headName} onChange={(e) => setForm({ ...form, headName: e.target.value })} error={errors.headName} lang="en" />
+      <PageHead title={t('household.editTitle')} back={{ to: `/field/households/${id}` }} meta={<ShortCode code={h.shortCode} size="sm" />} />
+      <form onSubmit={submit} noValidate>
+        <TextField
+          label={t('household.headName')}
+          value={form.headName}
+          onChange={(e) => setForm({ ...form, headName: e.target.value })}
+          error={errors.headName}
+          lang="en"
+          autoComplete="off"
+          spellCheck={false}
+        />
         {own ? (
-          <TextField label={t('household.mobile')} type="tel" value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} error={errors.mobile} />
+          <TextField label={t('household.mobile')} type="tel" inputMode="tel" autoComplete="off" value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} error={errors.mobile} />
         ) : (
-          <p className="muted">{t('errors.mobile_not_editable')}</p>
+          <Notice>{t('errors.mobile_not_editable')}</Notice>
         )}
         <Stepper label={t('household.members')} value={form.memberCount} onChange={(n) => setForm({ ...form, memberCount: n })} />
         <SelectField label={t('household.area')} value={form.areaId} onChange={(e) => setForm({ ...form, areaId: e.target.value })}>
@@ -692,11 +842,11 @@ export function EditHouseholdPage() {
             </option>
           ))}
         </SelectField>
-        <div className="form-actions">
-          <button type="submit" className="btn btn-signal btn-lg">
+        <div className="action-stack mt-5">
+          <button type="submit" className="btn btn-signal btn-lg btn-block">
             {t('common.save')}
           </button>
-          <Link className="btn btn-quiet btn-lg" to={`/field/households/${id}`}>
+          <Link className="btn btn-secondary btn-block" to={`/field/households/${id}`}>
             {t('common.cancel')}
           </Link>
         </div>
@@ -722,7 +872,7 @@ export function DistributePage({ anonymous = false }: { anonymous?: boolean }) {
   const past = useLocalData(async () => (h ? localStore.distributionsFor(h.id) : []), [h?.id]);
   const allItems = useLocalData(async () => new Map((await localStore.db.items.toArray()).map((i) => [i.id, i])), []);
 
-  if (!anonymous && !h) return <Notice tone="warn">{t('household.notFound')}</Notice>;
+  if (!anonymous && !h) return <NotOnPhone />;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -740,31 +890,40 @@ export function DistributePage({ anonymous = false }: { anonymous?: boolean }) {
       setError(t('distribution.failed'));
     }
   };
+  const recent = (past ?? []).filter((d) => d.status === 'recorded').slice(0, 3);
 
   return (
     <>
-      <h1>{anonymous ? t('distribution.anonymousTitle') : t('distribution.title')}</h1>
-      {anonymous && <p className="muted">{t('distribution.anonymousIntro')}</p>}
-      {h && (
-        <p>
-          <strong>{h.headName}</strong> <ShortCode code={h.shortCode} size="sm" />
-        </p>
-      )}
-      {past && past.length > 0 && (
+      <PageHead
+        title={anonymous ? t('distribution.anonymousTitle') : t('distribution.title')}
+        back={{ to: h ? `/field/households/${h.id}` : '/field' }}
+        lead={anonymous ? t('distribution.anonymousIntro') : undefined}
+        meta={
+          h ? (
+            <>
+              <strong>{h.headName}</strong>
+              <ShortCode code={h.shortCode} size="sm" />
+            </>
+          ) : undefined
+        }
+      />
+      {recent.length > 0 && (
         <Notice>
-          <strong>{t('household.pastDistributions')}:</strong>{' '}
-          {past
-            .filter((d) => d.status === 'recorded')
-            .slice(0, 3)
-            .map((d) => `${formatTime(d.distributedAt)} (${d.organisationName}): ${d.items.map((i) => itemLabel(allItems?.get(i.itemId), i18n.language)).join(', ')}`)
-            .join('; ')}
+          <strong>{t('distribution.recent')}</strong>
+          <ul className="list">
+            {recent.map((d) => (
+              <li key={d.id} className="small">
+                <span className="tabular">{formatTime(d.distributedAt)}</span> · {d.organisationName}: {d.items.map((i) => itemLabel(allItems?.get(i.itemId), i18n.language)).join(', ')}
+              </li>
+            ))}
+          </ul>
         </Notice>
       )}
       {error && <Notice tone="error">{error}</Notice>}
       <form onSubmit={submit} noValidate>
         {anonymous && (
           <SelectField label={t('common.area')} value={areaId} onChange={(e) => setAreaId(e.target.value)}>
-            <option value="">—</option>
+            <option value="">{t('common.choose')}</option>
             {areas?.map((a) => (
               <option key={a.id} value={a.id}>
                 {areaLabel(a)}
@@ -772,29 +931,37 @@ export function DistributePage({ anonymous = false }: { anonymous?: boolean }) {
             ))}
           </SelectField>
         )}
-        <fieldset className="panel" style={{ margin: '0 0 16px' }}>
-          <legend className="label">
-            <strong>{t('distribution.items')}</strong>
-          </legend>
+        <fieldset className="fieldset">
+          <legend>{t('distribution.items')}</legend>
           {items && items.length === 0 && <p className="muted">{t('distribution.noItems')}</p>}
           {items?.map((it) => (
             <div key={it.id} className="item-row">
-              <span>
-                <strong>{itemLabel(it, i18n.language)}</strong> <span className="small muted">({it.unit})</span>
+              <span className="item-name">
+                <strong>{itemLabel(it, i18n.language)}</strong>
+                <span className="item-unit">{it.unit}</span>
               </span>
-              <Stepper label={`${t('distribution.quantity')}: ${itemLabel(it, i18n.language)}`} min={0} max={10000} value={qty[it.id] ?? 0} onChange={(n) => setQty({ ...qty, [it.id]: n })} />
+              <Stepper
+                label={`${t('distribution.quantity')}: ${itemLabel(it, i18n.language)}`}
+                hideLabel
+                min={0}
+                max={10000}
+                value={qty[it.id] ?? 0}
+                onChange={(n) => setQty({ ...qty, [it.id]: n })}
+              />
             </div>
           ))}
         </fieldset>
         {!anonymous && (
           <label className="check">
             <input type="checkbox" checked={elsewhere} onChange={(e) => setElsewhere(e.target.checked)} />
-            {t('distribution.receivedElsewhere')}
+            <span className="check-text">{t('distribution.receivedElsewhere')}</span>
           </label>
         )}
-        <button type="submit" className="btn btn-signal btn-block btn-lg">
-          {t('distribution.confirm')}
-        </button>
+        <div className="form-actions">
+          <button type="submit" className="btn btn-signal btn-block btn-lg">
+            {t('distribution.confirm')}
+          </button>
+        </div>
       </form>
     </>
   );
@@ -814,48 +981,52 @@ export function SyncPage() {
   const r = status.lastResult;
   return (
     <>
-      <h1>{t('sync.title')}</h1>
-      <p className="muted">{t('sync.intro')}</p>
+      <PageHead title={t('sync.title')} lead={t('sync.intro')} />
       {(status.needsLogin || !serverSession) && (
         <Notice tone="warn">
-          {t('sync.authNeeded')} <Link to="/login">{t('auth.login')}</Link>
+          <p>{t('sync.authNeeded')}</p>
+          <Link className="btn btn-secondary btn-sm" to="/login">
+            {t('auth.login')}
+          </Link>
         </Notice>
       )}
       {status.revoked && <Notice tone="error">{t('sync.revoked')}</Notice>}
       {r && (
         <Notice tone={r.ok ? 'ok' : 'error'}>
           <strong>{r.ok ? t('sync.completed') : t('sync.interrupted')}</strong>
-          <br />
-          {t('sync.result', {
-            uploaded: formatNumber(r.uploaded),
-            duplicates: formatNumber(r.duplicates),
-            conflicts: formatNumber(r.conflicts),
-            downloaded: formatNumber(r.downloadedHouseholds + r.downloadedDistributions),
-          })}
+          <span>
+            {t('sync.result', {
+              uploaded: formatNumber(r.uploaded),
+              duplicates: formatNumber(r.duplicates),
+              conflicts: formatNumber(r.conflicts),
+              downloaded: formatNumber(r.downloadedHouseholds + r.downloadedDistributions),
+            })}
+          </span>
         </Notice>
       )}
       <button type="button" className="btn btn-signal btn-block btn-lg" disabled={status.running || !serverSession} onClick={() => void run()}>
+        <RefreshCw size={20} aria-hidden />
         {status.running ? t('status.syncing') : t('sync.now')}
       </button>
-      <section className="panel" style={{ marginTop: 16 }}>
-        <h2>
-          {t('sync.queue')} <span className="badge-count">{formatNumber(status.pending)}</span>
-        </h2>
+      <section className="panel mt-5" aria-labelledby="queue-title">
+        <div className="section-title">
+          <h2 id="queue-title">{t('sync.queue')}</h2>
+          <span className={`badge-count${status.pending === 0 ? ' badge-quiet' : ''}`}>{formatNumber(status.pending)}</span>
+        </div>
         {rows && rows.length === 0 ? (
           <p className="muted">{t('sync.queueEmpty')}</p>
         ) : (
           <ul className="list">
             {rows?.map((o) => (
               <li key={o.eventId} className="list-row">
-                <span>
-                  {t(`sync.types.${o.type}`, { defaultValue: o.type })}
-                  <br />
-                  <span className="small muted">
+                <span className="list-main">
+                  <span className="list-title">{t(`sync.types.${o.type}`, { defaultValue: o.type })}</span>
+                  <span className="list-sub tabular">
                     {formatTime(o.createdAt)}
-                    {o.attempts > 0 ? `, ${t('sync.attempts', { count: o.attempts })}` : ''}
+                    {o.attempts > 0 ? ` · ${t('sync.attempts', { count: o.attempts })}` : ''}
                   </span>
                 </span>
-                <span className={`tag ${o.status === 'failed' ? 'tag-danger' : 'tag-warn'}`}>{t(`statuses.${o.status === 'failed' ? 'failed' : 'pending'}`)}</span>
+                <StatusTag status={o.status === 'failed' ? 'failed' : 'pending'} />
               </li>
             ))}
           </ul>
@@ -877,18 +1048,22 @@ export function FieldUnservedPage() {
   if (!data) return null;
   return (
     <>
-      <h1>{t('unserved.title')}</h1>
-      <p className="muted">{t('unserved.fieldIntro')}</p>
-      {data.releases.length === 0 && <Empty title={t('unserved.none')} />}
+      <PageHead title={t('unserved.title')} lead={t('unserved.fieldIntro')} back={{ to: '/field' }} />
+      {data.releases.length === 0 && (
+        <Empty title={t('unserved.none')} mark="no_records">
+          {t('unserved.noneHint')}
+        </Empty>
+      )}
       {data.releases.map((r) => (
-        <section key={r.id} className="panel">
-          <div className="panel-head">
-            <h2>
+        <section key={r.id} className="panel" aria-labelledby={`rel-${r.id}`}>
+          <div className="section-title">
+            <h2 id={`rel-${r.id}`}>
               <MapPin size={18} aria-hidden /> {areaLabel(localStore.area(r.areaId))}
             </h2>
-            <span className="small muted">{t('unserved.released', { time: formatTime(r.releasedAt), name: r.releasedByName })}</span>
           </div>
-          <p>{t('unserved.count', { count: r.householdIds.length })}</p>
+          <p className="small muted">
+            {t('unserved.released', { time: formatTime(r.releasedAt), name: r.releasedByName })} · {t('unserved.count', { count: r.householdIds.length })}
+          </p>
           <ul className="list">
             {r.householdIds.map((hid) => {
               const h = localStore.getHousehold(hid);
@@ -896,9 +1071,13 @@ export function FieldUnservedPage() {
                 <li key={hid}>
                   {h ? (
                     <Link className="list-row" to={`/field/households/${hid}`}>
-                      <span className="list-title">{h.headName}</span>
-                      <span>
-                        <ShortCode code={h.shortCode} size="sm" /> {data.served.has(hid) && <span className="tag tag-ok">{t('unserved.servedSince')}</span>}
+                      <span className="list-main">
+                        <span className="list-title">{h.headName}</span>
+                        <ShortCode code={h.shortCode} size="sm" />
+                      </span>
+                      <span className="list-end">
+                        {data.served.has(hid) ? <StatusTag status="ok" label={t('unserved.servedSince')} /> : <StatusTag status="pending" label={t('unserved.waiting')} />}
+                        <ChevronRight size={18} className="chev" aria-hidden />
                       </span>
                     </Link>
                   ) : (
@@ -924,18 +1103,6 @@ interface ServerNotification {
   createdAt: string;
 }
 
-export function useNotificationText() {
-  const { t } = useTranslation();
-  return (type: string, params: Record<string, string | number>) => {
-    const p: Record<string, string | number> = { ...params };
-    if (typeof p.field === 'string') p.field = t(`conflicts.fields.${p.field}`, { defaultValue: p.field });
-    if (typeof p.label === 'string') p.label = t(`statuses.${p.label}`, { defaultValue: p.label });
-    if (typeof p.decision === 'string') p.decision = t(`statuses.${p.decision}`, { defaultValue: p.decision });
-    if (typeof p.reason === 'string') p.reason = t(`errors.${p.reason}`, { defaultValue: p.reason });
-    return t(`notifications.types.${type}`, { ...p, defaultValue: type });
-  };
-}
-
 export function FieldNotificationsPage() {
   const { t } = useTranslation();
   const { serverSession } = useSession();
@@ -958,27 +1125,34 @@ export function FieldNotificationsPage() {
     if (serverSession) await api.post('/api/notifications/read-all').catch(() => undefined);
     setServer((s) => s.map((n) => ({ ...n, isRead: true })));
   };
+  const unread = all.filter((n) => !n.isRead).length;
   return (
     <>
-      <div className="panel-head">
-        <h1>{t('notifications.title')}</h1>
-        <button type="button" className="btn btn-quiet" onClick={() => void markAll()}>
-          {t('notifications.markAll')}
-        </button>
-      </div>
+      <PageHead
+        title={t('notifications.title')}
+        back={{ to: '/field' }}
+        actions={
+          unread > 0 ? (
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => void markAll()}>
+              {t('notifications.markAll')}
+            </button>
+          ) : undefined
+        }
+      />
       {all.length === 0 ? (
-        <Empty title={t('notifications.none')} />
+        <Empty title={t('notifications.none')} mark="synced">
+          {t('notifications.noneHint')}
+        </Empty>
       ) : (
         <ul className="list panel">
           {all.map((n) => (
-            <li key={n.id} className="list-row">
-              <span>
-                {n.isRead ? text(n.type, n.params) : <strong>{text(n.type, n.params)}</strong>}
-                <br />
-                <span className="small muted">{formatTime(n.createdAt)}</span>
+            <li key={n.id} className={`list-row${n.isRead ? '' : ' unread'}`}>
+              <span className="list-main">
+                <span className={n.isRead ? undefined : 'list-title'}>{text(n.type, n.params)}</span>
+                <span className="list-sub tabular">{formatTime(n.createdAt)}</span>
               </span>
               {n.link?.startsWith('/field') && (
-                <Link className="btn btn-quiet" to={n.link}>
+                <Link className="btn btn-secondary btn-sm" to={n.link}>
                   {t('common.open')}
                 </Link>
               )}
@@ -1002,9 +1176,9 @@ export function FieldSettingsPage() {
   }, []);
   return (
     <>
-      <h1>{t('settings.title')}</h1>
-      <section className="panel">
-        <h2>{t('settings.device')}</h2>
+      <PageHead title={t('settings.title')} back={{ to: '/field' }} />
+      <section className="panel" aria-labelledby="device-title">
+        <h2 id="device-title">{t('settings.device')}</h2>
         <dl className="dl">
           <dt>{t('common.user')}</dt>
           <dd>{local?.fullName}</dd>
@@ -1015,17 +1189,19 @@ export function FieldSettingsPage() {
             <span className="short-code-sm">{local?.devicePrefix}</span>
           </dd>
           <dt>{t('settings.storage')}</dt>
-          <dd>{persisted ? t('settings.persisted') : t('settings.notPersisted')}</dd>
+          <dd>
+            <StatusTag status={persisted ? 'ok' : 'pending'} label={persisted ? t('settings.persisted') : t('settings.notPersisted')} />
+          </dd>
         </dl>
       </section>
-      <section className="panel">
-        <h2>{t('pin.changePin')}</h2>
+      <section className="panel" aria-labelledby="pin-title">
+        <h2 id="pin-title">{t('pin.changePin')}</h2>
         <SetPinPage embedded />
       </section>
       {role === 'GROUP_COORDINATOR' && (
-        <Link className="btn btn-quiet btn-block" to="/app/coverage" style={{ marginBottom: 16 }}>
-          {t('field.openDashboard')}
-        </Link>
+        <ul className="menu-list">
+          <MenuLink to="/app/coverage" icon={LayoutDashboard} label={t('field.openDashboard')} />
+        </ul>
       )}
       {status.pending > 0 && <Notice tone="warn">{t('settings.logoutPending', { n: status.pending })}</Notice>}
       <button

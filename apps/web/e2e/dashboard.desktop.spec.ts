@@ -91,7 +91,7 @@ test('Observer sees area-level figures and gets a report without personal data',
 
 test('Operation administrator: setup, join requests, audit trail and reports', async ({ page }) => {
   await login(page, ACCOUNTS.opadmin);
-  await expect(page.getByRole('heading', { name: 'Operations' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Operations', exact: true })).toBeVisible();
   await shot(page, 'operations');
   await page.getByRole('link', { name: /Feni Flash Flood 2024/ }).click();
   await expect(page.getByRole('heading', { name: 'Join requests' })).toBeVisible();
@@ -119,7 +119,7 @@ test('Operation administrator: setup, join requests, audit trail and reports', a
 test('Coordinator approves a new volunteer; System Administrator approves an organisation', async ({ page }) => {
   await login(page, ACCOUNTS.coordA);
   await page.getByRole('link', { name: 'Members' }).click();
-  await page.getByRole('tab', { name: 'Waiting for approval' }).click();
+  await page.getByRole('button', { name: 'Waiting for approval' }).click();
   await expect(page.getByText('Nayeem Islam')).toBeVisible();
   await shot(page, 'members');
   await page.getByRole('row', { name: /Nayeem Islam/ }).getByRole('button', { name: 'Approve' }).click();
@@ -130,7 +130,7 @@ test('Coordinator approves a new volunteer; System Administrator approves an org
   await expect(page.getByRole('heading', { name: 'Organisations' })).toBeVisible();
   await expect(page.getByText('Meghna Flood Response')).toBeVisible();
   await shot(page, 'admin-organisations');
-  await page.getByRole('button', { name: 'Approve' }).first().click();
+  await page.getByRole('button', { name: 'Approve', exact: true }).first().click();
   await expect(page.getByText('Organisation approved.')).toBeVisible();
   await page.getByRole('link', { name: 'Backup and retention' }).click();
   await expect(page.getByRole('heading', { name: 'Retention', exact: true })).toBeVisible();

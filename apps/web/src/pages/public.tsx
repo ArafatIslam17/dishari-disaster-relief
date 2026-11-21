@@ -1,30 +1,65 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useParams } from 'react-router';
-import { LockKeyhole } from 'lucide-react';
+import { Link, isRouteErrorResponse, useNavigate, useParams, useRouteError } from 'react-router';
+import { LockKeyhole, LogIn } from 'lucide-react';
 import { normalisePhone } from '@relief/shared';
 import { api } from '../api/client';
 import { useSession } from '../auth/session';
 import { UnlockError, localStore } from '../local/store';
 import { homePath } from '../router-paths';
-import { LangSwitch, Notice, SelectField, TextField, issuesOf, useApiData, useErrorText, useIssueText, useToast } from '../ui/kit';
+import { Empty, LangSwitch, Notice, SelectField, StatusMark, TextField, ThemeToggle, issuesOf, useApiData, useConfirm, useErrorText, useIssueText, useToast, type MarkKind } from '../ui/kit';
 
-export function PublicFrame({ title, children }: { title: string; children: ReactNode }) {
+const LEGEND: { kind: MarkKind; key: string }[] = [
+  { kind: 'served', key: 'coverage.fully_served' },
+  { kind: 'partly', key: 'coverage.partly_served' },
+  { kind: 'not_served', key: 'coverage.not_served' },
+  { kind: 'no_records', key: 'coverage.no_records' },
+  { kind: 'pending', key: 'statuses.pending' },
+  { kind: 'duplicate', key: 'statuses.possible' },
+];
+
+/** Public pages: an ink panel with what the product is for, and the task on paper beside it. */
+export function PublicFrame({ title, lead, children }: { title: string; lead?: ReactNode; children: ReactNode }) {
   const { t } = useTranslation();
   return (
-    <main className="public" id="main">
-      <div className="public-box">
-        <div className="panel-head">
+    <div className="public">
+      <aside className="public-aside" aria-label={t('app.name')}>
+        <span className="brand">
+          <img src="/icon.svg" alt="" width={36} height={36} />
+          {t('app.name')}
+        </span>
+        <div className="aside-promise">
+          <p className="aside-title">{t('public.promise')}</p>
+          <p>{t('public.promiseSub')}</p>
+        </div>
+        <div>
+          <ul className="signal-legend" aria-label={t('public.legend')}>
+            {LEGEND.map((l) => (
+              <li key={l.kind}>
+                <StatusMark kind={l.kind} size={14} />
+                {t(l.key)}
+              </li>
+            ))}
+          </ul>
+          <p className="aside-foot">{t('public.foot')}</p>
+        </div>
+      </aside>
+      <main className="public-box" id="main">
+        <div className="public-top">
           <span className="brand">
             <img src="/icon.svg" alt="" width={32} height={32} />
             {t('app.name')}
           </span>
-          <LangSwitch />
+          <div className="public-tools">
+            <ThemeToggle />
+            <LangSwitch />
+          </div>
         </div>
         <h1>{title}</h1>
+        {lead && <p className="lead">{lead}</p>}
         {children}
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
 
@@ -38,15 +73,26 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [phoneError, setPhoneError] = useState<string | undefined>();
+  const [passwordError, setPasswordError] = useState<string | undefined>();
+  const [online, setOnline] = useState(() => navigator.onLine);
+  useEffect(() => {
+    const on = () => setOnline(navigator.onLine);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', on);
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', on);
+    };
+  }, []);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!normalisePhone(mobile)) {
-      setPhoneError(t('validation.invalid_phone'));
-      return;
-    }
-    setPhoneError(undefined);
+    const badPhone = !normalisePhone(mobile);
+    setPhoneError(badPhone ? t('validation.invalid_phone') : undefined);
+    setPasswordError(password ? undefined : t('validation.password_required'));
+    if (badPhone) return document.querySelector<HTMLInputElement>('input[name="mobile"]')?.focus();
+    if (!password) return document.querySelector<HTMLInputElement>('input[name="password"]')?.focus();
     setBusy(true);
     try {
       const user = await login(mobile, password);
@@ -59,40 +105,57 @@ export function LoginPage() {
   };
 
   return (
-    <PublicFrame title={t('auth.loginTitle')}>
-      <p className="muted">{t('auth.loginIntro')}</p>
-      {!navigator.onLine && <Notice tone="offline">{t('auth.offlineLogin')}</Notice>}
+    <PublicFrame title={t('auth.loginTitle')} lead={t('auth.loginIntro')}>
+      {!online && <Notice tone="offline">{t('auth.offlineLogin')}</Notice>}
       {error && <Notice tone="error">{error}</Notice>}
       <form onSubmit={submit} noValidate>
         <TextField
           label={t('common.mobile')}
+          name="mobile"
           type="tel"
           inputMode="tel"
           autoComplete="username"
+          spellCheck={false}
+          placeholder="01XXXXXXXXX"
           value={mobile}
           onChange={(e) => setMobile(e.target.value)}
           error={phoneError}
         />
         <TextField
           label={t('auth.password')}
+          name="password"
           type="password"
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          error={passwordError}
         />
-        <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={busy || !password}>
+        <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={busy}>
+          <LogIn size={20} aria-hidden />
           {busy ? t('auth.loggingIn') : t('auth.login')}
         </button>
       </form>
-      <p className="small muted" style={{ marginTop: 16 }}>
-        {t('auth.forgot')}
-      </p>
-      <p>
-        {t('auth.noAccount')} <Link to="/register">{t('auth.registerAccount')}</Link>
-      </p>
-      <p>
-        <Link to="/register-organisation">{t('auth.registerOrg')}</Link>
-      </p>
+      <p className="small muted mt-4">{t('auth.forgot')}</p>
+      <div className="public-links">
+        <p>
+          {t('auth.noAccount')} <Link to="/register">{t('auth.registerAccount')}</Link>
+        </p>
+        <p>
+          {t('auth.orgQuestion')} <Link to="/register-organisation">{t('auth.registerOrg')}</Link>
+        </p>
+      </div>
+    </PublicFrame>
+  );
+}
+
+function Done({ title, text }: { title: string; text: string }) {
+  const { t } = useTranslation();
+  return (
+    <PublicFrame title={title}>
+      <Notice tone="ok">{text}</Notice>
+      <Link className="btn btn-primary" to="/login">
+        {t('auth.toLogin')}
+      </Link>
     </PublicFrame>
   );
 }
@@ -105,6 +168,7 @@ export function RegisterPage() {
   const [query, setQuery] = useState('');
   const [issues, setIssues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const orgs = useApiData(
     (signal) =>
@@ -124,6 +188,7 @@ export function RegisterPage() {
       setError(t('errors.network')); // UC01 1.a
       return;
     }
+    setBusy(true);
     try {
       await api.post('/api/auth/register', {
         fullName: form.fullName,
@@ -136,28 +201,31 @@ export function RegisterPage() {
     } catch (err) {
       setIssues(issuesOf(err));
       setError(errorText(err));
+    } finally {
+      setBusy(false);
     }
   };
 
-  if (done) {
-    return (
-      <PublicFrame title={t('auth.registerTitle')}>
-        <Notice tone="ok">{t('auth.submitted')}</Notice>
-        <Link className="btn btn-primary" to="/login">
-          {t('auth.toLogin')}
-        </Link>
-      </PublicFrame>
-    );
-  }
+  if (done) return <Done title={t('auth.registerTitle')} text={t('auth.submitted')} />;
   return (
-    <PublicFrame title={t('auth.registerTitle')}>
-      <p className="muted">{t('auth.registerIntro')}</p>
+    <PublicFrame title={t('auth.registerTitle')} lead={t('auth.registerIntro')}>
       {error && <Notice tone="error">{error}</Notice>}
       <form onSubmit={submit} noValidate>
-        <TextField label={t('auth.fullName')} value={form.fullName} onChange={set('fullName')} autoComplete="name" error={issueText(issues.fullName)} />
-        <TextField label={t('common.mobile')} type="tel" inputMode="tel" value={form.mobile} onChange={set('mobile')} autoComplete="tel" error={issueText(issues.mobile)} />
+        <TextField label={t('auth.fullName')} name="name" value={form.fullName} onChange={set('fullName')} autoComplete="name" error={issueText(issues.fullName)} />
+        <TextField
+          label={t('common.mobile')}
+          name="mobile"
+          type="tel"
+          inputMode="tel"
+          value={form.mobile}
+          onChange={set('mobile')}
+          autoComplete="tel"
+          spellCheck={false}
+          error={issueText(issues.mobile)}
+        />
         <TextField
           label={t('auth.password')}
+          name="new-password"
           type="password"
           value={form.password}
           onChange={set('password')}
@@ -165,8 +233,8 @@ export function RegisterPage() {
           help={t('validation.password_too_short')}
           error={issueText(issues.password)}
         />
-        <fieldset className="field" style={{ border: 0, padding: 0 }}>
-          <legend className="label">{t('auth.kind')}</legend>
+        <fieldset className="choice-group">
+          <legend>{t('auth.kind')}</legend>
           <label className="check">
             <input type="radio" name="kind" value="member" checked={form.kind === 'member'} onChange={set('kind')} />
             {t('auth.kindMember')}
@@ -178,9 +246,9 @@ export function RegisterPage() {
         </fieldset>
         {form.kind === 'member' && (
           <>
-            <TextField label={t('auth.searchOrg')} value={query} onChange={(e) => setQuery(e.target.value)} />
+            <TextField label={t('auth.searchOrg')} type="search" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" spellCheck={false} />
             <SelectField label={t('auth.chooseOrg')} value={form.organisationId} onChange={set('organisationId')} error={issueText(issues.organisationId)}>
-              <option value="">—</option>
+              <option value="">{t('common.choose')}</option>
               {orgs.data?.organisations.map((o) => (
                 <option key={o.id} value={o.id}>
                   {i18n.language === 'bn' && o.nameBn ? `${o.nameBn} (${o.name})` : o.name}
@@ -189,13 +257,15 @@ export function RegisterPage() {
             </SelectField>
           </>
         )}
-        <button type="submit" className="btn btn-primary btn-block btn-lg">
+        <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={busy}>
           {t('auth.registerAccount')}
         </button>
       </form>
-      <p style={{ marginTop: 16 }}>
-        <Link to="/login">{t('auth.toLogin')}</Link>
-      </p>
+      <div className="public-links">
+        <p>
+          {t('auth.haveAccount')} <Link to="/login">{t('auth.toLogin')}</Link>
+        </p>
+      </div>
     </PublicFrame>
   );
 }
@@ -208,64 +278,94 @@ export function RegisterOrganisationPage() {
   const [coord, setCoord] = useState({ fullName: '', mobile: '', password: '' });
   const [issues, setIssues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setIssues({});
+    setBusy(true);
     try {
       await api.post('/api/auth/register-organisation', { organisation: org, coordinator: coord });
       setDone(true);
     } catch (err) {
       setIssues(issuesOf(err));
       setError(errorText(err));
+    } finally {
+      setBusy(false);
     }
   };
-  if (done) {
-    return (
-      <PublicFrame title={t('auth.registerOrgTitle')}>
-        <Notice tone="ok">{t('auth.submittedOrg')}</Notice>
-        <Link className="btn btn-primary" to="/login">
-          {t('auth.toLogin')}
-        </Link>
-      </PublicFrame>
-    );
-  }
+  if (done) return <Done title={t('auth.registerOrgTitle')} text={t('auth.submittedOrg')} />;
   const o = (k: keyof typeof org) => (e: { target: { value: string } }) => setOrg({ ...org, [k]: e.target.value });
   const c = (k: keyof typeof coord) => (e: { target: { value: string } }) => setCoord({ ...coord, [k]: e.target.value });
   return (
-    <PublicFrame title={t('auth.registerOrgTitle')}>
-      <p className="muted">{t('auth.registerOrgIntro')}</p>
+    <PublicFrame title={t('auth.registerOrgTitle')} lead={t('auth.registerOrgIntro')}>
       {error && <Notice tone="error">{error}</Notice>}
       <form onSubmit={submit} noValidate>
-        <TextField label={t('auth.orgName')} value={org.name} onChange={o('name')} error={issueText(issues['organisation.name'])} />
-        <TextField label={t('auth.orgNameBn')} value={org.nameBn} onChange={o('nameBn')} lang="bn" />
-        <SelectField label={t('auth.orgType')} value={org.orgType} onChange={o('orgType')}>
-          {(['ngo', 'volunteer_group', 'community', 'other'] as const).map((k) => (
-            <option key={k} value={k}>
-              {t(`auth.orgTypes.${k}`)}
-            </option>
-          ))}
-        </SelectField>
-        <TextField label={t('auth.contactName')} value={org.contactName} onChange={o('contactName')} error={issueText(issues['organisation.contactName'])} />
-        <TextField label={t('auth.contactPhone')} type="tel" value={org.contactPhone} onChange={o('contactPhone')} error={issueText(issues['organisation.contactPhone'])} />
-        <TextField label={t('auth.contactEmail')} type="email" value={org.contactEmail} onChange={o('contactEmail')} error={issueText(issues['organisation.contactEmail'])} />
-        <h2>{t('auth.yourAccount')}</h2>
-        <TextField label={t('auth.fullName')} value={coord.fullName} onChange={c('fullName')} error={issueText(issues['coordinator.fullName'])} />
-        <TextField label={t('common.mobile')} type="tel" value={coord.mobile} onChange={c('mobile')} error={issueText(issues['coordinator.mobile'])} />
-        <TextField
-          label={t('auth.password')}
-          type="password"
-          autoComplete="new-password"
-          value={coord.password}
-          onChange={c('password')}
-          error={issueText(issues['coordinator.password'])}
-        />
-        <button type="submit" className="btn btn-primary btn-block btn-lg">
+        <div className="form-section">
+          <h2 className="menu-group-title">{t('auth.orgDetails')}</h2>
+          <TextField label={t('auth.orgName')} value={org.name} onChange={o('name')} error={issueText(issues['organisation.name'])} autoComplete="organization" />
+          <TextField label={t('auth.orgNameBn')} value={org.nameBn} onChange={o('nameBn')} lang="bn" autoComplete="off" />
+          <SelectField label={t('auth.orgType')} value={org.orgType} onChange={o('orgType')}>
+            {(['ngo', 'volunteer_group', 'community', 'other'] as const).map((k) => (
+              <option key={k} value={k}>
+                {t(`auth.orgTypes.${k}`)}
+              </option>
+            ))}
+          </SelectField>
+          <TextField label={t('auth.contactName')} value={org.contactName} onChange={o('contactName')} error={issueText(issues['organisation.contactName'])} autoComplete="off" />
+          <TextField
+            label={t('auth.contactPhone')}
+            type="tel"
+            inputMode="tel"
+            value={org.contactPhone}
+            onChange={o('contactPhone')}
+            error={issueText(issues['organisation.contactPhone'])}
+            autoComplete="off"
+          />
+          <TextField
+            label={t('auth.contactEmail')}
+            type="email"
+            value={org.contactEmail}
+            onChange={o('contactEmail')}
+            error={issueText(issues['organisation.contactEmail'])}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </div>
+        <div className="form-section">
+          <h2 className="menu-group-title">{t('auth.yourAccount')}</h2>
+          <TextField label={t('auth.fullName')} value={coord.fullName} onChange={c('fullName')} error={issueText(issues['coordinator.fullName'])} autoComplete="name" />
+          <TextField
+            label={t('common.mobile')}
+            type="tel"
+            inputMode="tel"
+            value={coord.mobile}
+            onChange={c('mobile')}
+            error={issueText(issues['coordinator.mobile'])}
+            autoComplete="tel"
+            spellCheck={false}
+          />
+          <TextField
+            label={t('auth.password')}
+            type="password"
+            autoComplete="new-password"
+            value={coord.password}
+            onChange={c('password')}
+            help={t('validation.password_too_short')}
+            error={issueText(issues['coordinator.password'])}
+          />
+        </div>
+        <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={busy}>
           {t('auth.registerOrg')}
         </button>
       </form>
+      <div className="public-links">
+        <p>
+          {t('auth.haveAccount')} <Link to="/login">{t('auth.toLogin')}</Link>
+        </p>
+      </div>
     </PublicFrame>
   );
 }
@@ -291,30 +391,34 @@ export function InvitePage() {
     }
   };
   const f = (k: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value });
+  if (done) return <Done title={t('auth.inviteTitle')} text={t('auth.inviteAccepted')} />;
   return (
-    <PublicFrame title={t('auth.inviteTitle')}>
+    <PublicFrame title={t('auth.inviteTitle')} lead={info.data ? t('auth.inviteIntro', { operation: info.data.operationName }) : undefined}>
       {info.error ? (
-        <Notice tone="error">{errorText(info.error)}</Notice>
-      ) : done ? (
-        <>
-          <Notice tone="ok">{t('auth.inviteAccepted')}</Notice>
-          <Link className="btn btn-primary" to="/login">
-            {t('auth.toLogin')}
-          </Link>
-        </>
+        <Empty
+          title={t('auth.inviteInvalid')}
+          mark="failed"
+          action={
+            <Link className="btn btn-secondary" to="/login">
+              {t('auth.toLogin')}
+            </Link>
+          }
+        >
+          {errorText(info.error)}
+        </Empty>
       ) : (
         <>
-          {info.data && <p>{t('auth.inviteIntro', { operation: info.data.operationName })}</p>}
           {error && <Notice tone="error">{error}</Notice>}
           <form onSubmit={submit} noValidate>
-            <TextField label={t('auth.fullName')} value={form.fullName} onChange={f('fullName')} error={issueText(issues.fullName)} />
-            <TextField label={t('common.mobile')} type="tel" value={form.mobile} onChange={f('mobile')} error={issueText(issues.mobile)} />
+            <TextField label={t('auth.fullName')} value={form.fullName} onChange={f('fullName')} error={issueText(issues.fullName)} autoComplete="name" />
+            <TextField label={t('common.mobile')} type="tel" inputMode="tel" value={form.mobile} onChange={f('mobile')} error={issueText(issues.mobile)} autoComplete="tel" spellCheck={false} />
             <TextField
               label={t('auth.password')}
               type="password"
               autoComplete="new-password"
               value={form.password}
               onChange={f('password')}
+              help={t('validation.password_too_short')}
               error={issueText(issues.password)}
             />
             <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={!info.data}>
@@ -355,7 +459,6 @@ export function ChangePasswordPage({ forced = true }: { forced?: boolean }) {
   };
   const body = (
     <>
-      {forced && <p>{t('auth.changePasswordIntro')}</p>}
       {error && <Notice tone="error">{error}</Notice>}
       <form onSubmit={submit} noValidate>
         <TextField label={t('auth.currentPassword')} type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
@@ -368,13 +471,19 @@ export function ChangePasswordPage({ forced = true }: { forced?: boolean }) {
           help={t('validation.password_too_short')}
           error={issueText(issues.newPassword)}
         />
-        <button type="submit" className="btn btn-primary">
+        <button type="submit" className={`btn btn-primary${forced ? ' btn-block btn-lg' : ''}`}>
           {t('auth.changePassword')}
         </button>
       </form>
     </>
   );
-  return forced ? <PublicFrame title={t('auth.changePasswordTitle')}>{body}</PublicFrame> : body;
+  return forced ? (
+    <PublicFrame title={t('auth.changePasswordTitle')} lead={t('auth.changePasswordIntro')}>
+      {body}
+    </PublicFrame>
+  ) : (
+    body
+  );
 }
 
 const PIN_RE = /^\d{4,6}$/;
@@ -387,11 +496,13 @@ export function SetPinPage({ embedded = false }: { embedded?: boolean }) {
   const [pin, setPinValue] = useState('');
   const [repeat, setRepeat] = useState('');
   const [error, setError] = useState<string | undefined>();
+  const [repeatError, setRepeatError] = useState<string | undefined>();
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!PIN_RE.test(pin)) return setError(t('validation.pin_digits'));
-    if (pin !== repeat) return setError(t('validation.pin_mismatch'));
     setError(undefined);
+    setRepeatError(undefined);
+    if (!PIN_RE.test(pin)) return setError(t('validation.pin_digits'));
+    if (pin !== repeat) return setRepeatError(t('validation.pin_mismatch'));
     await setPin(pin);
     if (embedded) {
       toast(t('pin.pinChanged'));
@@ -400,41 +511,52 @@ export function SetPinPage({ embedded = false }: { embedded?: boolean }) {
     } else navigate('/field', { replace: true });
   };
   const form = (
-    <>
-      <p className="muted">{t('pin.setIntro')}</p>
-      <form onSubmit={submit} noValidate>
-        <TextField
-          label={t('pin.pin')}
-          type="password"
-          inputMode="numeric"
-          autoComplete="new-password"
-          maxLength={6}
-          value={pin}
-          onChange={(e) => setPinValue(e.target.value)}
-          error={error}
-        />
-        <TextField
-          label={t('pin.repeat')}
-          type="password"
-          inputMode="numeric"
-          autoComplete="new-password"
-          maxLength={6}
-          value={repeat}
-          onChange={(e) => setRepeat(e.target.value)}
-        />
-        <button type="submit" className="btn btn-signal btn-block btn-lg">
-          {t('pin.setPin')}
-        </button>
-      </form>
-    </>
+    <form onSubmit={submit} noValidate>
+      <TextField
+        label={t('pin.pin')}
+        type="password"
+        inputMode="numeric"
+        autoComplete="new-password"
+        maxLength={6}
+        className={embedded ? undefined : 'pin-field'}
+        help={t('pin.pinHelp')}
+        value={pin}
+        onChange={(e) => setPinValue(e.target.value)}
+        error={error}
+      />
+      <TextField
+        label={t('pin.repeat')}
+        type="password"
+        inputMode="numeric"
+        autoComplete="new-password"
+        maxLength={6}
+        className={embedded ? undefined : 'pin-field'}
+        value={repeat}
+        onChange={(e) => setRepeat(e.target.value)}
+        error={repeatError}
+      />
+      <button type="submit" className={`btn btn-signal${embedded ? '' : ' btn-block btn-lg'}`}>
+        {t('pin.setPin')}
+      </button>
+    </form>
   );
-  return embedded ? form : <PublicFrame title={t('pin.setTitle')}>{form}</PublicFrame>;
+  return embedded ? (
+    <>
+      <p className="muted small">{t('pin.changeIntro')}</p>
+      {form}
+    </>
+  ) : (
+    <PublicFrame title={t('pin.setTitle')} lead={t('pin.setIntro')}>
+      {form}
+    </PublicFrame>
+  );
 }
 
 export function UnlockPage() {
   const { t } = useTranslation();
   const { unlock, local, switchUser } = useSession();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [pin, setPin] = useState('');
   const [message, setMessage] = useState<{ tone: 'error' | 'warn'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -444,6 +566,7 @@ export function UnlockPage() {
   }, []);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (pin.length < 4) return setMessage({ tone: 'error', text: t('validation.pin_digits') });
     setBusy(true);
     setMessage(null);
     try {
@@ -465,16 +588,17 @@ export function UnlockPage() {
   const other = async () => {
     const count = await localStore.pendingCount();
     if (count > 0) return setMessage({ tone: 'warn', text: t('pin.switchBlocked', { n: count }) });
-    if (!window.confirm(t('pin.switchConfirm'))) return;
+    // UI audit F25: the app's own dialog, translated and styled, instead of window.confirm.
+    if (!(await confirm.ask(t('pin.switchConfirm'), false, { confirmLabel: t('pin.switchAction') }))) return;
     await switchUser();
     navigate('/login', { replace: true });
   };
   return (
-    <PublicFrame title={t('pin.unlockTitle')}>
-      <p>{t('pin.unlockIntro', { name: local?.fullName ?? '' })}</p>
+    <PublicFrame title={t('pin.unlockTitle')} lead={t('pin.unlockIntro', { name: local?.fullName ?? '' })}>
       {message && <Notice tone={message.tone}>{message.text}</Notice>}
       {locked ? (
         <Link className="btn btn-primary btn-block btn-lg" to="/login">
+          <LogIn size={20} aria-hidden />
           {t('auth.login')}
         </Link>
       ) : (
@@ -485,24 +609,48 @@ export function UnlockPage() {
             inputMode="numeric"
             autoComplete="current-password"
             maxLength={6}
+            className="pin-field"
             value={pin}
             onChange={(e) => setPin(e.target.value)}
-            autoFocus
           />
-          <button type="submit" className="btn btn-signal btn-block btn-lg" disabled={busy || pin.length < 4}>
+          <button type="submit" className="btn btn-signal btn-block btn-lg" disabled={busy}>
             <LockKeyhole size={20} aria-hidden />
             {busy ? t('pin.unlocking') : t('pin.unlock')}
           </button>
         </form>
       )}
-      <p style={{ marginTop: 16 }}>
-        <Link to="/login">{t('auth.login')}</Link>
-      </p>
-      <p>
-        <button type="button" className="link-button" onClick={() => void other()}>
-          {t('pin.otherUser')}
+      <div className="public-links">
+        {!locked && (
+          <p>
+            {t('pin.onlineInstead')} <Link to="/login">{t('auth.login')}</Link>
+          </p>
+        )}
+        <p>
+          <button type="button" className="link-button" onClick={() => void other()}>
+            {t('pin.otherUser')}
+          </button>
+        </p>
+      </div>
+      {confirm.dialog}
+    </PublicFrame>
+  );
+}
+
+/** Shown when a route fails to render or does not exist, instead of a blank screen. */
+export function RouteErrorPage() {
+  const { t } = useTranslation();
+  const error = useRouteError();
+  const notFound = isRouteErrorResponse(error) && error.status === 404;
+  return (
+    <PublicFrame title={notFound ? t('public.notFoundTitle') : t('public.errorTitle')} lead={notFound ? t('public.notFoundText') : t('public.errorText')}>
+      <div className="row">
+        <a className="btn btn-primary" href="/">
+          {t('public.home')}
+        </a>
+        <button type="button" className="btn btn-secondary" onClick={() => window.location.reload()}>
+          {t('common.retry')}
         </button>
-      </p>
+      </div>
     </PublicFrame>
   );
 }

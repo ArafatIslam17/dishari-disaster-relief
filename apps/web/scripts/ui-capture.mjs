@@ -155,6 +155,7 @@ async function captureHere(page, name, opts = {}) {
   const isDash = entry.url.startsWith('/app');
   for (const w of WIDTHS) {
     await page.setViewportSize({ width: w, height: w <= 420 ? 800 : 900 });
+    await page.evaluate(() => window.scrollTo(0, 0));
     await sleep(200);
     // Horizontal overflow is a defect at any width.
     entry.overflow[w] = await page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - window.innerWidth));

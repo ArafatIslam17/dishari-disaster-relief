@@ -47,6 +47,13 @@ export function formatTime(iso: string | Date | null | undefined): string {
   }).format(d);
 }
 
+/** Compact time for the sync chip: the time of day when it is today, otherwise the date. */
+export function formatShortTime(iso: string | Date): string {
+  const d = typeof iso === 'string' ? new Date(iso) : iso;
+  const today = new Date().toDateString() === d.toDateString();
+  return new Intl.DateTimeFormat(i18next.language === 'bn' ? 'bn-BD' : 'en-GB', today ? { hour: '2-digit', minute: '2-digit' } : { day: 'numeric', month: 'short' }).format(d);
+}
+
 export function formatNumber(n: number | string): string {
   if (typeof n === 'string') return n;
   return new Intl.NumberFormat(i18next.language === 'bn' ? 'bn-BD' : 'en-GB').format(n);

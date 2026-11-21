@@ -1,36 +1,45 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
-import { Download, FileText, Send } from 'lucide-react';
+import { ChevronRight, Download, FileText, Send } from 'lucide-react';
 import type { CoverageLabel, DistributionDTO, HouseholdDTO } from '@relief/shared';
 import { api, downloadFile } from '../api/client';
 import { useSession } from '../auth/session';
 import { formatNumber, formatTime } from '../i18n';
 import { useOperation } from '../layouts';
-import { useNotificationText } from './field';
+import { useNotificationText } from '../ui/notifications';
 import {
   CoverageChip,
   Empty,
   ErrorState,
   Loading,
   Notice,
+  PageHead,
+  Segmented,
   SelectField,
   ShortCode,
+  StatusMark,
   StatusTag,
   TextField,
   useApiData,
   useErrorText,
   useToast,
+  type MarkKind,
 } from '../ui/kit';
 
 function NeedOperation() {
   const { t } = useTranslation();
-  return <Notice>{t('nav.noOperation')}</Notice>;
+  return <Empty title={t('nav.noOperation')} mark="no_records" />;
 }
 
 function areaName(lang: string, a: { upazila: string; unionName: string; ward: string; upazilaBn?: string | null; unionBn?: string | null }) {
   const bn = lang === 'bn';
   return { upazila: bn && a.upazilaBn ? a.upazilaBn : a.upazila, union: bn && a.unionBn ? a.unionBn : a.unionName, ward: a.ward };
+}
+
+/** Figures that are 0 read lighter so the eye lands on the non-zero cells. */
+function Num({ n }: { n: number | string }) {
+  return <span className={Number(n) === 0 ? 'zero' : undefined}>{formatNumber(n)}</span>;
 }
 
 // ---------- UC22 View Area Coverage (FR21) ----------
@@ -48,6 +57,9 @@ interface CoverageRowDTO {
   lastDistributionAt: string | null;
   label: CoverageLabel;
 }
+
+const LABEL_ORDER: CoverageLabel[] = ['fully_served', 'partly_served', 'not_served', 'no_records'];
+const LABEL_MARK: Record<CoverageLabel, MarkKind> = { fully_served: 'served', partly_served: 'partly', not_served: 'not_served', no_records: 'no_records' };
 
 export function CoveragePage() {
   const { t, i18n } = useTranslation();
@@ -84,12 +96,19 @@ export function CoveragePage() {
     if (k === 'union') next.delete('ward');
     setParams(next, { replace: true });
   };
+  const rows = data.data?.rows ?? [];
+  const byLabel = Object.fromEntries(LABEL_ORDER.map((l) => [l, rows.filter((r) => r.label === l).length])) as Record<CoverageLabel, number>;
+  const coordinator = role === 'GROUP_COORDINATOR';
+  const clear = (
+    <button type="button" className="btn btn-ghost" onClick={() => setParams({}, { replace: true })}>
+      {t('common.clear')}
+    </button>
+  );
   return (
     <>
-      <h1>{t('coverage.title')}</h1>
-      <p className="muted">{t('coverage.intro')}</p>
+      <PageHead title={t('coverage.title')} lead={t('coverage.intro')} />
       {role === 'OBSERVER' && <Notice>{t('coverage.observerNote')}</Notice>}
-      <div className="toolbar">
+      <div className="toolbar" role="search" aria-label={t('coverage.filters')}>
         <SelectField label={t('coverage.filterUpazila')} value={filter.upazila} onChange={(e) => setFilter('upazila', e.target.value)}>
           <option value="">{t('coverage.all')}</option>
           {options('upazila').map((o) => (
@@ -108,43 +127,73 @@ export function CoveragePage() {
             <option key={o}>{o}</option>
           ))}
         </SelectField>
+        {qs && clear}
       </div>
       {data.loading && !data.data && <Loading rows={6} />}
       {data.error ? <ErrorState error={data.error} onRetry={data.reload} /> : null}
       {data.data && (
         <>
-          <div className="stats">
-            <div className="stat">
-              <div className="value">{formatNumber(data.data.totals.registered)}</div>
-              <div className="label">{t('coverage.registered')}</div>
+          <section className="coverage-strip" aria-label={t('coverage.summary')}>
+            <div className="summary">
+              <div>
+                <span className="figure">{formatNumber(data.data.totals.registered)}</span>
+                <span className="figure-label">{t('coverage.registered')}</span>
+              </div>
+              <div>
+                <span className="figure">{formatNumber(data.data.totals.served)}</span>
+                <span className="figure-label">
+                  <StatusMark kind="served" />
+                  {t('coverage.served')}
+                </span>
+              </div>
+              <div>
+                <span className="figure">{formatNumber(data.data.totals.registered - data.data.totals.served)}</span>
+                <span className="figure-label">
+                  <StatusMark kind="not_served" />
+                  {t('coverage.unserved')}
+                </span>
+              </div>
+              <div>
+                <span className="figure">{formatNumber(data.data.totals.noRecords)}</span>
+                <span className="figure-label">
+                  <StatusMark kind="no_records" />
+                  {t('coverage.noRecordAreasLabel')}
+                </span>
+              </div>
             </div>
-            <div className="stat">
-              <div className="value">{formatNumber(data.data.totals.served)}</div>
-              <div className="label">{t('coverage.served')}</div>
-            </div>
-            <div className="stat">
-              <div className="value">{formatNumber(data.data.totals.registered - data.data.totals.served)}</div>
-              <div className="label">{t('coverage.unserved')}</div>
-            </div>
-            <div className="stat">
-              <div className="value">{formatNumber(data.data.totals.noRecords)}</div>
-              <div className="label">{t('coverage.noRecordAreas', { n: '' }).trim()}</div>
-            </div>
-          </div>
-          <p className="small muted">
-            {t('common.lastUpdated', { time: formatTime(data.data.lastUpdated) })}. {t('coverage.notSyncedNote')}
-          </p>
-          {data.data.rows.length === 0 ? (
-            <Empty title={t('common.noResults')} />
+            {rows.length > 0 && (
+              <>
+                <div className="coverage-bar" aria-hidden>
+                  {LABEL_ORDER.filter((l) => byLabel[l] > 0).map((l) => (
+                    <span key={l} className={`seg-${l}`} style={{ flexGrow: byLabel[l] }} />
+                  ))}
+                </div>
+                <ul className="legend" aria-label={t('coverage.byLabel')}>
+                  {LABEL_ORDER.map((l) => (
+                    <li key={l}>
+                      <span className={`tone-${LABEL_MARK[l]}`}>
+                        <StatusMark kind={LABEL_MARK[l]} />
+                      </span>
+                      {t(`coverage.${l}`)} <strong>{formatNumber(byLabel[l])}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <p className="small muted mt-4">
+              {t('common.lastUpdated', { time: formatTime(data.data.lastUpdated) })}. {t('coverage.notSyncedNote')}
+            </p>
+          </section>
+          {rows.length === 0 ? (
+            <Empty title={t('common.noResults')} mark="no_records" action={qs ? clear : undefined} />
           ) : (
-            <div className="table-wrap">
+            <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={t('coverage.title')}>
               <table>
                 <caption className="visually-hidden">{t('coverage.title')}</caption>
                 <thead>
                   <tr>
-                    <th scope="col">{t('coverage.filterUpazila')}</th>
-                    <th scope="col">{t('coverage.filterUnion')}</th>
-                    <th scope="col">{t('coverage.filterWard')}</th>
+                    <th scope="col">{t('coverage.area')}</th>
+                    <th scope="col">{t('coverage.label')}</th>
                     <th scope="col" className="num">
                       {t('coverage.registered')}
                     </th>
@@ -157,30 +206,46 @@ export function CoveragePage() {
                     <th scope="col" className="num">
                       {t('coverage.anonymous')}
                     </th>
-                    <th scope="col">{t('coverage.label')}</th>
                     <th scope="col">{t('coverage.lastDistribution')}</th>
-                    {role === 'GROUP_COORDINATOR' && <th scope="col">{t('common.actions')}</th>}
+                    {coordinator && <th scope="col">{t('common.actions')}</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {data.data.rows.map((r) => {
+                  {rows.map((r) => {
                     const n = areaName(i18n.language, r);
                     return (
                       <tr key={r.areaId}>
-                        <td>{n.upazila}</td>
-                        <td>{n.union}</td>
-                        <td>{n.ward}</td>
-                        <td className="num">{formatNumber(r.registered)}</td>
-                        <td className="num">{formatNumber(r.served)}</td>
-                        <td className="num">{formatNumber(r.unserved)}</td>
-                        <td className="num">{formatNumber(r.anonymousDistributions)}</td>
-                        <td>
+                        <td className="stack-head">
+                          {n.upazila}, {n.union}
+                          <span className="cell-sub">
+                            {t('coverage.ward')} {n.ward}
+                          </span>
+                        </td>
+                        <td data-label={t('coverage.label')}>
                           <CoverageChip label={r.label} />
                         </td>
-                        <td>{r.lastDistributionAt ? formatTime(r.lastDistributionAt) : '—'}</td>
-                        {role === 'GROUP_COORDINATOR' && (
+                        <td className="num" data-label={t('coverage.registered')}>
+                          <Num n={r.registered} />
+                        </td>
+                        <td className="num" data-label={t('coverage.served')}>
+                          <Num n={r.served} />
+                        </td>
+                        <td className="num" data-label={t('coverage.unserved')}>
+                          <Num n={r.unserved} />
+                        </td>
+                        <td className="num" data-label={t('coverage.anonymous')}>
+                          <Num n={r.anonymousDistributions} />
+                        </td>
+                        <td data-label={t('coverage.lastDistribution')} className="nowrap">
+                          {r.lastDistributionAt ? formatTime(r.lastDistributionAt) : <span className="zero">—</span>}
+                        </td>
+                        {coordinator && (
                           <td>
-                            {Number(r.unserved) > 0 && <Link to={`/app/coverage/${r.areaId}/unserved`}>{t('coverage.unservedLink')}</Link>}
+                            {Number(r.unserved) > 0 && (
+                              <Link className="row-link" to={`/app/coverage/${r.areaId}/unserved`}>
+                                {t('coverage.unservedLink')}
+                              </Link>
+                            )}
                           </td>
                         )}
                       </tr>
@@ -221,59 +286,62 @@ export function UnservedPage() {
       setSending(false);
     }
   };
+  const households = data.data?.households ?? [];
   return (
     <>
-      <p>
-        <Link to="/app/coverage">{t('common.back')}</Link>
-      </p>
-      <h1>{t('unserved.title')}</h1>
-      <p className="muted">{t('unserved.dashIntro')}</p>
+      <PageHead
+        title={t('unserved.title')}
+        lead={t('unserved.dashIntro')}
+        back={{ to: '/app/coverage', label: t('coverage.title') }}
+        actions={
+          households.length > 0 ? (
+            <button type="button" className="btn btn-primary" disabled={sending || current.status !== 'active'} onClick={() => void release()}>
+              <Send size={18} aria-hidden />
+              {t('unserved.release')}
+            </button>
+          ) : undefined
+        }
+        meta={data.data ? <span>{t('common.lastUpdated', { time: formatTime(data.data.lastUpdated) })}</span> : undefined}
+      />
       {data.loading && <Loading />}
       {data.error ? <ErrorState error={data.error} onRetry={data.reload} /> : null}
-      {data.data && (
-        <>
-          <p className="small muted">{t('common.lastUpdated', { time: formatTime(data.data.lastUpdated) })}</p>
-          {data.data.households.length === 0 ? (
-            <Empty title={t('unserved.allServed')} />
-          ) : (
-            <>
-              <button type="button" className="btn btn-primary" disabled={sending || current.status !== 'active'} onClick={() => void release()}>
-                <Send size={18} aria-hidden />
-                {t('unserved.release')}
-              </button>
-              <div className="table-wrap" style={{ marginTop: 16 }}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">{t('household.shortCode')}</th>
-                      <th scope="col">{t('household.headName')}</th>
-                      <th scope="col" className="num">
-                        {t('household.members')}
-                      </th>
-                      <th scope="col">{t('common.organisation')}</th>
-                      <th scope="col">{t('households.registered')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.data.households.map((h) => (
-                      <tr key={h.id}>
-                        <td>
-                          <Link to={`/app/households/${h.id}`}>
-                            <ShortCode code={h.shortCode} size="sm" />
-                          </Link>
-                        </td>
-                        <td>{h.headName}</td>
-                        <td className="num">{formatNumber(h.memberCount)}</td>
-                        <td>{h.organisationName}</td>
-                        <td>{formatTime(h.createdAt)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </>
+      {data.data && households.length === 0 && <Empty title={t('unserved.allServed')} mark="served" />}
+      {households.length > 0 && (
+        <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={t('unserved.title')}>
+          <table>
+            <caption className="visually-hidden">{t('unserved.title')}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{t('household.shortCode')}</th>
+                <th scope="col">{t('household.headName')}</th>
+                <th scope="col" className="num">
+                  {t('household.members')}
+                </th>
+                <th scope="col">{t('common.organisation')}</th>
+                <th scope="col">{t('households.registered')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {households.map((h) => (
+                <tr key={h.id}>
+                  <td className="stack-head">
+                    <Link to={`/app/households/${h.id}`}>
+                      <ShortCode code={h.shortCode} size="sm" />
+                    </Link>
+                  </td>
+                  <td data-label={t('household.headName')}>{h.headName}</td>
+                  <td className="num" data-label={t('household.members')}>
+                    {formatNumber(h.memberCount)}
+                  </td>
+                  <td data-label={t('common.organisation')}>{h.organisationName}</td>
+                  <td data-label={t('households.registered')} className="nowrap">
+                    {formatTime(h.createdAt)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </>
   );
@@ -319,19 +387,26 @@ export function ConflictsPage() {
   if (!current) return <NeedOperation />;
   return (
     <>
-      <div className="panel-head">
-        <h1>{t('conflicts.title')}</h1>
-        <button type="button" className="btn btn-quiet" onClick={() => setParams(status === 'open' ? { status: 'resolved' } : {})}>
-          {status === 'open' ? t('conflicts.showResolved') : t('conflicts.showOpen')}
-        </button>
-      </div>
-      <p className="muted">{t('conflicts.intro')}</p>
+      <PageHead
+        title={t('conflicts.title')}
+        lead={t('conflicts.intro')}
+        actions={
+          <button type="button" className="btn btn-secondary" onClick={() => setParams(status === 'open' ? { status: 'resolved' } : {})}>
+            {status === 'open' ? t('conflicts.showResolved') : t('conflicts.showOpen')}
+          </button>
+        }
+      />
       {data.loading && <Loading />}
       {data.error ? <ErrorState error={data.error} onRetry={data.reload} /> : null}
-      {data.data && data.data.conflicts.length === 0 && <Empty title={t('conflicts.none')} />}
+      {data.data && data.data.conflicts.length === 0 && (
+        <Empty title={status === 'open' ? t('conflicts.none') : t('conflicts.noneResolved')} mark="synced">
+          {status === 'open' ? t('conflicts.noneHint') : undefined}
+        </Empty>
+      )}
       {data.data && data.data.conflicts.length > 0 && (
-        <div className="table-wrap">
+        <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={t('conflicts.title')}>
           <table>
+            <caption className="visually-hidden">{t('conflicts.title')}</caption>
             <thead>
               <tr>
                 <th scope="col">{t('household.shortCode')}</th>
@@ -345,16 +420,18 @@ export function ConflictsPage() {
             <tbody>
               {data.data.conflicts.map((c) => (
                 <tr key={c.id}>
-                  <td>
+                  <td className="stack-head">
                     <Link to={`/app/conflicts/${c.id}`}>
                       <ShortCode code={c.shortCode} size="sm" />
                     </Link>
                   </td>
-                  <td>{t(`conflicts.fields.${c.fieldName}`)}</td>
-                  <td>{showValue(c.fieldName, c.serverValue, t)}</td>
-                  <td>{showValue(c.fieldName, c.localValue, t)}</td>
-                  <td>{formatTime(c.createdAt)}</td>
-                  <td>
+                  <td data-label={t('conflicts.field')}>{t(`conflicts.fields.${c.fieldName}`)}</td>
+                  <td data-label={t('conflicts.current')}>{showValue(c.fieldName, c.serverValue, t)}</td>
+                  <td data-label={t('conflicts.incoming')}>{showValue(c.fieldName, c.localValue, t)}</td>
+                  <td data-label={t('common.time')} className="nowrap">
+                    {formatTime(c.createdAt)}
+                  </td>
+                  <td data-label={t('common.status')}>
                     <StatusTag status={c.status} />
                   </td>
                 </tr>
@@ -395,32 +472,39 @@ export function ConflictDetailPage() {
   const editable = c.status === 'open' && c.canResolve && c.fieldName !== 'gps' && c.fieldName !== 'areaId';
   return (
     <>
-      <p>
-        <Link to="/app/conflicts">{t('common.back')}</Link>
-      </p>
-      <h1>
-        {t(`conflicts.fields.${c.fieldName}`)}: <ShortCode code={c.shortCode} size="sm" />
-      </h1>
+      <PageHead
+        title={t(`conflicts.fields.${c.fieldName}`)}
+        back={{ to: '/app/conflicts', label: t('conflicts.title') }}
+        meta={
+          <>
+            <ShortCode code={c.shortCode} size="sm" />
+            <StatusTag status={c.status} />
+            <Link to={`/app/households/${c.householdId}`}>{t('households.history')}</Link>
+          </>
+        }
+      />
       {!c.canResolve && <Notice tone="warn">{t('conflicts.mobileOnly')}</Notice>}
       {error && <Notice tone="error">{error}</Notice>}
-      <div className="grid-2">
+      <div className="compare">
         {[
           { title: t('conflicts.current'), value: c.serverValue, who: by(c.serverUserName, c.serverOrganisationName, c.serverDeviceLabel, c.serverTime) },
           { title: t('conflicts.incoming'), value: c.localValue, who: by(c.localUserName, c.localOrganisationName, c.localDeviceLabel, c.localTime) },
         ].map((side) => (
-          <section key={side.title} className="panel">
+          <section key={side.title} className="compare-side" aria-label={side.title}>
             <h2>{side.title}</h2>
-            <p style={{ fontSize: '1.4rem', fontWeight: 700 }}>{showValue(c.fieldName, side.value, t)}</p>
-            <p className="small muted">{side.who}</p>
+            <p className="compare-value">{showValue(c.fieldName, side.value, t)}</p>
+            <p className="compare-by">{side.who}</p>
             {c.status === 'open' && c.canResolve && side.value !== 'hidden' && (
-              <button type="button" className="btn btn-primary" onClick={() => void resolve(side.value)}>
-                {t('conflicts.choose')}
-              </button>
+              <div>
+                <button type="button" className="btn btn-primary" onClick={() => void resolve(side.value)}>
+                  {t('conflicts.choose')}
+                </button>
+              </div>
             )}
           </section>
         ))}
       </div>
-      {c.status === 'resolved' && <Notice tone="ok">{t('statuses.resolved')}: {showValue(c.fieldName, c.resolvedValue, t)}</Notice>}
+      {c.status === 'resolved' && <Notice tone="ok">{`${t('statuses.resolved')}: ${showValue(c.fieldName, c.resolvedValue, t)}`}</Notice>}
       {editable && (
         <form
           className="panel"
@@ -429,12 +513,19 @@ export function ConflictDetailPage() {
             void resolve(parseCustom());
           }}
         >
-          <TextField label={t('conflicts.custom')} value={custom} onChange={(e) => setCustom(e.target.value)} inputMode={c.fieldName === 'memberCount' ? 'numeric' : 'text'} />
-          <div className="form-actions">
+          <TextField
+            label={t('conflicts.custom')}
+            value={custom}
+            onChange={(e) => setCustom(e.target.value)}
+            inputMode={c.fieldName === 'memberCount' ? 'numeric' : 'text'}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <div className="row">
             <button type="submit" className="btn btn-primary" disabled={!custom.trim()}>
               {t('conflicts.resolve')}
             </button>
-            <Link className="btn btn-quiet" to="/app/conflicts">
+            <Link className="btn btn-ghost" to="/app/conflicts">
               {t('conflicts.leaveOpen')}
             </Link>
           </div>
@@ -459,11 +550,13 @@ interface PairRow {
   createdAt: string;
 }
 
+type PairStatus = 'pending_review' | 'linked' | 'not_duplicate';
+
 export function DuplicatesPage() {
   const { t } = useTranslation();
   const { current } = useOperation();
   const [params, setParams] = useSearchParams();
-  const status = (['linked', 'not_duplicate'].includes(params.get('status') ?? '') ? params.get('status') : 'pending_review') as string;
+  const status = (['linked', 'not_duplicate'].includes(params.get('status') ?? '') ? params.get('status') : 'pending_review') as PairStatus;
   const data = useApiData(
     (signal) => (current ? api.get<{ pairs: PairRow[] }>(`/api/duplicates?operationId=${current.id}&status=${status}`, signal) : Promise.resolve(null)),
     [current?.id, status],
@@ -471,52 +564,57 @@ export function DuplicatesPage() {
   if (!current) return <NeedOperation />;
   return (
     <>
-      <h1>{t('duplicates.title')}</h1>
-      <p className="muted">{t('duplicates.intro')}</p>
-      <div className="toolbar" role="tablist">
-        {(['pending_review', 'linked', 'not_duplicate'] as const).map((s) => (
-          <button key={s} type="button" role="tab" aria-selected={status === s} className={`btn ${status === s ? 'btn-primary' : 'btn-quiet'}`} onClick={() => setParams({ status: s })}>
-            {t(`duplicates.tabs.${s}`)}
-          </button>
-        ))}
-      </div>
+      <PageHead title={t('duplicates.title')} lead={t('duplicates.intro')} />
+      <Segmented<PairStatus>
+        label={t('common.status')}
+        value={status}
+        onChange={(s) => setParams({ status: s })}
+        options={(['pending_review', 'linked', 'not_duplicate'] as const).map((s) => ({ value: s, label: t(`duplicates.tabs.${s}`) }))}
+      />
       {data.loading && <Loading />}
       {data.error ? <ErrorState error={data.error} onRetry={data.reload} /> : null}
-      {data.data && data.data.pairs.length === 0 && <Empty title={t('duplicates.none')} />}
+      {data.data && data.data.pairs.length === 0 && <Empty title={t('duplicates.none')} mark="duplicate" />}
       {data.data && data.data.pairs.length > 0 && (
-        <div className="table-wrap">
+        <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={t('duplicates.title')}>
           <table>
+            <caption className="visually-hidden">{t('duplicates.title')}</caption>
             <thead>
               <tr>
                 <th scope="col" className="num">
                   {t('duplicates.score')}
                 </th>
                 <th scope="col">{t('common.status')}</th>
-                <th scope="col">A</th>
-                <th scope="col">B</th>
+                <th scope="col">{t('duplicates.householdA')}</th>
+                <th scope="col">{t('duplicates.householdB')}</th>
                 <th scope="col">{t('common.time')}</th>
               </tr>
             </thead>
             <tbody>
               {data.data.pairs.map((p) => (
                 <tr key={p.id}>
-                  <td className="num">
-                    <Link to={`/app/duplicates/${p.id}`}>{formatNumber(Math.round(p.score * 100))}%</Link>
+                  <td className="num stack-head">
+                    <Link className="row-link" to={`/app/duplicates/${p.id}`}>
+                      {formatNumber(Math.round(p.score * 100))}%
+                    </Link>
                   </td>
-                  <td>
+                  <td data-label={t('common.status')}>
                     <StatusTag status={p.label} />
                   </td>
-                  <td>
-                    {p.headNameA} <ShortCode code={p.shortCodeA} size="sm" />
-                    <br />
-                    <span className="small muted">{p.organisationA}</span>
+                  <td data-label={t('duplicates.householdA')}>
+                    <span>
+                      {p.headNameA} <ShortCode code={p.shortCodeA} size="sm" />
+                      <span className="cell-sub">{p.organisationA}</span>
+                    </span>
                   </td>
-                  <td>
-                    {p.headNameB} <ShortCode code={p.shortCodeB} size="sm" />
-                    <br />
-                    <span className="small muted">{p.organisationB}</span>
+                  <td data-label={t('duplicates.householdB')}>
+                    <span>
+                      {p.headNameB} <ShortCode code={p.shortCodeB} size="sm" />
+                      <span className="cell-sub">{p.organisationB}</span>
+                    </span>
                   </td>
-                  <td>{formatTime(p.createdAt)}</td>
+                  <td data-label={t('common.time')} className="nowrap">
+                    {formatTime(p.createdAt)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -564,55 +662,96 @@ export function DuplicateDetailPage() {
     const a = p.areas.find((x) => x.area_id === aid);
     return a ? `${a.upazila}, ${a.union_name}, ${i18n.language === 'bn' ? 'ওয়ার্ড' : 'ward'} ${a.ward}` : '';
   };
+  const fields: { key: string; label: string; a: string; b: string }[] = [
+    { key: 'name', label: t('household.headName'), a: p.a.headName ?? '—', b: p.b.headName ?? '—' },
+    { key: 'mobile', label: t('household.mobile'), a: p.a.mobile ?? p.a.mobileMasked ?? '—', b: p.b.mobile ?? p.b.mobileMasked ?? '—' },
+    { key: 'members', label: t('household.members'), a: formatNumber(p.a.memberCount), b: formatNumber(p.b.memberCount) },
+    { key: 'area', label: t('household.area'), a: area(p.a.areaId), b: area(p.b.areaId) },
+    { key: 'org', label: t('common.organisation'), a: p.a.organisationName, b: p.b.organisationName },
+  ];
   return (
     <>
-      <p>
-        <Link to="/app/duplicates">{t('common.back')}</Link>
-      </p>
-      <h1>
-        {t('duplicates.title')}: {formatNumber(Math.round(p.score * 100))}% <StatusTag status={p.label} /> <StatusTag status={p.status} />
-      </h1>
-      <section className="panel">
-        <h2>{t('duplicates.signals')}</h2>
-        <dl className="dl">
-          {(['phone', 'name', 'location', 'familySize'] as const).map((s) => (
-            <div key={s} style={{ display: 'contents' }}>
-              <dt>{t(`duplicates.signal.${s}`)}</dt>
-              <dd>{p.signals[s] === null || p.signals[s] === undefined ? '—' : `${formatNumber(Math.round((p.signals[s] as number) * 100))}%`}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
+      <PageHead
+        title={`${t('duplicates.pairTitle')}: ${formatNumber(Math.round(p.score * 100))}%`}
+        back={{ to: '/app/duplicates', label: t('duplicates.title') }}
+        meta={
+          <>
+            <StatusTag status={p.label} />
+            <StatusTag status={p.status} />
+          </>
+        }
+      />
       <div className="grid-2">
-        {[p.a, p.b].map((h) => (
-          <section key={h.id} className="hh-card">
-            <ShortCode code={h.shortCode} />
-            <dl className="dl">
-              <dt>{t('household.headName')}</dt>
-              <dd>{h.headName}</dd>
-              <dt>{t('household.mobile')}</dt>
-              <dd>{h.mobile ?? h.mobileMasked ?? '—'}</dd>
-              <dt>{t('household.members')}</dt>
-              <dd>{formatNumber(h.memberCount)}</dd>
-              <dt>{t('household.area')}</dt>
-              <dd>{area(h.areaId)}</dd>
-              <dt>{t('common.organisation')}</dt>
-              <dd>{h.organisationName}</dd>
-            </dl>
-            <p>
-              <Link to={`/app/households/${h.id}`}>{t('households.history')}</Link>
-            </p>
-          </section>
-        ))}
+        <section className="panel" aria-labelledby="signals-title">
+          <h2 id="signals-title">{t('duplicates.signals')}</h2>
+          {(['phone', 'name', 'location', 'familySize'] as const).map((s) => {
+            const v = p.signals[s];
+            const pct = v === null || v === undefined ? null : Math.round(v * 100);
+            return (
+              <div key={s} className="signal-meter">
+                <span className="small">{t(`duplicates.signal.${s}`)}</span>
+                <span className="bar" aria-hidden>
+                  <span style={{ width: `${pct ?? 0}%` }} />
+                </span>
+                <span className="pct">{pct === null ? '—' : `${formatNumber(pct)}%`}</span>
+              </div>
+            );
+          })}
+        </section>
+        <section className="panel" aria-labelledby="codes-title">
+          <h2 id="codes-title">{t('duplicates.codes')}</h2>
+          <dl className="dl">
+            <dt>{t('duplicates.householdA')}</dt>
+            <dd>
+              <ShortCode code={p.a.shortCode} size="sm" /> · <Link to={`/app/households/${p.a.id}`}>{t('households.history')}</Link>
+            </dd>
+            <dt>{t('duplicates.householdB')}</dt>
+            <dd>
+              <ShortCode code={p.b.shortCode} size="sm" /> · <Link to={`/app/households/${p.b.id}`}>{t('households.history')}</Link>
+            </dd>
+          </dl>
+        </section>
       </div>
-      <div className="form-actions">
+      <div className="diff" role="table" aria-label={t('duplicates.compare')}>
+        <div className="diff-row head" role="row">
+          <span className="k" role="columnheader">
+            {t('duplicates.detail')}
+          </span>
+          <span role="columnheader">{t('duplicates.householdA')}</span>
+          <span role="columnheader">{t('duplicates.householdB')}</span>
+        </div>
+        {fields.map((f) => {
+          const differs = f.a !== f.b;
+          return (
+            <div key={f.key} className={`diff-row${differs ? ' differs' : ''}`} role="row">
+              <span className="k" role="rowheader">
+                {f.label}
+                {differs && (
+                  <span className="diff-flag">
+                    <StatusMark kind="conflict" size={10} />
+                    {t('duplicates.differs')}
+                  </span>
+                )}
+              </span>
+              <span className="v" role="cell">
+                {f.a}
+              </span>
+              <span className="v" role="cell">
+                {f.b}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="decision-bar">
+        <span className="grow">{p.status === 'pending_review' ? t('duplicates.decide') : t(`duplicates.decided.${p.status}`, { defaultValue: '' })}</span>
         {p.status === 'pending_review' && (
           <>
+            <button type="button" className="btn btn-secondary" onClick={() => void act('not-duplicate', t('duplicates.notDuplicate'))}>
+              {t('duplicates.different')}
+            </button>
             <button type="button" className="btn btn-primary" onClick={() => void act('link', t('duplicates.linked'))}>
               {t('duplicates.same')}
-            </button>
-            <button type="button" className="btn btn-quiet" onClick={() => void act('not-duplicate', t('duplicates.notDuplicate'))}>
-              {t('duplicates.different')}
             </button>
           </>
         )}
@@ -661,19 +800,22 @@ export function FlagsPage() {
   if (!current) return <NeedOperation />;
   return (
     <>
-      <div className="panel-head">
-        <h1>{t('flags.title')}</h1>
-        <button type="button" className="btn btn-quiet" onClick={() => setParams(reviewed ? {} : { status: 'reviewed' })}>
-          {reviewed ? t('flags.showPending') : t('flags.showReviewed')}
-        </button>
-      </div>
-      <p className="muted">{t('flags.intro')}</p>
+      <PageHead
+        title={t('flags.title')}
+        lead={t('flags.intro')}
+        actions={
+          <button type="button" className="btn btn-secondary" onClick={() => setParams(reviewed ? {} : { status: 'reviewed' })}>
+            {reviewed ? t('flags.showPending') : t('flags.showReviewed')}
+          </button>
+        }
+      />
       {data.loading && <Loading />}
       {data.error ? <ErrorState error={data.error} onRetry={data.reload} /> : null}
-      {data.data && data.data.flags.length === 0 && <Empty title={t('flags.none')} />}
+      {data.data && data.data.flags.length === 0 && <Empty title={t('flags.none')} mark="synced" />}
       {data.data && data.data.flags.length > 0 && (
-        <div className="table-wrap">
+        <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={t('flags.title')}>
           <table>
+            <caption className="visually-hidden">{t('flags.title')}</caption>
             <thead>
               <tr>
                 <th scope="col">{t('flags.item')}</th>
@@ -685,16 +827,24 @@ export function FlagsPage() {
             <tbody>
               {data.data.flags.map((f) => (
                 <tr key={f.id}>
-                  <td>
-                    <Link to={`/app/flags/${f.id}`}>{i18n.language === 'bn' && f.itemNameBn ? f.itemNameBn : f.itemName}</Link>
+                  <td className="stack-head">
+                    <Link className="row-link" to={`/app/flags/${f.id}`}>
+                      {i18n.language === 'bn' && f.itemNameBn ? f.itemNameBn : f.itemName}
+                    </Link>
                   </td>
-                  <td>
-                    {f.firstOrganisation}, {formatTime(f.firstAt)}
+                  <td data-label={t('flags.first')}>
+                    <span>
+                      {f.firstOrganisation}
+                      <span className="cell-sub">{formatTime(f.firstAt)}</span>
+                    </span>
                   </td>
-                  <td>
-                    {f.secondOrganisation}, {formatTime(f.secondAt)}
+                  <td data-label={t('flags.second')}>
+                    <span>
+                      {f.secondOrganisation}
+                      <span className="cell-sub">{formatTime(f.secondAt)}</span>
+                    </span>
                   </td>
-                  <td>
+                  <td data-label={t('common.status')}>
                     <StatusTag status={f.status} />
                   </td>
                 </tr>
@@ -731,29 +881,23 @@ export function FlagDetailPage() {
   const item = i18n.language === 'bn' && f.itemNameBn ? f.itemNameBn : f.itemName;
   return (
     <>
-      <p>
-        <Link to="/app/flags">{t('common.back')}</Link>
-      </p>
-      <h1>
-        {t('flags.title')}: {item}
-      </h1>
+      <PageHead title={item} back={{ to: '/app/flags', label: t('flags.title') }} meta={<StatusTag status={f.status} />} />
       {f.householdInDuplicateReview && <Notice tone="warn">{t('flags.inReview')}</Notice>}
-      <div className="grid-2">
+      <div className="compare">
         {[
           { title: t('flags.first'), org: f.firstOrganisation, at: f.firstAt, qty: f.firstQuantity, code: f.firstShortCode, status: f.firstStatus },
           { title: t('flags.second'), org: f.secondOrganisation, at: f.secondAt, qty: f.secondQuantity, code: f.secondShortCode, status: f.secondStatus },
         ].map((s) => (
-          <section key={s.title} className="panel">
+          <section key={s.title} className="compare-side" aria-label={s.title}>
             <h2>{s.title}</h2>
+            <p className="compare-value">
+              {formatNumber(s.qty)} <span className="muted small">{f.unit}</span>
+            </p>
             <dl className="dl">
               <dt>{t('common.organisation')}</dt>
               <dd>{s.org}</dd>
               <dt>{t('common.time')}</dt>
               <dd>{formatTime(s.at)}</dd>
-              <dt>{t('distribution.quantity')}</dt>
-              <dd>
-                {formatNumber(s.qty)} {f.unit}
-              </dd>
               <dt>{t('household.shortCode')}</dt>
               <dd>{s.code ? <ShortCode code={s.code} size="sm" /> : '—'}</dd>
               <dt>{t('common.status')}</dt>
@@ -766,25 +910,27 @@ export function FlagDetailPage() {
       </div>
       {f.status === 'pending' ? (
         <form className="panel" onSubmit={submit}>
-          <fieldset style={{ border: 0, padding: 0 }}>
-            <legend className="label">
-              <strong>{t('common.status')}</strong>
-            </legend>
-            {(['justified', 'repeat'] as const).map((d) => (
-              <label key={d} className="check">
-                <input type="radio" name="decision" checked={decision === d} onChange={() => setDecision(d)} />
-                {t(`flags.${d}`)}
-              </label>
-            ))}
+          <fieldset className="choice-group">
+            <legend>{t('flags.decision')}</legend>
+            <div className="choice-row">
+              {(['justified', 'repeat'] as const).map((d) => (
+                <label key={d} className="check">
+                  <input type="radio" name="decision" checked={decision === d} onChange={() => setDecision(d)} />
+                  {t(`flags.${d}`)}
+                </label>
+              ))}
+            </div>
           </fieldset>
-          <TextField label={t('common.note')} value={note} onChange={(e) => setNote(e.target.value)} />
+          <TextField label={t('common.note')} help={t('flags.noteHelp')} value={note} onChange={(e) => setNote(e.target.value)} autoComplete="off" />
           <button type="submit" className="btn btn-primary" disabled={note.trim().length < 3}>
-            {t('common.save')}
+            {t('flags.saveDecision')}
           </button>
         </form>
       ) : (
         <Notice tone="ok">
-          <StatusTag status={f.status} /> {f.note} ({f.reviewedByName})
+          <span>
+            <StatusTag status={f.status} /> {f.note} ({f.reviewedByName})
+          </span>
         </Notice>
       )}
     </>
@@ -805,25 +951,27 @@ export function HouseholdsPage() {
   if (!current) return <NeedOperation />;
   return (
     <>
-      <h1>{t('households.title')}</h1>
+      <PageHead title={t('households.title')} />
       <form
         className="toolbar"
+        role="search"
         onSubmit={(e) => {
           e.preventDefault();
           setParams(term ? { q: term } : {});
         }}
       >
-        <TextField label={t('households.searchLabel')} type="search" value={term} onChange={(e) => setTerm(e.target.value)} />
+        <TextField label={t('households.searchLabel')} type="search" value={term} onChange={(e) => setTerm(e.target.value)} autoComplete="off" spellCheck={false} />
         <button type="submit" className="btn btn-primary">
           {t('common.search')}
         </button>
       </form>
       {data.loading && <Loading />}
       {data.error ? <ErrorState error={data.error} onRetry={data.reload} /> : null}
-      {data.data && data.data.households.length === 0 && <Empty title={t('search.none')} />}
+      {data.data && data.data.households.length === 0 && <Empty title={t('search.none')} mark="not_served" />}
       {data.data && data.data.households.length > 0 && (
-        <div className="table-wrap">
+        <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={t('households.title')}>
           <table>
+            <caption className="visually-hidden">{t('households.title')}</caption>
             <thead>
               <tr>
                 <th scope="col">{t('household.shortCode')}</th>
@@ -838,15 +986,19 @@ export function HouseholdsPage() {
             <tbody>
               {data.data.households.map((h) => (
                 <tr key={h.id}>
-                  <td>
+                  <td className="stack-head">
                     <Link to={`/app/households/${h.id}`}>
                       <ShortCode code={h.shortCode} size="sm" />
                     </Link>
                   </td>
-                  <td>{h.redacted ? t('household.redacted') : h.headName}</td>
-                  <td className="short-code-sm">{h.mobile ?? h.mobileMasked ?? '—'}</td>
-                  <td className="num">{formatNumber(h.memberCount)}</td>
-                  <td>{h.organisationName}</td>
+                  <td data-label={t('household.headName')}>{h.redacted ? t('household.redacted') : h.headName}</td>
+                  <td data-label={t('household.mobile')} className="tabular">
+                    {h.mobile ?? h.mobileMasked ?? '—'}
+                  </td>
+                  <td className="num" data-label={t('household.members')}>
+                    {formatNumber(h.memberCount)}
+                  </td>
+                  <td data-label={t('common.organisation')}>{h.organisationName}</td>
                 </tr>
               ))}
             </tbody>
@@ -871,7 +1023,7 @@ interface HistoryEntry {
 
 export function HouseholdDetailPage() {
   const { id = '' } = useParams();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const detail = useApiData(
     (signal) => api.get<{ household: HouseholdDTO; area: { upazila: string; union_name: string; ward: string }; distributions: DistributionDTO[] }>(`/api/households/${id}`, signal),
     [id],
@@ -882,18 +1034,21 @@ export function HouseholdDetailPage() {
   const { household: h, area } = detail.data;
   return (
     <>
-      <p>
-        <Link to="/app/households">{t('common.back')}</Link>
-      </p>
+      <PageHead
+        title={h.redacted ? t('household.redactedTitle') : (h.headName ?? '')}
+        back={{ to: '/app/households', label: t('households.title') }}
+        meta={<span>{t('household.version', { n: h.version })}</span>}
+      />
       <div className="grid-2">
-        <section className="hh-card">
-          <ShortCode code={h.shortCode} />
+        <article className="hh-card">
+          <div className="hh-card-head">
+            <span className="hh-card-label">{t('household.shortCode')}</span>
+            <ShortCode code={h.shortCode} />
+          </div>
           {h.redacted ? (
             <p>{t('household.redacted')}</p>
           ) : (
             <dl className="dl">
-              <dt>{t('household.headName')}</dt>
-              <dd>{h.headName}</dd>
               <dt>{t('household.mobile')}</dt>
               <dd>{h.mobile ?? h.mobileMasked ?? '—'}</dd>
               <dt>{t('household.members')}</dt>
@@ -906,48 +1061,48 @@ export function HouseholdDetailPage() {
               <dd>{h.organisationName}</dd>
             </dl>
           )}
-          <p className="small muted">{t('household.version', { n: h.version })}</p>
-        </section>
-        <section className="panel">
-          <h2>{t('household.pastDistributions')}</h2>
+        </article>
+        <section className="panel" aria-labelledby="dist-title">
+          <h2 id="dist-title">{t('household.pastDistributions')}</h2>
           {detail.data.distributions.length === 0 ? (
             <p className="muted">{t('household.noDistributions')}</p>
           ) : (
-            <ul className="list">
+            <ul className="list history-list">
               {detail.data.distributions.map((d) => (
-                <li key={d.id} className="list-row">
-                  <span>
-                    {formatTime(d.distributedAt)}, {d.organisationName}
-                    {d.status === 'voided' && <span className="tag tag-danger"> {t('distribution.voided', { reason: d.cancelReason ?? '' })}</span>}
-                  </span>
-                  <span className="small">{d.items.reduce((s, i) => s + i.quantity, 0)}</span>
+                <li key={d.id} className={d.status === 'voided' ? 'voided' : undefined}>
+                  <div className="history-head">
+                    <strong className="tabular">{formatTime(d.distributedAt)}</strong>
+                    <span className="small muted">{d.organisationName}</span>
+                    {d.status === 'voided' && <StatusTag status="voided" label={t('distribution.voided', { reason: d.cancelReason ?? '' })} />}
+                  </div>
+                  <span className="history-items small">{t('households.itemsGiven', { count: d.items.reduce((s, i) => s + i.quantity, 0) })}</span>
                 </li>
               ))}
             </ul>
           )}
         </section>
       </div>
-      <section className="panel">
-        <h2>{t('households.historyTitle')}</h2>
+      <section className="panel" aria-labelledby="history-title">
+        <h2 id="history-title">{t('households.historyTitle')}</h2>
         {history.loading && <Loading />}
         {history.error ? <Notice tone="error">{t('households.historyEmpty')}</Notice> : null}
         {history.data && (
-          <ol className="list">
+          <ol className="list history-list">
             {history.data.history.map((e) => (
-              <li key={e.id} style={{ padding: '10px 0' }}>
-                <strong>{t(`households.actions.${e.action.replace(/\./g, '_')}`, { defaultValue: e.action })}</strong>{' '}
-                <span className="muted">{formatTime(e.createdAt)}</span>
-                <br />
-                <span className="small">
-                  {[e.userName, e.organisationName, e.deviceLabel].filter(Boolean).join(', ')}
-                  {e.changedFields?.length ? `. ${t('audit.fields')}: ${e.changedFields.map((f) => t(`conflicts.fields.${f}`, { defaultValue: f })).join(', ')}` : ''}
+              <li key={e.id}>
+                <div className="history-head">
+                  <strong>{t(`households.actions.${e.action.replace(/\./g, '_')}`, { defaultValue: e.action })}</strong>
+                  <span className="small muted tabular">{formatTime(e.createdAt)}</span>
+                </div>
+                <span className="small muted">
+                  {[e.userName, e.organisationName, e.deviceLabel].filter(Boolean).join(' · ')}
+                  {e.changedFields?.length ? ` · ${t('audit.fields')}: ${e.changedFields.map((f) => t(`conflicts.fields.${f}`, { defaultValue: f })).join(', ')}` : ''}
                 </span>
               </li>
             ))}
           </ol>
         )}
       </section>
-      <span hidden lang={i18n.language} />
     </>
   );
 }
@@ -984,32 +1139,35 @@ export function ReportsPage() {
   };
   return (
     <>
-      <h1>{t('reports.title')}</h1>
-      {message && <Notice tone={message.tone}>{message.text}</Notice>}
-      <form className="panel" onSubmit={generate}>
+      <PageHead title={t('reports.title')} lead={t('reports.intro')} />
+      <form className="panel" onSubmit={generate} style={{ maxWidth: '44rem' }}>
         <SelectField label={t('reports.type')} value={type} onChange={(e) => setType(e.target.value)}>
           {role === 'GROUP_COORDINATOR' && <option value="organisation">{t('reports.organisation')}</option>}
           {role !== 'GROUP_COORDINATOR' && <option value="operation">{t('reports.operation')}</option>}
         </SelectField>
-        <div className="grid-2">
+        <div className="form-grid">
           <TextField label={t('reports.from')} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-          <TextField label={t('reports.to')} type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <TextField label={t('reports.to')} type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} />
         </div>
-        <fieldset style={{ border: 0, padding: 0, marginBottom: 16 }}>
-          <legend className="label">
-            <strong>{t('reports.format')}</strong>
-          </legend>
-          {(['pdf', 'csv'] as const).map((f) => (
-            <label key={f} className="check">
-              <input type="radio" name="format" checked={format === f} onChange={() => setFormat(f)} />
-              {f.toUpperCase()}
-            </label>
-          ))}
+        <p className="small muted">{t('reports.rangeHelp')}</p>
+        <fieldset className="choice-group">
+          <legend>{t('reports.format')}</legend>
+          <div className="choice-row">
+            {(['pdf', 'csv'] as const).map((f) => (
+              <label key={f} className="check">
+                <input type="radio" name="format" checked={format === f} onChange={() => setFormat(f)} />
+                {f.toUpperCase()}
+              </label>
+            ))}
+          </div>
         </fieldset>
         <button type="submit" className="btn btn-primary" disabled={busy}>
           {format === 'pdf' ? <FileText size={18} aria-hidden /> : <Download size={18} aria-hidden />}
-          {t('reports.generate')}
+          {busy ? t('reports.generating') : t('reports.generate')}
         </button>
+        <div aria-live="polite" className="mt-4">
+          {message && <Notice tone={message.tone}>{message.text}</Notice>}
+        </div>
       </form>
     </>
   );
@@ -1035,34 +1193,43 @@ export function NotificationsPage() {
     if (n.link) navigate(n.link);
     else data.reload();
   };
+  const unread = data.data?.unread ?? 0;
   return (
     <>
-      <div className="panel-head">
-        <h1>{t('notifications.title')}</h1>
-        <button
-          type="button"
-          className="btn btn-quiet"
-          onClick={() => {
-            void api.post('/api/notifications/read-all').then(data.reload);
-          }}
-        >
-          {t('notifications.markAll')}
-        </button>
-      </div>
+      <PageHead
+        title={t('notifications.title')}
+        actions={
+          unread > 0 ? (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                void api.post('/api/notifications/read-all').then(data.reload);
+              }}
+            >
+              {t('notifications.markAll')}
+            </button>
+          ) : undefined
+        }
+      />
       {data.loading && !data.data && <Loading />}
       {data.error ? <ErrorState error={data.error} onRetry={data.reload} /> : null}
-      {data.data && data.data.notifications.length === 0 && <Empty title={t('notifications.none')} />}
+      {data.data && data.data.notifications.length === 0 && (
+        <Empty title={t('notifications.none')} mark="synced">
+          {t('notifications.noneHint')}
+        </Empty>
+      )}
       {data.data && data.data.notifications.length > 0 && (
         <ul className="list panel">
           {data.data.notifications.map((n) => (
-            <li key={n.id} className="list-row">
-              <span>
-                {n.isRead ? text(n.type, n.params) : <strong>{text(n.type, n.params)}</strong>}
-                <br />
-                <span className="small muted">{formatTime(n.createdAt)}</span>
+            <li key={n.id} className={`list-row${n.isRead ? '' : ' unread'}`}>
+              <span className="list-main">
+                <span className={n.isRead ? undefined : 'list-title'}>{text(n.type, n.params)}</span>
+                <span className="list-sub tabular">{formatTime(n.createdAt)}</span>
               </span>
-              <button type="button" className="btn btn-quiet" onClick={() => void open(n)}>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => void open(n)}>
                 {t('common.open')}
+                <ChevronRight size={16} aria-hidden />
               </button>
             </li>
           ))}

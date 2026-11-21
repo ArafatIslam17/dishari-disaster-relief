@@ -41,6 +41,9 @@
   --shell-line: oklch(0.38 0.04 215);
   --on-shell: oklch(0.97 0.01 200);
   --on-shell-2: oklch(0.82 0.025 205);
+  /* status marks drawn on the ink shell (sync chip) */
+  --ok-on-shell: oklch(0.82 0.13 155);
+  --bad-on-shell: oklch(0.78 0.14 30);
   --teal: oklch(0.42 0.08 205);
   --teal-strong: oklch(0.345 0.072 208);
   --teal-tint: oklch(0.935 0.028 200);

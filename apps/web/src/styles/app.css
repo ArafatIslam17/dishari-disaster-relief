@@ -967,6 +967,10 @@ td .cell-sub {
     border: 0;
     text-align: left;
   }
+  .stack-table td > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
   .stack-table td::before {
     content: attr(data-label);
     color: var(--ink-2);
@@ -1535,13 +1539,13 @@ dialog::backdrop {
   color: var(--marigold);
 }
 .sync-chip[data-state='synced'] .mark {
-  color: oklch(0.82 0.13 155);
+  color: var(--ok-on-shell);
 }
 .sync-chip[data-state='failed'] {
-  border-color: oklch(0.72 0.14 30);
+  border-color: var(--bad-on-shell);
 }
 .sync-chip[data-state='failed'] .mark {
-  color: oklch(0.78 0.14 30);
+  color: var(--bad-on-shell);
 }
 @media (prefers-reduced-motion: no-preference) {
   .sync-chip[data-state='running'] .mark {
@@ -1683,12 +1687,16 @@ dialog::backdrop {
   color: var(--ink);
 }
 .home-stats {
+  padding: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0 0 var(--s4);
   border: 1px solid var(--line);
   border-radius: var(--r-1);
   background: var(--surface);
+}
+.home-stats dd {
+  margin: 0;
 }
 .home-stats > div {
   padding: var(--s3);
@@ -1764,7 +1772,8 @@ dialog::backdrop {
 .menu-list li + li {
   border-top: 1px solid var(--line);
 }
-.menu-list a {
+.menu-list a,
+.menu-button {
   display: flex;
   align-items: center;
   gap: var(--s3);
@@ -1775,11 +1784,21 @@ dialog::backdrop {
   font-weight: var(--w-strong);
   transition: background-color var(--dur-1) var(--ease);
 }
-.menu-list a:hover {
+.menu-button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.menu-list a:hover,
+.menu-button:hover {
   background: var(--surface-2);
   color: var(--ink);
 }
-.menu-list a > .lucide:first-child {
+.menu-list a > .lucide:first-child,
+.menu-button > .lucide:first-child {
   color: var(--teal);
 }
 .menu-label {
@@ -2219,7 +2238,7 @@ dialog::backdrop {
 .aside-promise {
   max-width: 28rem;
 }
-.aside-promise h2 {
+.aside-title {
   color: var(--on-shell);
   font-size: clamp(1.6rem, 1.1rem + 1.4vw, 2.3rem);
   font-weight: 500;
@@ -2228,7 +2247,7 @@ dialog::backdrop {
   letter-spacing: -0.02em;
   margin-bottom: var(--s4);
 }
-:lang(bn) .aside-promise h2 {
+:lang(bn) .aside-title {
   line-height: 1.4;
   letter-spacing: 0;
 }
@@ -2257,6 +2276,7 @@ dialog::backdrop {
   --mark-knock: var(--shell);
 }
 .aside-foot {
+  margin-top: var(--s4);
   font-size: var(--t-xs);
   color: var(--on-shell-2);
 }
@@ -2386,10 +2406,11 @@ dialog::backdrop {
   min-width: 0;
 }
 .diff-row.differs {
-  background: color-mix(in oklch, var(--pending-bg) 55%, var(--surface));
+  background: var(--marigold-tint);
 }
 .diff-flag {
-  display: inline-flex;
+  display: flex;
+  width: fit-content;
   align-items: center;
   gap: 4px;
   margin-top: 2px;
@@ -2473,4 +2494,42 @@ dialog::backdrop {
   .dash {
     display: block;
   }
+}
+
+/* ---------- disclosure for secondary filters ---------- */
+.more-filters {
+  margin: 0 0 var(--s4);
+}
+.more-filters summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  color: var(--teal);
+  font-size: var(--t-sm);
+  font-weight: var(--w-strong);
+  cursor: pointer;
+}
+.more-filters[open] summary {
+  margin-bottom: var(--s2);
+}
+
+.pin-field input {
+  font-size: 1.6rem;
+  letter-spacing: 0.4em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-height: 56px;
+}
+.pin-field label {
+  font-size: var(--t-base);
+}
+
+.table-wrap:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.dash-nav .brand img,
+.public-aside .brand img {
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--shell-line);
 }

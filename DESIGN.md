@@ -20,6 +20,8 @@ colors:
   teal-tint: "oklch(0.935 0.028 200)"    # selected row, active nav on light
   marigold: "oklch(0.81 0.155 76)"       # the hoist: field primary action, pending counts, current tab
   marigold-strong: "oklch(0.75 0.16 68)"
+  ok-on-shell: "oklch(0.82 0.13 155)"     # synced mark on the ink shell
+  bad-on-shell: "oklch(0.78 0.14 30)"     # failed mark on the ink shell
   status:
     served: "oklch(0.46 0.11 155)"
     partly: "oklch(0.50 0.105 62)"

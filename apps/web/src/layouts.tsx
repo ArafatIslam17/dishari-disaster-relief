@@ -33,7 +33,7 @@ import {
 import type { Role } from '@relief/shared';
 import { api } from './api/client';
 import { useSession } from './auth/session';
-import { formatNumber, formatTime } from './i18n';
+import { formatNumber, formatShortTime } from './i18n';
 import { syncManager } from './local/sync';
 import { LangSwitch, StatusMark, ThemeToggle, useApiData, type MarkKind } from './ui/kit';
 
@@ -83,7 +83,7 @@ export function FieldLayout() {
               <span className="sync-chip-main">
                 {state === 'running' ? t('status.syncing') : status.pending > 0 ? t('status.pending', { count: status.pending }) : t('status.allSynced')}
               </span>
-              <span className="sync-chip-sub">{status.lastSyncAt ? t('status.lastSync', { time: formatTime(status.lastSyncAt) }) : t('status.neverSynced')}</span>
+              <span className="sync-chip-sub">{status.lastSyncAt ? t('status.lastSyncShort', { time: formatShortTime(status.lastSyncAt) }) : t('status.neverSynced')}</span>
             </span>
           </Link>
           <span className="status-actions">

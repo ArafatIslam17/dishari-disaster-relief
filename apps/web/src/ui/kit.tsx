@@ -400,8 +400,9 @@ export function LangSwitch({ compact = false }: { compact?: boolean }) {
   if (compact) {
     const next: Lang = i18n.language === 'bn' ? 'en' : 'bn';
     return (
-      <button type="button" className="lang-toggle" onClick={() => choose(next)} lang={next} aria-label={`${t('app.language')}: ${next === 'bn' ? 'বাংলা' : 'English'}`}>
-        {next === 'bn' ? 'বাং' : 'EN'}
+      <button type="button" className="lang-toggle" onClick={() => choose(next)} title={next === 'bn' ? 'বাংলা' : 'English'}>
+        <span className="visually-hidden">{t('app.language')}: </span>
+        <span lang={next}>{next === 'bn' ? 'বাং' : 'EN'}</span>
       </button>
     );
   }
