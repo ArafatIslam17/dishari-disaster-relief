@@ -1,0 +1,131 @@
+{
+  "base": "http://localhost:4173",
+  "measuredAt": "2026-11-22T00:10:34.135Z",
+  "lighthouse": [
+    {
+      "name": "login (public)",
+      "url": "/login",
+      "finalUrl": "/login",
+      "formFactor": "mobile",
+      "runtimeError": null,
+      "attempts": 1,
+      "performance": 99,
+      "accessibility": 100,
+      "bestPractices": 96,
+      "seo": 92,
+      "fcp": "0.2 s",
+      "lcp": "0.3 s",
+      "tbt": "130 ms",
+      "cls": "0",
+      "failing": [
+        "inspector-issues",
+        "robots-txt",
+        "bf-cache"
+      ]
+    },
+    {
+      "name": "field cold start (opens on PIN unlock)",
+      "url": "/field",
+      "finalUrl": "/unlock",
+      "formFactor": "mobile",
+      "runtimeError": null,
+      "attempts": 1,
+      "performance": 96,
+      "accessibility": 100,
+      "bestPractices": 96,
+      "seo": 92,
+      "fcp": "0.2 s",
+      "lcp": "0.7 s",
+      "tbt": "220 ms",
+      "cls": "0",
+      "failing": [
+        "inspector-issues",
+        "robots-txt",
+        "bf-cache"
+      ]
+    },
+    {
+      "name": "dashboard coverage",
+      "url": "/app/coverage",
+      "finalUrl": "/app/coverage",
+      "formFactor": "desktop",
+      "runtimeError": null,
+      "attempts": 1,
+      "performance": 100,
+      "accessibility": 100,
+      "bestPractices": 96,
+      "seo": 92,
+      "fcp": "0.1 s",
+      "lcp": "0.2 s",
+      "tbt": "0 ms",
+      "cls": "0",
+      "failing": [
+        "inspector-issues",
+        "robots-txt",
+        "bf-cache"
+      ]
+    },
+    {
+      "name": "dashboard duplicates",
+      "url": "/app/duplicates",
+      "finalUrl": "/app/duplicates",
+      "formFactor": "desktop",
+      "runtimeError": null,
+      "attempts": 1,
+      "performance": 100,
+      "accessibility": 100,
+      "bestPractices": 96,
+      "seo": 92,
+      "fcp": "0.1 s",
+      "lcp": "0.3 s",
+      "tbt": "0 ms",
+      "cls": "0",
+      "failing": [
+        "inspector-issues",
+        "robots-txt",
+        "bf-cache"
+      ]
+    },
+    {
+      "name": "dashboard operation setup",
+      "url": "/app/operations",
+      "finalUrl": "/app/operations",
+      "formFactor": "desktop",
+      "runtimeError": null,
+      "attempts": 1,
+      "performance": 100,
+      "accessibility": 100,
+      "bestPractices": 96,
+      "seo": 92,
+      "fcp": "0.1 s",
+      "lcp": "0.2 s",
+      "tbt": "0 ms",
+      "cls": "0",
+      "failing": [
+        "inspector-issues",
+        "robots-txt",
+        "bf-cache"
+      ]
+    }
+  ],
+  "pwa": {
+    "name": "Relief Coordination",
+    "shortName": "Relief",
+    "display": "standalone",
+    "startUrl": "/",
+    "themeColor": "#012831",
+    "backgroundColor": "#f1f7f8",
+    "icons": [
+      "192x192",
+      "512x512",
+      "512x512 maskable",
+      "any"
+    ],
+    "has192": true,
+    "has512": true,
+    "hasMaskable": true,
+    "serviceWorkerControls": true,
+    "offlineReloadRenders": "লগইন",
+    "pass": true
+  }
+}

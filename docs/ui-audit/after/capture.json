@@ -1,0 +1,1886 @@
+{
+ "base": "http://localhost:5173",
+ "theme": "light",
+ "startedAt": "2026-11-21T23:54:41.538Z",
+ "routes": [
+  {
+   "role": "public",
+   "lang": "en",
+   "name": "login",
+   "url": "/login",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "public",
+   "lang": "en",
+   "name": "register",
+   "url": "/register",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "public",
+   "lang": "en",
+   "name": "register-organisation",
+   "url": "/register-organisation",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "public",
+   "lang": "en",
+   "name": "invite-not-a-real-token",
+   "url": "/invite/not-a-real-token",
+   "console": [
+    "error: Failed to load resource: the server responded with a status of 400 (Bad Request)"
+   ],
+   "network": [
+    "400 GET /api/invites/not-a-real-token"
+   ],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "public",
+   "lang": "bn",
+   "name": "login",
+   "url": "/login",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "public",
+   "lang": "bn",
+   "name": "register",
+   "url": "/register",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "public",
+   "lang": "bn",
+   "name": "register-organisation",
+   "url": "/register-organisation",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "public",
+   "lang": "bn",
+   "name": "invite-not-a-real-token",
+   "url": "/invite/not-a-real-token",
+   "console": [
+    "error: Failed to load resource: the server responded with a status of 400 (Bad Request)"
+   ],
+   "network": [
+    "400 GET /api/invites/not-a-real-token"
+   ],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "set-pin",
+   "url": "/set-pin",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-choose-operation",
+   "url": "/field",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-home-no-areas",
+   "url": "/field",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field",
+   "url": "/field",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-areas",
+   "url": "/field/areas",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-search",
+   "url": "/field/search",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-search-results",
+   "url": "/field/search",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-household",
+   "url": "/field/households/01a1ff69-20d7-7605-9050-538c7239ad17",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-distribute",
+   "url": "/field/households/01a1ff69-20d7-7605-9050-538c7239ad17/distribute",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-households-new",
+   "url": "/field/households/new",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-households-new-form",
+   "url": "/field/households/new",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-anonymous",
+   "url": "/field/anonymous",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-sync",
+   "url": "/field/sync",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-unserved",
+   "url": "/field/unserved",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-notifications",
+   "url": "/field/notifications",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-settings",
+   "url": "/field/settings",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-offline",
+   "url": "/field",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "field-sync-offline",
+   "url": "/field/sync",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "en",
+   "name": "unlock",
+   "url": "/unlock",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "set-pin",
+   "url": "/set-pin",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-choose-operation",
+   "url": "/field",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-home-no-areas",
+   "url": "/field",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field",
+   "url": "/field",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-areas",
+   "url": "/field/areas",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-search",
+   "url": "/field/search",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-search-results",
+   "url": "/field/search",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-household",
+   "url": "/field/households/01a1ff69-20d7-7605-9050-538c7239ad17",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-distribute",
+   "url": "/field/households/01a1ff69-20d7-7605-9050-538c7239ad17/distribute",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-households-new",
+   "url": "/field/households/new",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-households-new-form",
+   "url": "/field/households/new",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-anonymous",
+   "url": "/field/anonymous",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-sync",
+   "url": "/field/sync",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-unserved",
+   "url": "/field/unserved",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-notifications",
+   "url": "/field/notifications",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-settings",
+   "url": "/field/settings",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-offline",
+   "url": "/field",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "field-sync-offline",
+   "url": "/field/sync",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "fv",
+   "lang": "bn",
+   "name": "unlock",
+   "url": "/unlock",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-coverage",
+   "url": "/app/coverage",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-coverage-unserved",
+   "url": "/app/coverage/01a1ff69-2097-7fc8-98f3-4da6cc294b9b/unserved",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-households",
+   "url": "/app/households",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-household-detail",
+   "url": "/app/households/01a1ff69-20da-7918-8a4d-09488f71c292",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-conflicts",
+   "url": "/app/conflicts",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-conflict-detail",
+   "url": "/app/conflicts/01a1ff69-2614-740c-946a-f02bcf58c576",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-duplicates",
+   "url": "/app/duplicates",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-duplicate-detail",
+   "url": "/app/duplicates/01a1ff69-262f-77b7-8ef3-5c4fbe1d557f",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-flags",
+   "url": "/app/flags",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-flag-detail",
+   "url": "/app/flags/01a1ff69-2707-7ced-80e1-afbf265b09c5",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-members",
+   "url": "/app/members",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-join",
+   "url": "/app/join",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-reports",
+   "url": "/app/reports",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-notifications",
+   "url": "/app/notifications",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "en",
+   "name": "app-account",
+   "url": "/app/account",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-coverage",
+   "url": "/app/coverage",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-coverage-unserved",
+   "url": "/app/coverage/01a1ff69-2097-7fc8-98f3-4da6cc294b9b/unserved",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-households",
+   "url": "/app/households",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-household-detail",
+   "url": "/app/households/01a1ff69-20da-7918-8a4d-09488f71c292",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-conflicts",
+   "url": "/app/conflicts",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-conflict-detail",
+   "url": "/app/conflicts/01a1ff69-2614-740c-946a-f02bcf58c576",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-duplicates",
+   "url": "/app/duplicates",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-duplicate-detail",
+   "url": "/app/duplicates/01a1ff69-262f-77b7-8ef3-5c4fbe1d557f",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-flags",
+   "url": "/app/flags",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-flag-detail",
+   "url": "/app/flags/01a1ff69-2707-7ced-80e1-afbf265b09c5",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-members",
+   "url": "/app/members",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-join",
+   "url": "/app/join",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-reports",
+   "url": "/app/reports",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-notifications",
+   "url": "/app/notifications",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "gc",
+   "lang": "bn",
+   "name": "app-account",
+   "url": "/app/account",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "oa",
+   "lang": "en",
+   "name": "app-operations",
+   "url": "/app/operations",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "oa",
+   "lang": "en",
+   "name": "app-operation-detail",
+   "url": "/app/operations/01a1ff69-2080-7264-a618-6a1e99d3f4fc",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "oa",
+   "lang": "en",
+   "name": "app-coverage",
+   "url": "/app/coverage",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "oa",
+   "lang": "en",
+   "name": "app-flags",
+   "url": "/app/flags",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "oa",
+   "lang": "en",
+   "name": "app-audit",
+   "url": "/app/audit",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "oa",
+   "lang": "en",
+   "name": "app-reports",
+   "url": "/app/reports",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "oa",
+   "lang": "en",
+   "name": "app-account",
+   "url": "/app/account",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "oa",
+   "lang": "bn",
+   "name": "app-operations",
+   "url": "/app/operations",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "oa",
+   "lang": "bn",
+   "name": "app-operation-detail",
+   "url": "/app/operations/01a1ff69-2080-7264-a618-6a1e99d3f4fc",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "oa",
+   "lang": "bn",
+   "name": "app-coverage",
+   "url": "/app/coverage",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "oa",
+   "lang": "bn",
+   "name": "app-flags",
+   "url": "/app/flags",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "oa",
+   "lang": "bn",
+   "name": "app-audit",
+   "url": "/app/audit",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "oa",
+   "lang": "bn",
+   "name": "app-reports",
+   "url": "/app/reports",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "oa",
+   "lang": "bn",
+   "name": "app-account",
+   "url": "/app/account",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "sa",
+   "lang": "en",
+   "name": "app-admin-organisations",
+   "url": "/app/admin/organisations",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "sa",
+   "lang": "en",
+   "name": "app-admin-users",
+   "url": "/app/admin/users",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "sa",
+   "lang": "en",
+   "name": "app-admin-disaster-types",
+   "url": "/app/admin/disaster-types",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "sa",
+   "lang": "en",
+   "name": "app-admin-system",
+   "url": "/app/admin/system",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "sa",
+   "lang": "en",
+   "name": "app-audit",
+   "url": "/app/audit",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "sa",
+   "lang": "en",
+   "name": "app-coverage",
+   "url": "/app/coverage",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "sa",
+   "lang": "bn",
+   "name": "app-admin-organisations",
+   "url": "/app/admin/organisations",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "sa",
+   "lang": "bn",
+   "name": "app-admin-users",
+   "url": "/app/admin/users",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "sa",
+   "lang": "bn",
+   "name": "app-admin-disaster-types",
+   "url": "/app/admin/disaster-types",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "sa",
+   "lang": "bn",
+   "name": "app-admin-system",
+   "url": "/app/admin/system",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "sa",
+   "lang": "bn",
+   "name": "app-audit",
+   "url": "/app/audit",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "sa",
+   "lang": "bn",
+   "name": "app-coverage",
+   "url": "/app/coverage",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "ob",
+   "lang": "en",
+   "name": "app-coverage",
+   "url": "/app/coverage",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "ob",
+   "lang": "en",
+   "name": "app-reports",
+   "url": "/app/reports",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "ob",
+   "lang": "en",
+   "name": "app-notifications",
+   "url": "/app/notifications",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "ob",
+   "lang": "en",
+   "name": "app-account",
+   "url": "/app/account",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": []
+  },
+  {
+   "role": "ob",
+   "lang": "bn",
+   "name": "app-coverage",
+   "url": "/app/coverage",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "ob",
+   "lang": "bn",
+   "name": "app-reports",
+   "url": "/app/reports",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "ob",
+   "lang": "bn",
+   "name": "app-notifications",
+   "url": "/app/notifications",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  },
+  {
+   "role": "ob",
+   "lang": "bn",
+   "name": "app-account",
+   "url": "/app/account",
+   "console": [],
+   "network": [],
+   "axe": [],
+   "overflow": {
+    "360": 0,
+    "390": 0,
+    "768": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "detect": null
+  }
+ ],
+ "finishedAt": "2026-11-22T00:02:07.655Z"
+}

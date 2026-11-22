@@ -16,7 +16,7 @@ import { Link } from 'react-router';
 import { AlertTriangle, ArrowLeft, CheckCircle2, Info, Minus, Monitor, Moon, Plus, Sun, WifiOff, X } from 'lucide-react';
 import { formatShortCode, type CoverageLabel } from '@relief/shared';
 import { ApiError } from '../api/client';
-import { setLang, type Lang } from '../i18n';
+import { formatShortTime, setLang, type Lang } from '../i18n';
 import { getTheme, setTheme, subscribeTheme, type ThemeChoice } from '../theme';
 
 /** Translates an API or validation error code into a sentence. */
@@ -28,7 +28,7 @@ export function useErrorText() {
         const key = `errors.${err.code}`;
         const params: Record<string, string> = { ...(err.details as Record<string, string> | undefined) };
         if (err.code === 'account_locked' && params.lockedUntil) {
-          params.time = new Date(params.lockedUntil).toLocaleTimeString(i18n.language === 'bn' ? 'bn-BD' : 'en-GB');
+          params.time = formatShortTime(params.lockedUntil);
         }
         return i18n.exists(key) ? t(key, params) : t(err.status === 0 ? 'errors.network' : 'errors.unexpected');
       }

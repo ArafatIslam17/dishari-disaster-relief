@@ -1,5 +1,5 @@
 // Lighthouse scores for the production build, plus the PWA checks Lighthouse 12 no longer runs.
-//   node apps/web/scripts/lighthouse.mjs [--base http://127.0.0.1:4173] [--out docs/ui-audit/lighthouse.json]
+//   node apps/web/scripts/lighthouse.mjs [--base http://localhost:4173] [--out docs/ui-audit/lighthouse.json]
 // Serve the build first: `node scripts/workspace.mjs api e2e:server` (seeded PGlite + PWA on 4173).
 // A persistent Chromium profile is logged in through Playwright, so Lighthouse audits real
 // signed-in pages with storage kept between runs (disableStorageReset).
@@ -14,7 +14,7 @@ const arg = (name, def) => {
   const i = process.argv.indexOf(`--${name}`);
   return i > -1 ? process.argv[i + 1] : def;
 };
-const BASE = arg('base', 'http://127.0.0.1:4173');
+const BASE = arg('base', 'http://localhost:4173'); // must match an allowed CORS origin
 const OUT = resolve(arg('out', 'docs/ui-audit/lighthouse.json'));
 const PORT = 9444;
 const PASSWORD = 'Relief2026demo';
@@ -39,6 +39,8 @@ async function login(page, mobile) {
 
 async function fieldSetup(page) {
   await login(page, '01855000001');
+  // The app moves on to /set-pin a moment after landing on /field.
+  await page.waitForURL((u) => u.pathname === '/set-pin', { timeout: 10_000 }).catch(() => {});
   if (page.url().includes('/set-pin')) {
     const pins = page.locator('input[type=password]');
     await pins.nth(0).fill('2468');
@@ -51,26 +53,39 @@ async function fieldSetup(page) {
 const results = { base: BASE, measuredAt: new Date().toISOString(), lighthouse: [], pwa: {} };
 const profile = mkdtempSync(join(tmpdir(), 'relief-lh-'));
 let context = null;
-let current = null;
+let current; // undefined, so the first run (account null) still launches a browser
 
 for (const run of runs) {
   if (current !== run.account) {
     await context?.close();
-    context = await chromium.launchPersistentContext(profile + (run.account ?? 'anon'), { args: [`--remote-debugging-port=${PORT}`], headless: true });
+    context = await chromium.launchPersistentContext(profile + (run.account ?? 'anon'), { args: [`--remote-debugging-port=${PORT}`], headless: true, channel: 'chromium' });
     const page = context.pages()[0] ?? (await context.newPage());
     if (run.account === 'field') await fieldSetup(page);
     else if (run.account) await login(page, run.account);
+    else {
+      // Warm visit, so the public page is measured like the signed-in ones (service worker installed).
+      await page.goto(`${BASE}/login`);
+      await page.evaluate(() => localStorage.setItem('relief.lang', 'en'));
+      await page.reload();
+    }
     current = run.account;
   }
   const flags = { port: PORT, output: 'json', logLevel: 'error', disableStorageReset: true, onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'] };
-  const r = await lighthouse(`${BASE}${run.path}`, flags, run.form === 'desktop' ? desktopConfig : undefined);
-  const lhr = r.lhr;
+  // A runtime error (NO_NAVSTART, NO_FCP) means Lighthouse measured nothing, so retry up to 3 attempts.
+  let lhr;
+  let attempts = 0;
+  do {
+    attempts += 1;
+    lhr = (await lighthouse(`${BASE}${run.path}`, flags, run.form === 'desktop' ? desktopConfig : undefined)).lhr;
+  } while (lhr.runtimeError && attempts < 3);
   const score = (c) => Math.round((lhr.categories[c]?.score ?? 0) * 100);
   const entry = {
     name: run.name,
     url: run.path,
     finalUrl: lhr.finalDisplayedUrl.replace(BASE, ''),
     formFactor: run.form,
+    runtimeError: lhr.runtimeError?.code ?? null,
+    attempts,
     performance: score('performance'),
     accessibility: score('accessibility'),
     bestPractices: score('best-practices'),
@@ -84,7 +99,7 @@ for (const run of runs) {
       .map((a) => a.id),
   };
   results.lighthouse.push(entry);
-  console.info(`${entry.name}: perf ${entry.performance}, a11y ${entry.accessibility}, bp ${entry.bestPractices}, seo ${entry.seo} (${entry.finalUrl}) LCP ${entry.lcp} CLS ${entry.cls}${entry.failing.length ? ` failing: ${entry.failing.join(', ')}` : ''}`);
+  console.info(`${entry.name}${entry.runtimeError ? ` [${entry.runtimeError}]` : ""}: perf ${entry.performance}, a11y ${entry.accessibility}, bp ${entry.bestPractices}, seo ${entry.seo} (${entry.finalUrl}) LCP ${entry.lcp} CLS ${entry.cls}${entry.failing.length ? ` failing: ${entry.failing.join(', ')}` : ''}`);
 }
 await context?.close();
 

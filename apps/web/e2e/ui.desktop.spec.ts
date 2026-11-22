@@ -65,7 +65,7 @@ test('F43: removing an area asks for confirmation first', async ({ page }) => {
   await login(page, ACCOUNTS.opadmin);
   await page.getByRole('link', { name: /Feni Flash Flood 2024/ }).click();
   await expect(page.getByRole('heading', { name: 'Areas', exact: true })).toBeVisible();
-  const rows = page.locator('.table-wrap[aria-label="Areas"] tbody tr');
+  const rows = page.getByRole('region', { name: 'Areas table' }).locator('tbody tr');
   const before = await rows.count();
   expect(before).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Remove' }).first().click();
