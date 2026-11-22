@@ -45,7 +45,7 @@ Every demo password is `Relief2026demo`, unless you set `SEED_DEMO_PASSWORD` (an
 3. **Sync after an interrupted upload.** Go online and tap *Sync now*. Records upload in batches. If the connection drops, the next sync resumes from the first unconfirmed record, and repeated records are stored once.
 4. **Review a possible duplicate.** Log in as `01722000001` and open *Duplicates*. Compare the pair side by side with per-signal scores, link it, then undo the link.
 5. **Resolve a conflict.** *Conflicts*: both values with user, organisation, device and time. Choose one or type the correct value. It is saved as a new version in the household history.
-6. **Check coverage.** *Coverage* shows Fully, Partly, Not served and **No records** (hatched; never shown as served). Filter by upazila, union or ward, open *Unserved households*, and *Send this list to field devices*. The volunteer receives it at the next sync.
+6. **Check coverage.** *Coverage* shows Fully, Partly, Not served and **No records** (dashed mark; never shown as served). Filter by upazila, union or ward, open *Unserved households*, and *Send this list to field devices*. The volunteer receives it at the next sync.
 
 ## Architecture
 
@@ -67,6 +67,27 @@ apps/web          React 19 PWA (Vite 7, Workbox): mobile-first field app with an
 - **Privacy.** Raw phone numbers and GPS points go only to the registering organisation. Others get a masked number and a per-operation HMAC for matching. Observers see area-level counts with small cells suppressed. 90 days after closure, personal fields are removed and the operation's event key is destroyed.
 
 More: [`docs/DECISIONS.md`](docs/DECISIONS.md), [`docs/design-system.md`](docs/design-system.md), [`docs/TRACEABILITY.md`](docs/TRACEABILITY.md), [`docs/EVALUATION.md`](docs/EVALUATION.md), [`docs/FINAL-REPORT.md`](docs/FINAL-REPORT.md)
+
+## Design
+
+The interface uses **Signal**, a design system named after Bangladesh's port cyclone-warning signals, where a shape carries the meaning. [`DESIGN.md`](DESIGN.md) holds the visual system. It is adapted from the IBM (Carbon) entry in VoltAgent's awesome-design-md and borrows Carbon's structure, not its identity. [`docs/design-system.md`](docs/design-system.md) has the working detail: tokens, dial settings and components.
+
+- **Type.** Roboto Flex (variable: condensed width in tables, higher optical size in headings, tabular figures for counts) and Baloo Da 2 for Bangla through `:lang(bn)`. Both are self-hosted from Fontsource, Latin and Bengali subsets only, preloaded and precached, so they work offline.
+- **Colour.** OKLCH tokens in `apps/web/src/styles/tokens.css`: an ink-teal shell, tinted neutrals and one marigold accent for the main action on each screen. A full dark theme follows the system setting, with a manual toggle in every shell. `node apps/web/scripts/contrast.mjs` checks every text and control pair against WCAG 2.2 AA in both themes.
+- **Status never by colour alone.** Served, partly served, not served, no records, pending, synced, failed, conflict and duplicate each have a geometric mark and a word.
+- **Two shells.** The field app is one column with 48 px targets, a bottom bar and a one-row status bar (network, pending count, last sync). The dashboard has a dark rail with open-queue counts, condensed sticky-header tables that stack into labelled rows below 48 rem, and a summary strip instead of cards.
+- **Motion** lasts 120–240 ms, is used only for state changes, and has a reduced-motion path. The only loops are the skeleton pulse while content loads and the sync spinner while a sync runs; both stop under reduced motion.
+
+The UI audit lives in [`docs/ui-audit/`](docs/ui-audit/): [`REPORT.md`](docs/ui-audit/REPORT.md) (before and after, with measured scores), [`FINDINGS.md`](docs/ui-audit/FINDINGS.md) (every defect and its fix) and the before and after screenshots of every route for all five roles at five widths in both languages. To repeat the measurements:
+
+```powershell
+pnpm dev                                                       # then, in another terminal:
+node apps/web/scripts/ui-capture.mjs --out docs/ui-audit/after --detect   # screenshots, axe, console, overflow
+node scripts/workspace.mjs web build; node scripts/workspace.mjs api e2e:server   # production build on :4173, then:
+node apps/web/scripts/lighthouse.mjs                           # Lighthouse + PWA check -> docs/ui-audit/lighthouse.json
+```
+
+Restart the production server after every build: it registers the built files when it starts.
 
 ## Roles
 

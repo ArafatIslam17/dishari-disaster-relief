@@ -17,7 +17,7 @@ The installed Taste Skill (`design-taste-frontend` 2.5.1) has no dials. Its upst
 |---|---|---|---|---|
 | Field app (phone, outdoors, one hand) | 5 | 2 | 3 | One column; 48 px targets; one marigold action per screen; 56 px list rows; state transitions only (press, toast, sync spin). |
 | Coordination dashboard (desktop, many rows) | 5 | 2 | 8 | Condensed table type (`font-stretch` 92%), 10 px cell padding, sticky headers, a summary strip instead of cards, queue counts in the rail; no entrance motion. |
-| Login, onboarding and empty states | 7 | 4 | 5 | Split frame: an ink panel with the product promise and the signal legend, and the form on paper. The form's children rise in on load (240 ms, staggered by 40 ms). Empty states get a drawn mark, a line, a sentence and an action. |
+| Login, onboarding and empty states | 7 | 4 | 5 | Split frame: an ink panel with the product promise and the signal legend, and the form on paper. The form's children rise 6 px on load (240 ms, staggered by 40 ms). They move but never fade in from transparent, so the screen still shows its content if the animation never runs (FINDINGS F52). Empty states get a drawn mark, a line, a sentence and an action. |
 
 `MOTION_INTENSITY` stays at 4 or below everywhere, so no surface claims motion it doesn't ship, and every animation has a reduced-motion path. The 2.5.1 controls map to `data-radius="sharp"` (its rule for fintech and developer tools: 2 px here) and `data-motion` default (never `live`).
 
