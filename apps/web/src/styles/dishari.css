@@ -3401,3 +3401,24 @@ body {
     flex-shrink: 0;
   }
 }
+
+/* Compact language toggle in the field header (light frost bar, matches the icon buttons beside it). */
+.status-actions .lang-toggle {
+  flex-shrink: 0;
+  min-width: 44px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--card-line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-2);
+  box-shadow: var(--shadow-card);
+  white-space: nowrap;
+}
+.status-actions .lang-toggle:hover {
+  background: var(--surface-2);
+  color: var(--teal-strong);
+}
+.status-actions .lang-toggle [lang='bn'] {
+  font-family: var(--font-bn);
+}

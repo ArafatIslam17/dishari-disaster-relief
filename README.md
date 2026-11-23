@@ -197,6 +197,26 @@ The Stitch reference designs are in [`docs/stitch-design/`](docs/stitch-design/)
    - `CORS_ORIGINS` listing only your HTTPS origin
 3. Create the first administrator with `pnpm admin:create`. Never run `pnpm seed` in production. The sandbox payment endpoint also refuses to run in production.
 
+### Vercel
+
+`vercel.json` deploys the repository as one Vercel project with two services:
+- **`web`** is the Vite build of `apps/web`. It is served for every path, with a fallback to `index.html` so client-side routes load.
+- **`api`** is the Fastify app in `apps/api`, served on `/api/*`. Its entrypoint is `apps/api/src/vercel.ts`, which runs the same app as `server.ts` but without its timers, backups and signal handling.
+
+The browser calls the API with relative `/api/...` paths on the same domain, so the session cookie works without CORS. The services never call each other from the server, so no service bindings are needed. Run `vercel dev` to try both services together locally.
+
+**Environment variables for `api`:**
+- `NODE_ENV=production`, `COOKIE_SECURE=true` and `TRUST_PROXY=true`.
+- `CORS_ORIGINS=https://<your domain>`.
+- `DATABASE_URL` pointing to a hosted PostgreSQL with `pg_trgm` available.
+- `JWT_SECRET`, `PHONE_PEPPER` and `DATA_MASTER_KEY`.
+- `BACKUP_DAILY=false`. Backups are the database provider's job, because a function has no `pg_dump`.
+- `CRON_SECRET`.
+
+**Migrations.** Run them against that database before the first deploy and after every schema change: `DATABASE_URL=... pnpm db:migrate`. Then run `pnpm admin:create`.
+
+**Background jobs.** Queued jobs run while an instance is warm. To make sure they run, schedule `GET /api/cron/jobs` (for example every few minutes) and `GET /api/cron/daily` (once a day) with Vercel Cron. Both routes require `Authorization: Bearer $CRON_SECRET`, and they return 404 when `CRON_SECRET` is not set.
+
 The Content Security Policy allows map images from `tile.openstreetmap.org` only. A high-traffic public deployment should move to a tile provider that allows that volume, or host its own tiles, and update `imgSrc` in `apps/api/src/app.ts` to match.
 
 ## Troubleshooting

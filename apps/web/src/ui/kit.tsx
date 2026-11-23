@@ -402,8 +402,18 @@ export function LangSwitch({ compact = false }: { compact?: boolean }) {
   const { i18n, t } = useTranslation();
   const choose = (l: Lang) => setLang(l);
   const lang = i18n.language === 'bn' ? 'bn' : 'en';
+  // Field header on small phones: one button that names the language it switches to ("Language: বাং").
+  if (compact) {
+    const next: Lang = lang === 'bn' ? 'en' : 'bn';
+    return (
+      <button type="button" className="lang-toggle" onClick={() => choose(next)} title={next === 'bn' ? 'বাংলা' : 'English'}>
+        <span className="visually-hidden">{t('app.language')}: </span>
+        <span lang={next}>{next === 'bn' ? 'বাং' : 'EN'}</span>
+      </button>
+    );
+  }
   return (
-    <div className={`lang-switch${compact ? ' lang-switch-sm' : ''}`} role="group" aria-label={t('app.language')}>
+    <div className="lang-switch" role="group" aria-label={t('app.language')}>
       <button type="button" aria-pressed={lang === 'en'} onClick={() => choose('en')} lang="en">
         EN
       </button>

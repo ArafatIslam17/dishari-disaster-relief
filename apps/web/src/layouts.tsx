@@ -218,10 +218,14 @@ function FieldBottomBar({ pending }: { pending: number }) {
         </span>
         {t('nav.newHousehold')}
       </NavLink>
-      <NavLink to="/field/sync">
+      <NavLink to="/field/sync" aria-label={pending > 0 ? `${t('nav.sync')}, ${t('status.pending', { count: pending })}` : undefined}>
         <span className="nav-pill">
           <RefreshCw size={22} aria-hidden />
-          {pending > 0 && <span className="badge-count nav-badge">{formatNumber(pending)}</span>}
+          {pending > 0 && (
+            <span className="badge-count nav-badge" aria-hidden>
+              {formatNumber(pending)}
+            </span>
+          )}
         </span>
         {t('nav.sync')}
       </NavLink>
