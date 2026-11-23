@@ -423,7 +423,7 @@ export const en = {
     served: 'Served households',
     status: 'Coverage status',
     noPlaces: 'No mapped areas for this operation yet.',
-    listLabel: 'Upazilas on the map',
+    listLabel: 'Pins on the map',
     listItem: '{{name}}: {{status}}, {{registered}} registered, {{served}} served',
   },
   portal: {

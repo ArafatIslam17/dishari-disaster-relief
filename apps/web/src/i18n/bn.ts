@@ -425,7 +425,7 @@ export const bn: Messages = {
     served: 'ত্রাণপ্রাপ্ত খানা',
     status: 'কভারেজের অবস্থা',
     noPlaces: 'এই অপারেশনের কোনো এলাকা এখনো মানচিত্রে নেই।',
-    listLabel: 'মানচিত্রের উপজেলাসমূহ',
+    listLabel: 'মানচিত্রের পিন',
     listItem: '{{name}}: {{status}}, নিবন্ধিত {{registered}}, ত্রাণপ্রাপ্ত {{served}}',
   },
   portal: {

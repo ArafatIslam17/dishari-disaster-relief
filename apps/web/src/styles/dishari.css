@@ -580,8 +580,8 @@ td .chip,
   font-weight: 700;
 }
 .sync-chip-sub {
+  /* Full-strength colour: small text on the tinted pill needs the whole AA contrast. */
   color: inherit;
-  opacity: 0.85;
   font-weight: 500;
 }
 .sync-chip-sub::before {
