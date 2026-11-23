@@ -1,12 +1,15 @@
-import { useState, type FormEvent } from 'react';
+import { lazy, Suspense, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
-import { ChevronRight, Download, FileText, Send } from 'lucide-react';
+import { ChevronRight, Download, FileText, HandCoins, House, MapPinOff, PackageCheck, Send, TriangleAlert } from 'lucide-react';
 import type { CoverageLabel, DistributionDTO, HouseholdDTO } from '@relief/shared';
 import { api, downloadFile } from '../api/client';
 import { useSession } from '../auth/session';
-import { formatNumber, formatTime } from '../i18n';
-import { useOperation } from '../layouts';
+import { formatNumber, formatPercent, formatTaka, formatTime } from '../i18n';
+import { RecentDonations, useFundSummary } from '../ui/fund';
+import { Donut, PairedBars, type BarDatum } from '../ui/charts';
+import { pinKind, placeOf, type UpazilaFigure } from '../ui/map-places';
+import { useOperation, useQueueCounts } from '../layouts';
 import { useNotificationText } from '../ui/notifications';
 import {
   CoverageChip,
@@ -59,29 +62,118 @@ interface CoverageRowDTO {
 }
 
 const LABEL_ORDER: CoverageLabel[] = ['fully_served', 'partly_served', 'not_served', 'no_records'];
-const LABEL_MARK: Record<CoverageLabel, MarkKind> = { fully_served: 'served', partly_served: 'partly', not_served: 'not_served', no_records: 'no_records' };
+
+/** Relief fund: what donors gave through the sandbox payment gateway for this operation. */
+/** Leaflet loads in its own chunk the first time a map is on screen. */
+const LiveMap = lazy(() => import('../ui/live-map'));
+
+function LiveMapCard({ upazilas }: { upazilas: UpazilaFigure[] | null }) {
+  const { t, i18n } = useTranslation();
+  const name = (u: UpazilaFigure) => (i18n.language === 'bn' && u.upazilaBn ? u.upazilaBn : u.upazila);
+  const pinned = (upazilas ?? []).filter((u) => placeOf(u.upazila));
+  return (
+    <section className="card map-card is-paired" aria-labelledby="map-title">
+      <div className="card-head">
+        <div>
+          <h2 id="map-title">
+            <span className="live-dot" aria-hidden />
+            {t('map.title')}
+          </h2>
+          <p className="card-sub">{t('map.sub')}</p>
+        </div>
+        <ul className="map-legend" aria-label={t('map.legend')}>
+          <li>
+            <span className="legend-pin is-active" aria-hidden />
+            {t('map.active')}
+          </li>
+          <li>
+            <span className="legend-pin is-attention" aria-hidden />
+            {t('map.attention')}
+          </li>
+        </ul>
+      </div>
+      <div className="live-map">
+        {upazilas ? (
+          <Suspense fallback={<Loading rows={3} />}>
+            <LiveMap upazilas={upazilas} />
+          </Suspense>
+        ) : (
+          <Loading rows={3} />
+        )}
+      </div>
+      {pinned.length > 0 && (
+        <ul className="visually-hidden" aria-label={t('map.listLabel')}>
+          {pinned.map((u) => (
+            <li key={u.upazila}>
+              {t('map.listItem', { name: name(u), status: t(`map.${pinKind(u)}`), registered: formatNumber(u.registered), served: formatNumber(u.served) })}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function FundCard({ operationId }: { operationId: string | null }) {
+  const { t } = useTranslation();
+  const fund = useFundSummary(operationId);
+  return (
+    <section className="card fund-card is-paired" aria-labelledby="fund-title">
+      <div className="card-head">
+        <div>
+          <h2 id="fund-title">{t('donate.fundTitle')}</h2>
+          <p className="card-sub">{t('donate.fundSub')}</p>
+        </div>
+        <span className="kpi-icon tone-tile-gold" aria-hidden>
+          <HandCoins size={20} />
+        </span>
+      </div>
+      {fund.error ? (
+        <p className="muted small">{t('errors.unexpected')}</p>
+      ) : !fund.data ? (
+        <Loading rows={2} />
+      ) : (
+        <>
+          <p className="fund-figure">
+            <span className="visually-hidden">{t('donate.totalRaised')}: </span>
+            {formatTaka(fund.data.totalBdt)}
+          </p>
+          <p className="fund-count">{t('donate.donations', { count: fund.data.completedCount, n: formatNumber(fund.data.completedCount) })}</p>
+          <RecentDonations items={fund.data.latest} limit={4} />
+        </>
+      )}
+      <p className="card-foot">
+        <Link to="/donate">{t('donate.fundOpen')}</Link>
+      </p>
+    </section>
+  );
+}
 
 export function CoveragePage() {
   const { t, i18n } = useTranslation();
-  const { current } = useOperation();
-  const { role } = useSession();
+  const { current, publicView } = useOperation();
+  const session = useSession();
+  // The public portal sees exactly what an observer sees.
+  const role = publicView ? 'OBSERVER' : session.role;
+  const base = publicView ? '/api/public/operations' : '/api/operations';
   const [params, setParams] = useSearchParams();
   const filter = { upazila: params.get('upazila') ?? '', union: params.get('union') ?? '', ward: params.get('ward') ?? '' };
   const qs = new URLSearchParams(Object.entries(filter).filter(([, v]) => v)).toString();
   const all = useApiData(
-    (signal) => (current ? api.get<{ rows: CoverageRowDTO[] }>(`/api/operations/${current.id}/coverage`, signal) : Promise.resolve(null)),
-    [current?.id],
+    (signal) => (current ? api.get<{ rows: CoverageRowDTO[]; upazilas: UpazilaFigure[] }>(`${base}/${current.id}/coverage`, signal) : Promise.resolve(null)),
+    [current?.id, base],
   );
   const data = useApiData(
     (signal) =>
       current
-        ? api.get<{ rows: CoverageRowDTO[]; totals: { registered: number; served: number; areas: number; noRecords: number }; lastUpdated: string | null; generatedAt: string }>(
-            `/api/operations/${current.id}/coverage?${qs}`,
+        ? api.get<{ rows: CoverageRowDTO[]; upazilas?: UpazilaFigure[]; totals: { registered: number; served: number; areas: number; noRecords: number }; lastUpdated: string | null; generatedAt: string }>(
+            `${base}/${current.id}/coverage?${qs}`,
             signal,
           )
         : Promise.resolve(null),
-    [current?.id, qs],
+    [current?.id, qs, base],
   );
+  const queues = useQueueCounts(publicView ? null : (role ?? null), current?.id, 'coverage');
   if (!current) return <NeedOperation />;
   const options = (key: 'upazila' | 'unionName' | 'ward') =>
     [...new Set((all.data?.rows ?? []).filter((r) => (key === 'upazila' ? true : !filter.upazila || r.upazila === filter.upazila) && (key !== 'ward' || !filter.union || r.unionName === filter.union)).map((r) => r[key]))].sort();
@@ -99,6 +191,50 @@ export function CoveragePage() {
   const rows = data.data?.rows ?? [];
   const byLabel = Object.fromEntries(LABEL_ORDER.map((l) => [l, rows.filter((r) => r.label === l).length])) as Record<CoverageLabel, number>;
   const coordinator = role === 'GROUP_COORDINATOR';
+  const totals = data.data?.totals ?? { registered: 0, served: 0, areas: 0, noRecords: 0 };
+  const unservedTotal = Math.max(0, Number(totals.registered) - Number(totals.served));
+  const servedRatio = Number(totals.registered) > 0 ? Number(totals.served) / Number(totals.registered) : 0;
+  // Group by the next level down from the current filter: upazila, then union, then ward.
+  const groupKey = (r: CoverageRowDTO) => {
+    const n = areaName(i18n.language, r);
+    if (filter.union) return { key: r.ward, label: `${t('coverage.ward')} ${r.ward}` };
+    if (filter.upazila) return { key: r.unionName, label: n.union };
+    return { key: r.upazila, label: n.upazila };
+  };
+  const grouped = new Map<string, BarDatum>();
+  for (const r of rows) {
+    const g = groupKey(r);
+    const cur = grouped.get(g.key) ?? { key: g.key, label: g.label, a: 0, b: 0 };
+    cur.a += Number(r.registered) || 0;
+    cur.b += Number(r.served) || 0;
+    grouped.set(g.key, cur);
+  }
+  // Ward cells of 1 to 4 arrive as "<5" for observers and the public, so the top level charts the
+  // upazila rollup (suppressed only at upazila level) instead of summing suppressed ward cells.
+  if (!filter.upazila && data.data?.upazilas) {
+    grouped.clear();
+    for (const u of data.data.upazilas) {
+      const label = areaName(i18n.language, { upazila: u.upazila, upazilaBn: u.upazilaBn, unionName: '', ward: '' }).upazila;
+      grouped.set(u.upazila, { key: u.upazila, label, a: Number(u.registered) || 0, b: Number(u.served) || 0 });
+    }
+  }
+  const bars = [...grouped.values()].sort((x, y) => y.a - x.a).slice(0, 8);
+  const firstNotServed = rows.find((r) => r.label === 'not_served');
+  const queueItems: { key: string; title: string; sub: string; count: number; mark: MarkKind; to?: string; urgent?: boolean }[] = [];
+  const qc = queues.data ?? {};
+  if (qc.conflicts) queueItems.push({ key: 'conflicts', title: t('coverage.queueConflicts'), sub: t('coverage.queueConflictsSub'), count: qc.conflicts, mark: 'conflict', to: '/app/conflicts', urgent: true });
+  if (qc.duplicates) queueItems.push({ key: 'duplicates', title: t('coverage.queueDuplicates'), sub: t('coverage.queueDuplicatesSub'), count: qc.duplicates, mark: 'duplicate', to: '/app/duplicates', urgent: true });
+  if (qc.flags) queueItems.push({ key: 'flags', title: t('coverage.queueFlags'), sub: t('coverage.queueFlagsSub'), count: qc.flags, mark: 'failed', to: '/app/flags' });
+  if (byLabel.not_served > 0)
+    queueItems.push({
+      key: 'not_served',
+      title: t('coverage.queueNotServed'),
+      sub: t('coverage.queueNotServedSub'),
+      count: byLabel.not_served,
+      mark: 'not_served',
+      to: coordinator && firstNotServed ? `/app/coverage/${firstNotServed.areaId}/unserved` : undefined,
+    });
+  if (byLabel.no_records > 0) queueItems.push({ key: 'no_records', title: t('coverage.queueNoRecords'), sub: t('coverage.queueNoRecordsSub'), count: byLabel.no_records, mark: 'no_records' });
   const clear = (
     <button type="button" className="btn btn-ghost" onClick={() => setParams({}, { replace: true })}>
       {t('common.clear')}
@@ -133,57 +269,164 @@ export function CoveragePage() {
       {data.error ? <ErrorState error={data.error} onRetry={data.reload} /> : null}
       {data.data && (
         <>
-          <section className="coverage-strip" aria-label={t('coverage.summary')}>
-            <div className="summary">
-              <div>
-                <span className="figure">{formatNumber(data.data.totals.registered)}</span>
-                <span className="figure-label">{t('coverage.registered')}</span>
-              </div>
-              <div>
-                <span className="figure">{formatNumber(data.data.totals.served)}</span>
-                <span className="figure-label">
-                  <StatusMark kind="served" />
-                  {t('coverage.served')}
+          <section className="kpi-grid" aria-label={t('coverage.summary')}>
+            <article className="kpi">
+              <div className="kpi-head">
+                <h2 className="kpi-label">{t('coverage.registered')}</h2>
+                <span className="kpi-icon tone-tile-navy" aria-hidden>
+                  <House size={20} />
                 </span>
               </div>
-              <div>
-                <span className="figure">{formatNumber(data.data.totals.registered - data.data.totals.served)}</span>
-                <span className="figure-label">
-                  <StatusMark kind="not_served" />
-                  {t('coverage.unserved')}
+              <p className="kpi-figure">{formatNumber(totals.registered)}</p>
+              <p className="kpi-foot tone-foot-sky">{t('coverage.kpiAreas', { count: Number(totals.areas), n: formatNumber(totals.areas) })}</p>
+            </article>
+            <article className="kpi">
+              <div className="kpi-head">
+                <h2 className="kpi-label">{t('coverage.served')}</h2>
+                <span className="kpi-icon tone-tile-teal" aria-hidden>
+                  <PackageCheck size={20} />
                 </span>
               </div>
-              <div>
-                <span className="figure">{formatNumber(data.data.totals.noRecords)}</span>
-                <span className="figure-label">
-                  <StatusMark kind="no_records" />
-                  {t('coverage.noRecordAreasLabel')}
+              <p className="kpi-figure">{formatNumber(totals.served)}</p>
+              <p className="kpi-foot tone-foot-ok">
+                <StatusMark kind="served" />
+                {t('coverage.kpiRate', { pct: formatPercent(servedRatio) })}
+              </p>
+            </article>
+            <article className="kpi">
+              <div className="kpi-head">
+                <h2 className="kpi-label">{t('coverage.unserved')}</h2>
+                <span className="kpi-icon tone-tile-gold" aria-hidden>
+                  <TriangleAlert size={20} />
                 </span>
+              </div>
+              <p className="kpi-figure">{formatNumber(unservedTotal)}</p>
+              <p className="kpi-foot tone-foot-gold">
+                <StatusMark kind="not_served" />
+                {t('coverage.kpiStillWaiting')}
+              </p>
+            </article>
+            <article className="kpi">
+              <div className="kpi-head">
+                <h2 className="kpi-label">{t('coverage.noRecordAreasLabel')}</h2>
+                <span className="kpi-icon tone-tile-slate" aria-hidden>
+                  <MapPinOff size={20} />
+                </span>
+              </div>
+              <p className="kpi-figure">{formatNumber(totals.noRecords)}</p>
+              <p className="kpi-foot tone-foot-slate">
+                <StatusMark kind="no_records" />
+                {t('coverage.kpiNoRecords')}
+              </p>
+            </article>
+          </section>
+          <div className="dash-grid">
+            <section className="card chart-card" aria-labelledby="by-area-title">
+              <div className="card-head">
+                <div>
+                  <h2 id="by-area-title">{t('coverage.byAreaTitle')}</h2>
+                  <p className="card-sub">{t('coverage.byAreaSub')}</p>
+                </div>
+                <ul className="chart-key" aria-hidden>
+                  <li>
+                    <span className="key-swatch key-a" />
+                    {t('coverage.registered')}
+                  </li>
+                  <li>
+                    <span className="key-swatch key-b" />
+                    {t('coverage.served')}
+                  </li>
+                </ul>
+              </div>
+              {bars.length > 0 ? (
+                <PairedBars data={bars} label={t('coverage.byAreaChart')} aName={t('coverage.registered')} bName={t('coverage.served')} />
+              ) : (
+                <p className="muted small">{t('common.noResults')}</p>
+              )}
+              <p className="card-foot">
+                <span>{t('common.lastUpdated', { time: formatTime(data.data.lastUpdated) })}</span>
+                <span className="subtle">{t('coverage.notSyncedNote')}</span>
+              </p>
+            </section>
+            <div className="dash-side">
+              <section className="card" aria-labelledby="breakdown-title">
+                <div className="card-head">
+                  <h2 id="breakdown-title">{t('coverage.breakdownTitle')}</h2>
+                  <span className="card-meta">{t('coverage.breakdownTotal', { count: rows.length, n: formatNumber(rows.length) })}</span>
+                </div>
+                <div className="breakdown">
+                  <Donut
+                    label={`${t('coverage.breakdownTitle')}: ${LABEL_ORDER.map((l) => `${t(`coverage.${l}`)} ${formatNumber(byLabel[l])}`).join(', ')}`}
+                    centre={formatPercent(servedRatio)}
+                    centreSub={t('coverage.breakdownCentre')}
+                    slices={LABEL_ORDER.map((l) => ({ key: l, value: byLabel[l], className: `slice-${l}` }))}
+                  />
+                  <ul className="legend legend-stack" aria-label={t('coverage.byLabel')}>
+                    {LABEL_ORDER.map((l) => (
+                      <li key={l}>
+                        <span className={`key-dot slice-${l}`} aria-hidden />
+                        <span className="grow">{t(`coverage.${l}`)}</span>
+                        <strong>{formatNumber(byLabel[l])}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
+              <section className="card" aria-labelledby="queue-title">
+                <div className="card-head">
+                  <div>
+                    <h2 id="queue-title">{t('coverage.queueTitle')}</h2>
+                    <p className="card-sub">{t('coverage.queueSub')}</p>
+                  </div>
+                  {queueItems.length > 0 && <span className="badge-count">{formatNumber(queueItems.length)}</span>}
+                </div>
+                {queueItems.length === 0 ? (
+                  <p className="queue-empty">
+                    <StatusMark kind="synced" />
+                    {t('coverage.queueEmpty')}
+                  </p>
+                ) : (
+                  <ul className="queue">
+                    {queueItems.map((q) => {
+                      const body = (
+                        <>
+                          <span className={`queue-mark tone-${q.mark}`} aria-hidden>
+                            <StatusMark kind={q.mark} size={14} />
+                          </span>
+                          <span className="queue-text">
+                            <span className="queue-title">{q.title}</span>
+                            <span className="queue-sub">{q.sub}</span>
+                          </span>
+                          <span className="queue-count">{formatNumber(q.count)}</span>
+                          {q.to && <span className={`queue-cta${q.urgent ? ' is-urgent' : ''}`}>{t('coverage.queueOpen')}</span>}
+                        </>
+                      );
+                      return (
+                        <li key={q.key}>
+                          {q.to ? (
+                            <Link className="queue-item" to={q.to}>
+                              {body}
+                            </Link>
+                          ) : (
+                            <div className="queue-item">{body}</div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </section>
+            </div>
+            <LiveMapCard upazilas={all.data?.upazilas ?? null} />
+            <FundCard operationId={current?.id ?? null} />
+          </div>
+          <section className="card table-card" aria-labelledby="ward-table-title">
+            <div className="card-head">
+              <div>
+                <h2 id="ward-table-title">{t('coverage.tableTitle')}</h2>
+                <p className="card-sub">{t('coverage.tableSub')}</p>
               </div>
             </div>
-            {rows.length > 0 && (
-              <>
-                <div className="coverage-bar" aria-hidden>
-                  {LABEL_ORDER.filter((l) => byLabel[l] > 0).map((l) => (
-                    <span key={l} className={`seg-${l}`} style={{ flexGrow: byLabel[l] }} />
-                  ))}
-                </div>
-                <ul className="legend" aria-label={t('coverage.byLabel')}>
-                  {LABEL_ORDER.map((l) => (
-                    <li key={l}>
-                      <span className={`tone-${LABEL_MARK[l]}`}>
-                        <StatusMark kind={LABEL_MARK[l]} />
-                      </span>
-                      {t(`coverage.${l}`)} <strong>{formatNumber(byLabel[l])}</strong>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-            <p className="small muted mt-4">
-              {t('common.lastUpdated', { time: formatTime(data.data.lastUpdated) })}. {t('coverage.notSyncedNote')}
-            </p>
-          </section>
           {rows.length === 0 ? (
             <Empty title={t('common.noResults')} mark="no_records" action={qs ? clear : undefined} />
           ) : (
@@ -255,6 +498,7 @@ export function CoveragePage() {
               </table>
             </div>
           )}
+          </section>
         </>
       )}
     </>
@@ -1110,8 +1354,9 @@ export function HouseholdDetailPage() {
 // ---------- UC25 Generate Reports (FR26) ----------
 export function ReportsPage() {
   const { t } = useTranslation();
-  const { role } = useSession();
-  const { current } = useOperation();
+  const session = useSession();
+  const { current, publicView } = useOperation();
+  const role = publicView ? 'OBSERVER' : session.role;
   const errorText = useErrorText();
   const [type, setType] = useState(role === 'GROUP_COORDINATOR' ? 'organisation' : 'operation');
   const [from, setFrom] = useState('');
@@ -1128,7 +1373,7 @@ export function ReportsPage() {
     if (from) q.set('from', from);
     if (to) q.set('to', to);
     try {
-      const path = type === 'organisation' ? '/api/reports/organisation' : '/api/reports/operation-summary';
+      const path = type === 'organisation' ? '/api/reports/organisation' : publicView ? '/api/public/reports/operation-summary' : '/api/reports/operation-summary';
       const { empty } = await downloadFile(`${path}?${q.toString()}`);
       setMessage(empty ? { tone: 'warn', text: t('reports.empty') } : { tone: 'ok', text: t('reports.ready') });
     } catch (err) {

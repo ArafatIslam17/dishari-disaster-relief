@@ -6,6 +6,7 @@ import { registerSW } from 'virtual:pwa-register';
 import './theme';
 import './i18n';
 import './styles/app.css';
+import './styles/dishari.css';
 import { SessionProvider } from './auth/session';
 import { router } from './router';
 import { ToastProvider } from './ui/kit';

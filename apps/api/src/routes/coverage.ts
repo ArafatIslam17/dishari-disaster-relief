@@ -126,6 +126,41 @@ export function suppressSmallCells(rows: CoverageRow[]): (Omit<CoverageRow, 'reg
   return rows.map((r) => ({ ...r, registered: cell(r.registered), served: cell(r.served), unserved: cell(r.unserved) }));
 }
 
+export function coverageTotals(rows: CoverageRow[]) {
+  return rows.reduce(
+    (t, r) => ({
+      registered: t.registered + r.registered,
+      served: t.served + r.served,
+      areas: t.areas + 1,
+      noRecords: t.noRecords + (r.label === 'no_records' ? 1 : 0),
+    }),
+    { registered: 0, served: 0, areas: 0, noRecords: 0 },
+  );
+}
+
+/** Coverage rolled up per upazila (for the live map). Observers and the public get small cells suppressed. */
+export function upazilaRollup(rows: CoverageRow[], suppress: boolean) {
+  const by = new Map<string, { upazila: string; upazilaBn: string | null; registered: number; served: number; areas: number; noRecords: number; lastDistributionAt: string | null }>();
+  for (const r of rows) {
+    const u = by.get(r.upazila) ?? { upazila: r.upazila, upazilaBn: r.upazilaBn, registered: 0, served: 0, areas: 0, noRecords: 0, lastDistributionAt: null };
+    u.registered += r.registered;
+    u.served += r.served;
+    u.areas += 1;
+    if (r.label === 'no_records') u.noRecords += 1;
+    if (r.lastDistributionAt && (!u.lastDistributionAt || r.lastDistributionAt > u.lastDistributionAt)) u.lastDistributionAt = r.lastDistributionAt;
+    by.set(r.upazila, u);
+  }
+  const cell = (n: number) => (suppress && n > 0 && n < OBSERVER_MIN_CELL ? `<${OBSERVER_MIN_CELL}` : n);
+  return [...by.values()].map((u) => ({
+    ...u,
+    label: coverageLabel(u.registered, u.served),
+    servedPercent: servedPercent(u.registered, u.served),
+    registered: cell(u.registered),
+    served: cell(u.served),
+    unserved: cell(u.registered - u.served),
+  }));
+}
+
 export async function coverageRoutes(app: FastifyInstance): Promise<void> {
   const ctx = app.ctx;
   const viewers = requireAuth(ctx, 'GROUP_COORDINATOR', 'OPERATION_ADMINISTRATOR', 'OBSERVER', 'SYSTEM_ADMINISTRATOR');
@@ -142,17 +177,11 @@ export async function coverageRoutes(app: FastifyInstance): Promise<void> {
       .parse(request.query);
     const access = await operationAccess(ctx, auth, id);
     const summary = await coverageSummary(ctx, id, filter);
-    const rows = access.relation === 'observer' ? suppressSmallCells(summary.rows) : summary.rows;
-    const totals = summary.rows.reduce(
-      (t, r) => ({
-        registered: t.registered + r.registered,
-        served: t.served + r.served,
-        areas: t.areas + 1,
-        noRecords: t.noRecords + (r.label === 'no_records' ? 1 : 0),
-      }),
-      { registered: 0, served: 0, areas: 0, noRecords: 0 },
-    );
-    return { rows, totals, lastUpdated: summary.lastUpdated, generatedAt: ctx.now().toISOString() };
+    const observer = access.relation === 'observer';
+    const rows = observer ? suppressSmallCells(summary.rows) : summary.rows;
+    const totals = coverageTotals(summary.rows);
+    const upazilas = upazilaRollup(summary.rows, observer);
+    return { rows, totals, upazilas, lastUpdated: summary.lastUpdated, generatedAt: ctx.now().toISOString() };
   });
 
   // UC21: unserved households of an area (coordinators).

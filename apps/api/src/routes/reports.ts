@@ -47,6 +47,58 @@ function sendFile(reply: FastifyReply, body: Buffer | string, type: string, name
     .send(body);
 }
 
+type ReportQuery = ReturnType<typeof reportQuerySchema.parse>;
+
+/**
+ * UC25 operation summary file (CSV or PDF): area-level coverage, item totals and organisation counts;
+ * never names or phones. `suppress` hides counts of 1 to 4 (observers and the public portal).
+ */
+export async function sendOperationSummary(ctx: AppContext, reply: FastifyReply, q: ReportQuery, suppress: boolean) {
+  const generatedAt = ctx.now();
+  const coverage = await coverageSummary(ctx, q.operationId, q);
+  const rows = suppress ? suppressSmallCells(coverage.rows) : coverage.rows;
+  const totals = await itemTotals(ctx, q.operationId, q);
+  const byOrg = await query<{ org: string; distributions: number; anonymous: number }>(
+    ctx.db,
+    sql`select g.name as org, count(*)::int as distributions, count(*) filter (where d.is_anonymous)::int as anonymous
+          from distribution d join organisation g on g.organisation_id = d.organisation_id
+         where d.operation_id = ${q.operationId} and d.status = 'recorded' ${rangeSql(q)}
+         group by g.name order by g.name`,
+  );
+  const [op] = await query<{ name: string }>(ctx.db, sql`select name from operation where operation_id = ${q.operationId}`);
+  const empty = totals.length === 0 && coverage.rows.every((r) => r.registered === 0);
+  const coverageTable = rows.map((r) => [r.upazila, r.unionName, r.ward, r.registered, r.served, r.unserved, r.anonymousDistributions, LABELS[r.label], r.lastDistributionAt?.slice(0, 16).replace('T', ' ') ?? '-']);
+  const file = `operation-summary-${generatedAt.toISOString().slice(0, 10)}`;
+  if (q.format === 'csv') {
+    const csv = stringify([
+      ['section', 'upazila', 'union', 'ward', 'registered', 'served', 'unserved', 'anonymous_distributions', 'coverage', 'last_distribution_utc'],
+      ...coverageTable.map((r) => ['coverage', ...r]),
+      [],
+      ['section', 'item', 'unit', 'quantity', 'distributions'],
+      ...totals.map((t) => ['item_total', t.item, t.unit, t.quantity, t.distributions]),
+      [],
+      ['section', 'organisation', 'distributions', 'anonymous'],
+      ...byOrg.map((o) => ['organisation', o.org, o.distributions, o.anonymous]),
+    ]);
+    return sendFile(reply, ` ${csv}`, 'text/csv; charset=utf-8', `${file}.csv`, empty);
+  }
+  const pdf = new ReportPdf('Operation summary');
+  pdf.text(`${op?.name ?? ''} - operation summary`, { size: 16, bold: true, gap: 0.3 });
+  pdf.text(`Period: ${q.from ?? 'start'} to ${q.to ?? 'today'}. Area-level figures only; no names or phone numbers.`, { size: 10 });
+  if (suppress) pdf.text(`Counts between 1 and 4 are shown as "<5" to protect small wards.`, { size: 9, color: '#4A5A63' });
+  pdf.text(`Generated: ${generatedAt.toISOString().replace('T', ' ').slice(0, 16)} UTC. Data last synchronised: ${coverage.lastUpdated?.replace('T', ' ').slice(0, 16) ?? 'never'} UTC.`, { size: 9, color: '#4A5A63', gap: 1 });
+  if (empty) pdf.text('No households or distributions are recorded for this operation and period.', { size: 11, gap: 1 });
+  pdf.text('Coverage by area', { size: 12, bold: true, gap: 0.3 });
+  pdf.table(['Upazila', 'Union', 'Ward', 'Reg.', 'Served', 'Unserved', 'Anon.', 'Coverage', 'Last'], coverageTable, [60, 60, 40, 35, 38, 45, 35, 125, 62]);
+  if (totals.length > 0) {
+    pdf.text('Relief items distributed', { size: 12, bold: true, gap: 0.3 });
+    pdf.table(['Item', 'Quantity', 'Distributions'], totals.map((t) => [`${t.item}${t.item_bn ? ` (${t.item_bn})` : ''}`, `${t.quantity} ${t.unit}`, t.distributions]), [240, 140, 110]);
+    pdf.text('Distributions by organisation', { size: 12, bold: true, gap: 0.3 });
+    pdf.table(['Organisation', 'Distributions', 'Anonymous'], byOrg.map((o) => [o.org, o.distributions, o.anonymous]), [260, 120, 110]);
+  }
+  return sendFile(reply, await pdf.toBuffer(), 'application/pdf', `${file}.pdf`, empty);
+}
+
 export async function reportRoutes(app: FastifyInstance): Promise<void> {
   const ctx = app.ctx;
 
@@ -116,54 +168,12 @@ export async function reportRoutes(app: FastifyInstance): Promise<void> {
       const q = reportQuerySchema.parse(request.query);
       const access = await operationAccess(ctx, auth, q.operationId);
       if (access.relation !== 'admin' && access.relation !== 'observer') throw forbidden('role_not_allowed');
-      const generatedAt = ctx.now();
-      const coverage = await coverageSummary(ctx, q.operationId, q);
-      const rows = access.relation === 'observer' ? suppressSmallCells(coverage.rows) : coverage.rows;
-      const totals = await itemTotals(ctx, q.operationId, q);
-      const byOrg = await query<{ org: string; distributions: number; anonymous: number }>(
-        ctx.db,
-        sql`select g.name as org, count(*)::int as distributions, count(*) filter (where d.is_anonymous)::int as anonymous
-              from distribution d join organisation g on g.organisation_id = d.organisation_id
-             where d.operation_id = ${q.operationId} and d.status = 'recorded' ${rangeSql(q)}
-             group by g.name order by g.name`,
-      );
-      const [op] = await query<{ name: string }>(ctx.db, sql`select name from operation where operation_id = ${q.operationId}`);
       await audit(ctx.db, ctx.crypto, { userId: auth.userId, organisationId: auth.organisationId, deviceId: auth.deviceId }, {
         action: 'report.generated',
         operationId: q.operationId,
         details: { type: 'operation_summary', format: q.format, from: q.from, to: q.to },
       });
-      const empty = totals.length === 0 && coverage.rows.every((r) => r.registered === 0);
-      const coverageTable = rows.map((r) => [r.upazila, r.unionName, r.ward, r.registered, r.served, r.unserved, r.anonymousDistributions, LABELS[r.label], r.lastDistributionAt?.slice(0, 16).replace('T', ' ') ?? '-']);
-      const file = `operation-summary-${generatedAt.toISOString().slice(0, 10)}`;
-      if (q.format === 'csv') {
-        const csv = stringify([
-          ['section', 'upazila', 'union', 'ward', 'registered', 'served', 'unserved', 'anonymous_distributions', 'coverage', 'last_distribution_utc'],
-          ...coverageTable.map((r) => ['coverage', ...r]),
-          [],
-          ['section', 'item', 'unit', 'quantity', 'distributions'],
-          ...totals.map((t) => ['item_total', t.item, t.unit, t.quantity, t.distributions]),
-          [],
-          ['section', 'organisation', 'distributions', 'anonymous'],
-          ...byOrg.map((o) => ['organisation', o.org, o.distributions, o.anonymous]),
-        ]);
-        return sendFile(reply, ` ${csv}`, 'text/csv; charset=utf-8', `${file}.csv`, empty);
-      }
-      const pdf = new ReportPdf('Operation summary');
-      pdf.text(`${op?.name ?? ''} - operation summary`, { size: 16, bold: true, gap: 0.3 });
-      pdf.text(`Period: ${q.from ?? 'start'} to ${q.to ?? 'today'}. Area-level figures only; no names or phone numbers.`, { size: 10 });
-      if (access.relation === 'observer') pdf.text(`Counts between 1 and 4 are shown as "<5" to protect small wards.`, { size: 9, color: '#4A5A63' });
-      pdf.text(`Generated: ${generatedAt.toISOString().replace('T', ' ').slice(0, 16)} UTC. Data last synchronised: ${coverage.lastUpdated?.replace('T', ' ').slice(0, 16) ?? 'never'} UTC.`, { size: 9, color: '#4A5A63', gap: 1 });
-      if (empty) pdf.text('No households or distributions are recorded for this operation and period.', { size: 11, gap: 1 });
-      pdf.text('Coverage by area', { size: 12, bold: true, gap: 0.3 });
-      pdf.table(['Upazila', 'Union', 'Ward', 'Reg.', 'Served', 'Unserved', 'Anon.', 'Coverage', 'Last'], coverageTable, [60, 60, 40, 35, 38, 45, 35, 125, 62]);
-      if (totals.length > 0) {
-        pdf.text('Relief items distributed', { size: 12, bold: true, gap: 0.3 });
-        pdf.table(['Item', 'Quantity', 'Distributions'], totals.map((t) => [`${t.item}${t.item_bn ? ` (${t.item_bn})` : ''}`, `${t.quantity} ${t.unit}`, t.distributions]), [240, 140, 110]);
-        pdf.text('Distributions by organisation', { size: 12, bold: true, gap: 0.3 });
-        pdf.table(['Organisation', 'Distributions', 'Anonymous'], byOrg.map((o) => [o.org, o.distributions, o.anonymous]), [260, 120, 110]);
-      }
-      return sendFile(reply, await pdf.toBuffer(), 'application/pdf', `${file}.pdf`, empty);
+      return sendOperationSummary(ctx, reply, q, access.relation === 'observer');
     },
   );
 }

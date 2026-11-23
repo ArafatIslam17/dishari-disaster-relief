@@ -1,22 +1,20 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useDeferredValue, useEffect, useId, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, isRouteErrorResponse, useNavigate, useParams, useRouteError } from 'react-router';
-import { LockKeyhole, LogIn } from 'lucide-react';
+import { ArrowRight, Building2, Check, ChevronDown, ChevronRight, HandCoins, LockKeyhole, LogIn, ScanEye, Search, ShieldCheck, TriangleAlert, UserPlus, WifiOff } from 'lucide-react';
 import { normalisePhone } from '@relief/shared';
 import { api } from '../api/client';
 import { useSession } from '../auth/session';
 import { UnlockError, localStore } from '../local/store';
 import { homePath } from '../router-paths';
-import { Empty, LangSwitch, Notice, SelectField, StatusMark, TextField, ThemeToggle, issuesOf, useApiData, useConfirm, useErrorText, useIssueText, useToast, type MarkKind } from '../ui/kit';
+import { Brand, Empty, LangSwitch, Notice, PinPad, SelectField, TextField, ThemeToggle, issuesOf, useApiData, useConfirm, useErrorText, useIssueText, useToast } from '../ui/kit';
 
-const LEGEND: { kind: MarkKind; key: string }[] = [
-  { kind: 'served', key: 'coverage.fully_served' },
-  { kind: 'partly', key: 'coverage.partly_served' },
-  { kind: 'not_served', key: 'coverage.not_served' },
-  { kind: 'no_records', key: 'coverage.no_records' },
-  { kind: 'pending', key: 'statuses.pending' },
-  { kind: 'duplicate', key: 'statuses.possible' },
-];
+/** What the platform does, in three short lines on the public aside. */
+const HIGHLIGHTS = [
+  { key: 'offline', icon: WifiOff },
+  { key: 'transparent', icon: ScanEye },
+  { key: 'donate', icon: HandCoins },
+] as const;
 
 /** Public pages: an ink panel with what the product is for, and the task on paper beside it. */
 export function PublicFrame({ title, lead, children }: { title: string; lead?: ReactNode; children: ReactNode }) {
@@ -25,34 +23,34 @@ export function PublicFrame({ title, lead, children }: { title: string; lead?: R
     <div className="public">
       <aside className="public-aside" aria-label={t('app.name')}>
         <span className="brand">
-          <img src="/icon.svg" alt="" width={36} height={36} />
-          {t('app.name')}
+          <Brand sub={t('app.tagline')} size={48} />
         </span>
         <div className="aside-promise">
           <p className="aside-title">{t('public.promise')}</p>
           <p>{t('public.promiseSub')}</p>
         </div>
-        <div>
-          <ul className="signal-legend" aria-label={t('public.legend')}>
-            {LEGEND.map((l) => (
-              <li key={l.kind}>
-                <StatusMark kind={l.kind} size={14} />
-                {t(l.key)}
-              </li>
-            ))}
-          </ul>
-          <p className="aside-foot">{t('public.foot')}</p>
-        </div>
+        <ul className="aside-highlights" aria-label={t('public.highlights.title')}>
+          {HIGHLIGHTS.map(({ key, icon: Icon }) => (
+            <li key={key}>
+              <span className="aside-hl-icon" aria-hidden>
+                <Icon size={20} />
+              </span>
+              <span>
+                <strong>{t(`public.highlights.${key}.title`)}</strong>
+                <span>{t(`public.highlights.${key}.text`)}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
       </aside>
       <main className="public-box" id="main">
         <div className="public-top">
           <span className="brand">
-            <img src="/icon.svg" alt="" width={32} height={32} />
-            {t('app.name')}
+            <Brand size={48} />
           </span>
           <div className="public-tools">
-            <ThemeToggle />
             <LangSwitch />
+            <ThemeToggle />
           </div>
         </div>
         <h1>{title}</h1>
@@ -106,44 +104,82 @@ export function LoginPage() {
 
   return (
     <PublicFrame title={t('auth.loginTitle')} lead={t('auth.loginIntro')}>
-      {!online && <Notice tone="offline">{t('auth.offlineLogin')}</Notice>}
-      {error && <Notice tone="error">{error}</Notice>}
-      <form onSubmit={submit} noValidate>
-        <TextField
-          label={t('common.mobile')}
-          name="mobile"
-          type="tel"
-          inputMode="tel"
-          autoComplete="username"
-          spellCheck={false}
-          placeholder="01XXXXXXXXX"
-          value={mobile}
-          onChange={(e) => setMobile(e.target.value)}
-          error={phoneError}
-        />
-        <TextField
-          label={t('auth.password')}
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          error={passwordError}
-        />
-        <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={busy}>
-          <LogIn size={20} aria-hidden />
-          {busy ? t('auth.loggingIn') : t('auth.login')}
-        </button>
-      </form>
-      <p className="small muted mt-4">{t('auth.forgot')}</p>
-      <div className="public-links">
-        <p>
-          {t('auth.noAccount')} <Link to="/register">{t('auth.registerAccount')}</Link>
-        </p>
-        <p>
-          {t('auth.orgQuestion')} <Link to="/register-organisation">{t('auth.registerOrg')}</Link>
-        </p>
+      <div className="public-card">
+        {!online && <Notice tone="offline">{t('auth.offlineLogin')}</Notice>}
+        {error && <Notice tone="error">{error}</Notice>}
+        <form onSubmit={submit} noValidate>
+          <TextField
+            label={t('common.mobile')}
+            name="mobile"
+            type="tel"
+            inputMode="tel"
+            autoComplete="username"
+            spellCheck={false}
+            placeholder="01XXXXXXXXX"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            error={phoneError}
+          />
+          <TextField
+            label={t('auth.password')}
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            error={passwordError}
+          />
+          <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={busy}>
+            {busy ? t('auth.loggingIn') : t('auth.login')}
+            <ArrowRight size={20} aria-hidden />
+          </button>
+        </form>
+        <div className="soft-note">
+          <span className="menu-icon tone-tile-sky" aria-hidden>
+            <ShieldCheck size={18} />
+          </span>
+          <p>{t('auth.forgot')}</p>
+        </div>
       </div>
+      <Link to="/donate" className="donate-banner">
+        <span className="donate-banner-icon" aria-hidden>
+          <HandCoins size={24} />
+        </span>
+        <span className="menu-label">
+          {t('donate.nav')}
+          <span className="menu-sub">{t('donate.navSub')}</span>
+        </span>
+        <ArrowRight size={20} className="chev" aria-hidden />
+      </Link>
+      <section className="public-card onboard" aria-labelledby="onboard-title">
+        <h2 id="onboard-title" className="eyebrow">
+          {t('public.onboarding')}
+        </h2>
+        <Link to="/register" className="onboard-link">
+          <span className="menu-icon tone-tile-sky" aria-hidden>
+            <UserPlus size={22} />
+          </span>
+          <span className="menu-label">
+            {t('auth.noAccount')}
+            <span className="menu-sub">{t('auth.registerAccount')}</span>
+          </span>
+          <ChevronRight size={18} className="chev" aria-hidden />
+        </Link>
+        <Link to="/register-organisation" className="onboard-link">
+          <span className="menu-icon tone-tile-gold" aria-hidden>
+            <Building2 size={22} />
+          </span>
+          <span className="menu-label">
+            {t('auth.orgQuestion')}
+            <span className="menu-sub">{t('auth.registerOrg')}</span>
+          </span>
+          <ChevronRight size={18} className="chev" aria-hidden />
+        </Link>
+      </section>
+      <p className="secure-pill">
+        <ShieldCheck size={16} aria-hidden />
+        {t('public.secure')}
+      </p>
     </PublicFrame>
   );
 }
@@ -160,24 +196,142 @@ function Done({ title, text }: { title: string; text: string }) {
   );
 }
 
+interface OrgOption {
+  id: string;
+  name: string;
+  nameBn: string | null;
+}
+
+/**
+ * One searchable organisation picker (ARIA 1.2 combobox): click or press Down to see every approved
+ * organisation, or type to filter on the server. Enter picks, Escape closes.
+ */
+function OrgCombobox({ value, onChange, error, lang }: { value: string; onChange(id: string): void; error?: string; lang: string }) {
+  const { t } = useTranslation();
+  const id = useId();
+  const listId = `${id}-list`;
+  const [text, setText] = useState('');
+  const [typing, setTyping] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+  const [chosen, setChosen] = useState<OrgOption | null>(null);
+  const q = useDeferredValue(typing ? text.trim() : '');
+  const orgs = useApiData((signal) => api.get<{ organisations: OrgOption[] }>(`/api/public/organisations?q=${encodeURIComponent(q)}`, signal), [q]);
+  const options = orgs.data?.organisations ?? [];
+  const nameOf = (o: OrgOption) => (lang === 'bn' && o.nameBn ? o.nameBn : o.name);
+  const selected = chosen && chosen.id === value ? chosen : null;
+  const shown = typing ? text : selected ? nameOf(selected) : '';
+  const pick = (o: OrgOption) => {
+    setChosen(o);
+    onChange(o.id);
+    setTyping(false);
+    setText('');
+    setOpen(false);
+    setActive(-1);
+  };
+  const close = () => {
+    setOpen(false);
+    setActive(-1);
+    setTyping(false);
+    setText('');
+  };
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!open) setOpen(true);
+      const step = e.key === 'ArrowDown' ? 1 : -1;
+      setActive((a) => (options.length === 0 ? -1 : (a + step + options.length) % options.length));
+    } else if (e.key === 'Enter' && open) {
+      e.preventDefault();
+      const o = options[active] ?? (options.length === 1 ? options[0] : undefined);
+      if (o) pick(o);
+    } else if (e.key === 'Escape' && open) {
+      e.preventDefault();
+      close();
+    }
+  };
+  const describedBy = [`${id}-help`, error ? `${id}-err` : null].filter(Boolean).join(' ');
+  return (
+    <div className="field combo">
+      <label htmlFor={id}>{t('auth.chooseOrg')}</label>
+      <span id={`${id}-help`} className="help">
+        {t('auth.orgHelp')}
+      </span>
+      <div className="combo-box" data-open={open}>
+        <Search size={18} className="combo-icon" aria-hidden />
+        <input
+          id={id}
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={open && active >= 0 && options[active] ? `${id}-opt-${active}` : undefined}
+          aria-invalid={error ? 'true' : undefined}
+          aria-describedby={describedBy}
+          autoComplete="off"
+          spellCheck={false}
+          placeholder={t('auth.orgPlaceholder')}
+          value={shown}
+          onChange={(e) => {
+            setText(e.target.value);
+            setTyping(true);
+            setOpen(true);
+            setActive(-1);
+            if (value) onChange('');
+          }}
+          onClick={() => setOpen(true)}
+          onKeyDown={onKeyDown}
+          onBlur={close}
+        />
+        <button
+          type="button"
+          className="combo-toggle"
+          tabIndex={-1}
+          aria-label={t('auth.orgShowAll')}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => (open ? close() : setOpen(true))}
+        >
+          <ChevronDown size={18} aria-hidden />
+        </button>
+        <ul id={listId} role="listbox" aria-label={t('auth.chooseOrg')} className="combo-list" hidden={!open}>
+          {orgs.loading && options.length === 0 && <li className="combo-empty">{t('app.loading')}</li>}
+          {!orgs.loading && options.length === 0 && <li className="combo-empty">{t('auth.orgNone')}</li>}
+          {options.map((o, i) => (
+            <li
+              key={o.id}
+              id={`${id}-opt-${i}`}
+              role="option"
+              aria-selected={o.id === value}
+              className={i === active ? 'is-active' : undefined}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => pick(o)}
+            >
+              <span className="combo-name">{nameOf(o)}</span>
+              {lang === 'bn' && o.nameBn && <span className="combo-sub">{o.name}</span>}
+              {o.id === value && <Check size={16} className="combo-check" aria-hidden />}
+            </li>
+          ))}
+        </ul>
+      </div>
+      {error && (
+        <span id={`${id}-err`} className="error">
+          <TriangleAlert size={14} aria-hidden />
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function RegisterPage() {
   const { t, i18n } = useTranslation();
   const errorText = useErrorText();
   const issueText = useIssueText();
   const [form, setForm] = useState({ fullName: '', mobile: '', password: '', kind: 'member', organisationId: '' });
-  const [query, setQuery] = useState('');
   const [issues, setIssues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  const orgs = useApiData(
-    (signal) =>
-      api.get<{ organisations: { id: string; name: string; nameBn: string | null }[] }>(
-        `/api/public/organisations?q=${encodeURIComponent(query)}`,
-        signal,
-      ),
-    [query],
-  );
   const set = (k: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value });
 
   const submit = async (e: FormEvent) => {
@@ -206,7 +360,7 @@ export function RegisterPage() {
     }
   };
 
-  if (done) return <Done title={t('auth.registerTitle')} text={t('auth.submitted')} />;
+  if (done) return <Done title={t('auth.registerTitle')} text={t(form.kind === 'member' ? 'auth.submittedMember' : 'auth.submittedOpAdmin')} />;
   return (
     <PublicFrame title={t('auth.registerTitle')} lead={t('auth.registerIntro')}>
       {error && <Notice tone="error">{error}</Notice>}
@@ -243,19 +397,10 @@ export function RegisterPage() {
             <input type="radio" name="kind" value="operation_admin" checked={form.kind === 'operation_admin'} onChange={set('kind')} />
             {t('auth.kindOpAdmin')}
           </label>
+          <p className="help approver-hint">{t(form.kind === 'member' ? 'auth.approverMember' : 'auth.approverOpAdmin')}</p>
         </fieldset>
         {form.kind === 'member' && (
-          <>
-            <TextField label={t('auth.searchOrg')} type="search" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" spellCheck={false} />
-            <SelectField label={t('auth.chooseOrg')} value={form.organisationId} onChange={set('organisationId')} error={issueText(issues.organisationId)}>
-              <option value="">{t('common.choose')}</option>
-              {orgs.data?.organisations.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {i18n.language === 'bn' && o.nameBn ? `${o.nameBn} (${o.name})` : o.name}
-                </option>
-              ))}
-            </SelectField>
-          </>
+          <OrgCombobox value={form.organisationId} onChange={(id) => setForm((f) => ({ ...f, organisationId: id }))} error={issueText(issues.organisationId)} lang={i18n.language} />
         )}
         <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={busy}>
           {t('auth.registerAccount')}
@@ -487,6 +632,9 @@ export function ChangePasswordPage({ forced = true }: { forced?: boolean }) {
 }
 
 const PIN_RE = /^\d{4,6}$/;
+const PIN_MAX = 6;
+/** Keeps PIN fields to ASCII digits (Bangla digits typed on a Bangla keyboard are converted). */
+const pinDigits = (v: string) => v.replace(/[০-৯]/g, (d) => String(d.charCodeAt(0) - 0x09e6)).replace(/\D/g, '').slice(0, PIN_MAX);
 
 export function SetPinPage({ embedded = false }: { embedded?: boolean }) {
   const { t } = useTranslation();
@@ -497,6 +645,9 @@ export function SetPinPage({ embedded = false }: { embedded?: boolean }) {
   const [repeat, setRepeat] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [repeatError, setRepeatError] = useState<string | undefined>();
+  const [active, setActive] = useState<'pin' | 'repeat'>('pin');
+  const press = (d: string) => (active === 'pin' ? setPinValue((v) => pinDigits(v + d)) : setRepeat((v) => pinDigits(v + d)));
+  const back = () => (active === 'pin' ? setPinValue((v) => v.slice(0, -1)) : setRepeat((v) => v.slice(0, -1)));
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(undefined);
@@ -516,25 +667,30 @@ export function SetPinPage({ embedded = false }: { embedded?: boolean }) {
         label={t('pin.pin')}
         type="password"
         inputMode="numeric"
+        pattern="[0-9]*"
         autoComplete="new-password"
-        maxLength={6}
+        maxLength={PIN_MAX}
         className={embedded ? undefined : 'pin-field'}
         help={t('pin.pinHelp')}
         value={pin}
-        onChange={(e) => setPinValue(e.target.value)}
+        onFocus={() => setActive('pin')}
+        onChange={(e) => setPinValue(pinDigits(e.target.value))}
         error={error}
       />
       <TextField
         label={t('pin.repeat')}
         type="password"
         inputMode="numeric"
+        pattern="[0-9]*"
         autoComplete="new-password"
-        maxLength={6}
+        maxLength={PIN_MAX}
         className={embedded ? undefined : 'pin-field'}
         value={repeat}
-        onChange={(e) => setRepeat(e.target.value)}
+        onFocus={() => setActive('repeat')}
+        onChange={(e) => setRepeat(pinDigits(e.target.value))}
         error={repeatError}
       />
+      {!embedded && <PinPad onDigit={press} onDelete={back} />}
       <button type="submit" className={`btn btn-signal${embedded ? '' : ' btn-block btn-lg'}`}>
         {t('pin.setPin')}
       </button>
@@ -607,12 +763,14 @@ export function UnlockPage() {
             label={t('pin.pin')}
             type="password"
             inputMode="numeric"
+            pattern="[0-9]*"
             autoComplete="current-password"
-            maxLength={6}
+            maxLength={PIN_MAX}
             className="pin-field"
             value={pin}
-            onChange={(e) => setPin(e.target.value)}
+            onChange={(e) => setPin(pinDigits(e.target.value))}
           />
+          <PinPad onDigit={(d) => setPin((v) => pinDigits(v + d))} onDelete={() => setPin((v) => v.slice(0, -1))} />
           <button type="submit" className="btn btn-signal btn-block btn-lg" disabled={busy}>
             <LockKeyhole size={20} aria-hidden />
             {busy ? t('pin.unlocking') : t('pin.unlock')}

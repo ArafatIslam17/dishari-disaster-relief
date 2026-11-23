@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
 import { uuidv7 } from '@relief/shared';
 import { query } from '../src/db/client.js';
-import { PASSWORD, buildWorld, createTestEnv, insertUser, type TestEnv, type World } from './helpers.js';
+import { PASSWORD, buildWorld, createTestEnv, insertUser, type Session, type TestEnv, type World } from './helpers.js';
 
 let env: TestEnv;
 let w: World;
@@ -226,5 +226,57 @@ describe('UC02 / NFR02 / C2 lockout', () => {
     expect((await w.client.call('GET', '/api/notifications', { session: s })).body.code).toBe('password_change_required');
     expect((await w.client.call('POST', '/api/auth/change-password', { session: s, body: { currentPassword: temp.body.temporaryPassword, newPassword: 'NewPass2026x' } })).status).toBe(200);
     expect((await w.client.call('GET', '/api/notifications', { session: s })).status).toBe(200);
+  });
+});
+
+describe('Account approval hierarchy', () => {
+  const register = (fullName: string, mobile: string, kind: 'member' | 'operation_admin', organisationId?: string) =>
+    w.client.call('POST', '/api/auth/register', { body: { fullName, mobile, password: PASSWORD, kind, organisationId } });
+  // Earlier tests advance the clock past the access-token lifetime, so log in afresh.
+  const s = {} as Record<'sys' | 'oa' | 'coordA' | 'coordB', Session>;
+  beforeAll(async () => {
+    s.sys = await w.client.login('01700000000', PASSWORD);
+    s.oa = await w.client.login('01711111111', PASSWORD);
+    s.coordA = await w.client.login('01722222222', PASSWORD);
+    s.coordB = await w.client.login('01844444444', PASSWORD);
+  });
+  type Pending = { members: { id: string; mobile: string; canApprove: boolean }[] };
+  const queue = async (session: Session) =>
+    (await w.client.call<Pending>('GET', '/api/members?status=pending', { session })).body.members;
+
+  it('tells a pending account who approves it', async () => {
+    await register('Waiting Volunteer', '01790000001', 'member', w.orgA.id);
+    await register('Waiting Admin', '01790000002', 'operation_admin');
+    const login = (mobile: string) =>
+      w.client.call<{ code: string; details: { approver: string } }>('POST', '/api/auth/login', { body: { mobile, password: PASSWORD, device: { id: uuidv7(), label: 'x' } } });
+    expect((await login('01790000001')).body.details.approver).toBe('coordinator');
+    expect((await login('01790000002')).body.details.approver).toBe('sysadmin');
+  });
+  it('shows each approver only the registrations they may approve', async () => {
+    const coord = (await queue(s.coordA)).map((m) => m.mobile);
+    expect(coord).toContain('01790000001');
+    expect(coord).not.toContain('01790000002');
+    const sys = (await queue(s.sys)).map((m) => m.mobile);
+    expect(sys).toContain('01790000002');
+    expect(sys).not.toContain('01790000001');
+    const oa = await queue(s.oa);
+    expect(oa.map((m) => m.mobile)).toContain('01790000001');
+    expect(oa.map((m) => m.mobile)).not.toContain('01790000002');
+    expect(oa.every((m) => m.canApprove)).toBe(true);
+    // The other organisation's coordinator never sees it.
+    expect((await queue(s.coordB)).map((m) => m.mobile)).not.toContain('01790000001');
+  });
+  it('lets only the System Administrator approve an operation administrator', async () => {
+    const id = (await queue(s.sys)).find((m) => m.mobile === '01790000002')!.id;
+    expect((await w.client.call('POST', `/api/members/${id}/approve`, { session: s.oa, body: {} })).status).toBe(403);
+    expect((await w.client.call('POST', `/api/members/${id}/approve`, { session: s.coordA, body: {} })).status).toBe(403);
+    expect((await w.client.call('POST', `/api/members/${id}/approve`, { session: s.sys, body: {} })).status).toBe(200);
+  });
+  it('lets the coordinator or an operation administrator approve a volunteer, but not the System Administrator', async () => {
+    const id = (await queue(s.coordA)).find((m) => m.mobile === '01790000001')!.id;
+    expect((await w.client.call('POST', `/api/members/${id}/approve`, { session: s.sys, body: { role: 'FIELD_VOLUNTEER' } })).status).toBe(403);
+    expect((await w.client.call('POST', `/api/members/${id}/approve`, { session: s.coordB, body: { role: 'FIELD_VOLUNTEER' } })).status).toBe(403);
+    expect((await w.client.call('POST', `/api/members/${id}/approve`, { session: s.oa, body: { role: 'GROUP_COORDINATOR' } })).status).toBe(403);
+    expect((await w.client.call('POST', `/api/members/${id}/approve`, { session: s.oa, body: { role: 'FIELD_VOLUNTEER' } })).status).toBe(200);
   });
 });

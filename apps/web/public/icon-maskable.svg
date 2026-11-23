@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#012831"/><g transform="translate(256 256) scale(0.72) translate(-256 -256)"><path d="M256 104v304" stroke="#dbe9eb" stroke-width="22" stroke-linecap="round"/><rect x="188" y="132" width="136" height="136" fill="#f9b134"/><circle cx="256" cy="336" r="50" fill="#012831" stroke="#dbe9eb" stroke-width="22"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="dishari-mask-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#224A8A"/>
+      <stop offset="100%" stop-color="#132B52"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" fill="url(#dishari-mask-bg)"/>
+  <g transform="translate(32 32) scale(0.78) translate(-32 -32)">
+    <path d="M23.5 12.5H51.5V40.5H44.5V19.5H23.5V12.5Z" fill="#FFFFFF"/>
+    <path d="M18.5 24.5H39.5V45.5H32.5V31.5H18.5V24.5Z" fill="#8FB2E8"/>
+    <path d="M20 36L28 44L20 52L12 44L20 36Z" fill="#F59E0B"/>
+  </g>
+</svg>

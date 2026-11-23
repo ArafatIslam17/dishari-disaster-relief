@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700&amp;family=Roboto+Flex:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-tertiary": "#ffffff", "on-secondary": "#ffffff", "inverse-surface": "#2d3137", "surface": "#f8f9ff", "secondary": "#3c6090", "secondary-fixed-dim": "#a5c8ff", "error": "#ba1a1a", "tertiary-fixed": "#ffddb8", "background": "#f8f9ff", "error-container": "#ffdad6", "on-primary-fixed-variant": "#28467b", "outline": "#747780", "outline-variant": "#c4c6d1", "surface-container-highest": "#dfe2eb", "inverse-on-surface": "#eef0f9", "on-error-container": "#93000a", "on-secondary-fixed-variant": "#214877", "on-error": "#ffffff", "on-secondary-fixed": "#001c3a", "on-tertiary-fixed-variant": "#653e00", "surface-tint": "#415e94", "on-surface": "#181c22", "surface-variant": "#dfe2eb", "inverse-primary": "#acc7ff", "primary": "#002555", "on-background": "#181c22", "on-primary-fixed": "#001a41", "surface-container-lowest": "#ffffff", "primary-fixed-dim": "#acc7ff", "on-primary": "#ffffff", "surface-bright": "#f8f9ff", "tertiary": "#3a2100", "surface-container-high": "#e5e8f1", "surface-container": "#ebeef7", "on-tertiary-container": "#e89500", "primary-fixed": "#d8e2ff", "on-tertiary-fixed": "#2a1700", "on-primary-container": "#8aa7e1", "tertiary-fixed-dim": "#ffb95f", "surface-container-low": "#f1f3fc", "on-surface-variant": "#43474f", "secondary-container": "#a5c8ff", "on-secondary-container": "#2f5384", "surface-dim": "#d7dae3", "secondary-fixed": "#d4e3ff", "tertiary-container": "#573500", "primary-container": "#1b3b6f" }, "borderRadius": { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" }, "spacing": { "gutter": "1rem", "space-xl": "2rem", "margin": "1rem", "space-sm": "0.5rem", "gutter-desktop": "2rem", "space-xs": "0.25rem", "margin-desktop": "3rem", "space-md": "1rem", "space-lg": "1.25rem", "margin-tablet": "2rem", "gutter-tablet": "1.5rem" }, "fontFamily": { "headline-md": ["Roboto Flex"], "title-md": ["Roboto Flex"], "label-lg": ["Roboto Flex"], "label-sm": ["Roboto Flex"], "display-lg-mobile": ["Roboto Flex"], "display-lg": ["Roboto Flex"], "headline-lg": ["Roboto Flex"], "body-md": ["Roboto Flex"], "body-lg": ["Roboto Flex"], "tabular-stat": ["Roboto Flex"], "bangla": ["Baloo Da 2", "Roboto Flex", "sans-serif"] }, "fontSize": { "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "600" }], "title-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }], "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "tabular-stat": ["20px", { "lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "700" }] } } } }</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;background-color:#f8f9ff;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head><body class="bg-surface font-body-md text-body-md text-on-surface flex flex-col min-h-screen antialiased select-none"><header class="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-4 flex items-center justify-between gap-2"><div class="flex items-center gap-2 min-w-0"><button aria-label="Go back" class="w-11 h-11 -ml-1 rounded-full flex items-center justify-center text-primary-container hover:bg-surface-container-high transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><img alt="Dishari App Logo" class="h-7 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida/ALJJyrCFZ9eW6-UTwz3afHo4Cv4394W5p_N43ZKsS9BOIaWS840kPJ3OWrZ9NM0cueV2djjikdzWq2laqUn2YCt89Xm2x_U-wN-wXfFLzlx6t3XPFDYwHSnTOaTcqKhHTz1lggEJV78bEO00HdXNlcWieIe__KfWpQrNymZiSlo6JeOLWjltnSPScU9DMZzmo_kJDJPnlstPUCZBXjBtkz379MY0_YFYOQFcjVfpZu2tWBM"/><div class="flex flex-col min-w-0"><h1 class="font-title-md text-title-md text-primary font-bold tracking-tight truncate leading-tight">Relief Distribution</h1><span class="font-label-sm text-label-sm text-secondary truncate">Dishari Field Unit</span></div></div><div class="flex items-center gap-2 shrink-0"><div class="flex items-center bg-surface-container-high p-0.5 rounded-full"><button class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-container text-on-primary transition-all" type="button">EN</button><button class="px-2 py-0.5 rounded-full text-[10px] font-semibold text-on-surface-variant font-bangla transition-all" type="button">বাংলা</button></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 shadow-sm"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full px-4 pt-16 pb-8 bg-surface min-h-screen"><div class="flex flex-col w-full pb-32">
+<!-- Offline Network & Cache Status Telemetry Pill -->
+<div class="w-full mb-4">
+<div class="bg-[#0D1117] text-surface-container-lowest rounded-2xl p-3 shadow-xl flex items-center justify-between gap-2.5">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="relative flex items-center justify-center shrink-0 w-3 h-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-[#F59E0B]"></span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<span class="font-label-sm text-label-sm font-bold text-amber-400 uppercase tracking-wider">Offline Queue</span>
+<span class="text-white/40 text-[10px]">•</span>
+<span class="font-label-sm text-[11px] text-white/90 font-medium">1 waiting sync</span>
+</div>
+<span class="text-[11px] text-white/60 truncate font-mono">Last cached at 06:05 AM</span>
+</div>
+</div>
+<button class="shrink-0 px-2.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-white text-[11px] font-semibold flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[14px]">cloud_sync</span>
+<span>Options</span>
+</button>
+</div>
+</div>
+<!-- Household Target Brief Card -->
+<div class="bg-surface-container-lowest rounded-2xl p-3.5 mb-4 shadow-sm border border-slate-100 flex items-center justify-between">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-11 h-11 rounded-2xl bg-[#EFF6FF] border border-[#8FB2E8]/40 flex items-center justify-center shrink-0">
+<svg class="w-6 h-6" fill="none" viewbox="0 0 24 24">
+<path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6a1 1 0 00-1-1h-4a1 1 0 00-1 1v6H4a1 1 0 01-1-1v-9.5z" fill="#8FB2E8" fill-opacity="0.35"></path>
+<path d="M2.5 10.5L12 2.5l9.5 8M9.5 21v-6a1.5 1.5 0 011.5-1.5h2a1.5 1.5 0 011.5 1.5v6" stroke="#1B3B6F" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-title-md text-sm font-bold text-primary truncate">HH #8492 — Rahim Uddin</span>
+<span class="px-1.5 py-0.5 rounded-md bg-amber-100/90 text-amber-900 text-[10px] font-bold tracking-tight">Zone C-4</span>
+</div>
+<span class="text-[12px] text-on-surface-variant truncate">5 Members • Kalia, Narail • Ration Card: 9021</span>
+</div>
+</div>
+<div class="shrink-0 w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" viewbox="0 0 24 24">
+<path d="M12 2L4 5v6.5c0 5 3.4 9.7 8 10.5 4.6-.8 8-5.5 8-10.5V5l-8-3z" fill="#10B981" fill-opacity="0.2"></path>
+<path d="M12 2L4 5v6.5c0 5 3.4 9.7 8 10.5 4.6-.8 8-5.5 8-10.5V5l-8-3z" stroke="#047857" stroke-linejoin="round" stroke-width="1.6"></path>
+<path d="M9 12l2 2 4-4" stroke="#047857" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+</div>
+</div>
+<!-- Section Header -->
+<div class="flex items-center justify-between mb-3 px-1">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<h2 class="font-title-md text-title-md text-primary font-bold">Items Distributed</h2>
+<span class="bg-[#EFF6FF] text-primary border border-[#8FB2E8]/40 font-label-sm text-[11px] px-2 py-0.5 rounded-full font-bold">6 types</span>
+</div>
+<p class="font-body-md text-[13px] text-on-surface-variant">Record precise quantities handed over to this family</p>
+</div>
+</div>
+<!-- Items Distribution List -->
+<div class="flex flex-col gap-2.5 mb-5" id="items-list">
+<!-- 1. Rice (Active: 10 kg) -->
+<div class="item-card bg-[#EFF6FF] rounded-2xl p-3.5 shadow-sm transition-all flex items-center justify-between gap-3 border border-[#1B3B6F] shadow-[0_4px_16px_rgba(27,59,111,0.06)]">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-12 h-12 rounded-2xl bg-white border border-[#8FB2E8]/60 flex items-center justify-center shrink-0 shadow-sm">
+<!-- Duotone Rice / Grains SVG -->
+<svg class="w-7 h-7" fill="none" viewbox="0 0 32 32">
+<ellipse cx="16" cy="16" fill="#8FB2E8" fill-opacity="0.32" rx="9" ry="12"></ellipse>
+<path d="M16 5c-5 4-7 10-7 12 0 4.5 3.1 7 7 7s7-2.5 7-7c0-2-2-8-7-12z" stroke="#1B3B6F" stroke-linejoin="round" stroke-width="1.8"></path>
+<path d="M16 6v17M12.5 12c1.8.8 3.5.8 3.5.8M19.5 15.5c-1.8.8-3.5.8-3.5.8M12.5 18c1.8.8 3.5.8 3.5.8" stroke="#1B3B6F" stroke-linecap="round" stroke-width="1.6"></path>
+</svg>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-[15px] font-bold text-primary truncate leading-tight">Rice</span>
+<span class="font-label-sm text-[12px] text-secondary font-medium">kg (চাল)</span>
+</div>
+</div>
+<!-- Stepper Controls -->
+<div class="flex items-center gap-2 shrink-0">
+<button aria-label="Decrease rice" class="w-11 h-11 rounded-full bg-white text-primary border border-slate-200/80 hover:bg-slate-50 active:scale-90 transition-all flex items-center justify-center shadow-sm" onclick="decrement('rice', 1)" type="button">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<span class="font-tabular-stat text-lg font-bold text-primary w-9 text-center" id="qty-rice">10</span>
+<button aria-label="Increase rice" class="w-11 h-11 rounded-full bg-[#1B3B6F] text-white hover:bg-[#152e56] active:scale-90 transition-all flex items-center justify-center shadow-[0_4px_12px_rgba(27,59,111,0.25)]" onclick="increment('rice', 1)" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+<!-- 2. Lentils (Inactive: 0 kg) -->
+<div class="item-card bg-surface-container-lowest rounded-2xl p-3.5 shadow-sm transition-all flex items-center justify-between gap-3 border border-slate-100">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-12 h-12 rounded-2xl bg-surface-container-high/60 flex items-center justify-center shrink-0">
+<!-- Duotone Lentils / Seeds SVG -->
+<svg class="w-7 h-7" fill="none" viewbox="0 0 32 32">
+<path d="M16 26c-5-2-8-7-8-12 0-5 8-10 8-10s8 5 8 10c0 5-3 10-8 12z" fill="#64748B" fill-opacity="0.18"></path>
+<path d="M16 26c-5-2-8-7-8-12 0-5 8-10 8-10s8 5 8 10c0 5-3 10-8 12z" stroke="#475569" stroke-linejoin="round" stroke-width="1.8"></path>
+<path d="M16 7v17M16 14c-3 1-4.5 3-4.5 3M16 18c3 1 4.5 3 4.5 3" stroke="#475569" stroke-linecap="round" stroke-width="1.6"></path>
+</svg>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-[15px] font-bold text-on-surface truncate leading-tight">Lentils</span>
+<span class="font-label-sm text-[12px] text-on-surface-variant font-medium">kg (ডাল)</span>
+</div>
+</div>
+<!-- Stepper Controls -->
+<div class="flex items-center gap-2 shrink-0">
+<button aria-label="Decrease lentils" class="w-11 h-11 rounded-full bg-surface-container-low text-outline hover:bg-surface-container active:scale-90 transition-all flex items-center justify-center border border-slate-200/60" onclick="decrement('lentils', 1)" type="button">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<span class="font-tabular-stat text-lg font-bold text-outline w-9 text-center" id="qty-lentils">0</span>
+<button aria-label="Increase lentils" class="w-11 h-11 rounded-full bg-surface-container-high text-primary hover:bg-[#1B3B6F] hover:text-white active:scale-90 transition-all flex items-center justify-center border border-slate-200/80" onclick="increment('lentils', 1)" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+<!-- 3. Cooking oil (Inactive: 0 litre) -->
+<div class="item-card bg-surface-container-lowest rounded-2xl p-3.5 shadow-sm transition-all flex items-center justify-between gap-3 border border-slate-100">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-12 h-12 rounded-2xl bg-surface-container-high/60 flex items-center justify-center shrink-0">
+<!-- Duotone Cooking Oil Bottle SVG -->
+<svg class="w-7 h-7" fill="none" viewbox="0 0 32 32">
+<rect fill="#64748B" fill-opacity="0.18" height="17" rx="3" width="12" x="10" y="10"></rect>
+<path d="M13 5h6v3h-6V5z" stroke="#475569" stroke-linejoin="round" stroke-width="1.6"></path>
+<path d="M10 11a3 3 0 013-3h6a3 3 0 013 3v13a3 3 0 01-3 3H13a3 3 0 01-3-3V11z" stroke="#475569" stroke-width="1.8"></path>
+<path d="M16 13c1.5 2 2.5 3 2.5 4.5a2.5 2.5 0 11-5 0c0-1.5 1-2.5 2.5-4.5z" fill="#F59E0B" fill-opacity="0.3" stroke="#D97706" stroke-width="1.4"></path>
+</svg>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-[15px] font-bold text-on-surface truncate leading-tight">Cooking oil</span>
+<span class="font-label-sm text-[12px] text-on-surface-variant font-medium">litre (ভোজ্য তেল)</span>
+</div>
+</div>
+<!-- Stepper Controls -->
+<div class="flex items-center gap-2 shrink-0">
+<button aria-label="Decrease oil" class="w-11 h-11 rounded-full bg-surface-container-low text-outline hover:bg-surface-container active:scale-90 transition-all flex items-center justify-center border border-slate-200/60" onclick="decrement('oil', 1)" type="button">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<span class="font-tabular-stat text-lg font-bold text-outline w-9 text-center" id="qty-oil">0</span>
+<button aria-label="Increase oil" class="w-11 h-11 rounded-full bg-surface-container-high text-primary hover:bg-[#1B3B6F] hover:text-white active:scale-90 transition-all flex items-center justify-center border border-slate-200/80" onclick="increment('oil', 1)" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+<!-- 4. Oral saline (Active: 4 packet) -->
+<div class="item-card bg-[#EFF6FF] rounded-2xl p-3.5 shadow-sm transition-all flex items-center justify-between gap-3 border border-[#1B3B6F] shadow-[0_4px_16px_rgba(27,59,111,0.06)]">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-12 h-12 rounded-2xl bg-white border border-[#8FB2E8]/60 flex items-center justify-center shrink-0 shadow-sm">
+<!-- Duotone Oral Saline Packet SVG -->
+<svg class="w-7 h-7" fill="none" viewbox="0 0 32 32">
+<rect fill="#8FB2E8" fill-opacity="0.32" height="20" rx="3" width="18" x="7" y="6"></rect>
+<rect height="20" rx="3" stroke="#1B3B6F" stroke-width="1.8" width="18" x="7" y="6"></rect>
+<path d="M7 11h18M16 14v6M13 17h6" stroke="#1B3B6F" stroke-linecap="round" stroke-width="1.8"></path>
+<circle cx="21.5" cy="8.5" fill="#1B3B6F" r="1.5"></circle>
+</svg>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-[15px] font-bold text-primary truncate leading-tight">Oral saline</span>
+<span class="font-label-sm text-[12px] text-secondary font-medium">packet (খাবার স্যালাইন)</span>
+</div>
+</div>
+<!-- Stepper Controls -->
+<div class="flex items-center gap-2 shrink-0">
+<button aria-label="Decrease saline" class="w-11 h-11 rounded-full bg-white text-primary border border-slate-200/80 hover:bg-slate-50 active:scale-90 transition-all flex items-center justify-center shadow-sm" onclick="decrement('saline', 1)" type="button">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<span class="font-tabular-stat text-lg font-bold text-primary w-9 text-center" id="qty-saline">4</span>
+<button aria-label="Increase saline" class="w-11 h-11 rounded-full bg-[#1B3B6F] text-white hover:bg-[#152e56] active:scale-90 transition-all flex items-center justify-center shadow-[0_4px_12px_rgba(27,59,111,0.25)]" onclick="increment('saline', 1)" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+<!-- 5. Water purification tablets (Inactive: 0 strip) -->
+<div class="item-card bg-surface-container-lowest rounded-2xl p-3.5 shadow-sm transition-all flex items-center justify-between gap-3 border border-slate-100">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-12 h-12 rounded-2xl bg-surface-container-high/60 flex items-center justify-center shrink-0">
+<!-- Duotone Water Drop / Tablet Strip SVG -->
+<svg class="w-7 h-7" fill="none" viewbox="0 0 32 32">
+<path d="M16 6c-4 5.5-8 9.5-8 13.5a8 8 0 0016 0c0-4-4-8-8-13.5z" fill="#64748B" fill-opacity="0.18"></path>
+<path d="M16 6c-4 5.5-8 9.5-8 13.5a8 8 0 0016 0c0-4-4-8-8-13.5z" stroke="#475569" stroke-linejoin="round" stroke-width="1.8"></path>
+<ellipse cx="16" cy="19.5" fill="#8FB2E8" fill-opacity="0.4" rx="3.5" ry="3"></ellipse>
+<path d="M13.5 19.5h5" stroke="#475569" stroke-linecap="round" stroke-width="1.4"></path>
+</svg>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-[15px] font-bold text-on-surface truncate leading-tight">Water tablets</span>
+<span class="font-label-sm text-[12px] text-on-surface-variant font-medium">strip (পানি বিশুদ্ধকরণ)</span>
+</div>
+</div>
+<!-- Stepper Controls -->
+<div class="flex items-center gap-2 shrink-0">
+<button aria-label="Decrease water tablets" class="w-11 h-11 rounded-full bg-surface-container-low text-outline hover:bg-surface-container active:scale-90 transition-all flex items-center justify-center border border-slate-200/60" onclick="decrement('water', 1)" type="button">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<span class="font-tabular-stat text-lg font-bold text-outline w-9 text-center" id="qty-water">0</span>
+<button aria-label="Increase water tablets" class="w-11 h-11 rounded-full bg-surface-container-high text-primary hover:bg-[#1B3B6F] hover:text-white active:scale-90 transition-all flex items-center justify-center border border-slate-200/80" onclick="increment('water', 1)" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+<!-- 6. Dry food pack (Inactive: 0 pack) -->
+<div class="item-card bg-surface-container-lowest rounded-2xl p-3.5 shadow-sm transition-all flex items-center justify-between gap-3 border border-slate-100">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-12 h-12 rounded-2xl bg-surface-container-high/60 flex items-center justify-center shrink-0">
+<!-- Duotone Dry Food Pack / Box SVG -->
+<svg class="w-7 h-7" fill="none" viewbox="0 0 32 32">
+<path d="M6 12l10-5 10 5v12a2 2 0 01-2 2H8a2 2 0 01-2-2V12z" fill="#64748B" fill-opacity="0.18"></path>
+<path d="M6 12l10-5 10 5v12a2 2 0 01-2 2H8a2 2 0 01-2-2V12z" stroke="#475569" stroke-linejoin="round" stroke-width="1.8"></path>
+<path d="M6 12l10 5 10-5M16 17v9" stroke="#475569" stroke-linecap="round" stroke-width="1.6"></path>
+<path d="M13 8.5l6 3" stroke="#475569" stroke-linecap="round" stroke-width="1.4"></path>
+</svg>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-[15px] font-bold text-on-surface truncate leading-tight">Dry food pack</span>
+<span class="font-label-sm text-[12px] text-on-surface-variant font-medium">pack (শুকনো খাবার)</span>
+</div>
+</div>
+<!-- Stepper Controls -->
+<div class="flex items-center gap-2 shrink-0">
+<button aria-label="Decrease dry food" class="w-11 h-11 rounded-full bg-surface-container-low text-outline hover:bg-surface-container active:scale-90 transition-all flex items-center justify-center border border-slate-200/60" onclick="decrement('dryfood', 1)" type="button">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<span class="font-tabular-stat text-lg font-bold text-outline w-9 text-center" id="qty-dryfood">0</span>
+<button aria-label="Increase dry food" class="w-11 h-11 rounded-full bg-surface-container-high text-primary hover:bg-[#1B3B6F] hover:text-white active:scale-90 transition-all flex items-center justify-center border border-slate-200/80" onclick="increment('dryfood', 1)" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Duplicate Relief Safeguard Toggle Card -->
+<label class="bg-surface-container-lowest rounded-2xl p-4 mb-6 shadow-sm border border-slate-100 flex items-start gap-3.5 cursor-pointer active:bg-surface-container-low transition-colors">
+<div class="relative flex items-center pt-0.5">
+<input checked="" class="peer sr-only" id="duplicate-flag" type="checkbox"/>
+<div class="w-6 h-6 rounded-lg bg-surface-container-highest peer-checked:bg-[#1B3B6F] flex items-center justify-center transition-colors shadow-sm">
+<svg class="w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6"></path>
+</svg>
+</div>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-title-md text-sm font-bold text-on-surface leading-tight">The family already received relief from another group today</span>
+</div>
+<span class="text-[12px] text-on-surface-variant mt-1 leading-snug">Logged to prevent dual distribution &amp; reconcile partner agency lists (রেড ক্রিসেন্ট / স্থানীয় এনজিও)।</span>
+</div>
+</label>
+<!-- Sticky Tactical Actions Zone -->
+<div class="flex flex-col gap-3 pt-1">
+<!-- Primary CTA: Save Distribution -->
+<button class="w-full h-14 rounded-full bg-[#1B3B6F] text-white font-title-md text-base font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_8px_24px_-4px_rgba(27,59,111,0.35)]" id="save-btn" onclick="triggerSaveAnimation()" type="button">
+<svg class="w-5 h-5" fill="none" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"></circle>
+<path d="M8.5 12l2.5 2.5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Save distribution</span>
+</button>
+<!-- Secondary CTA: Save & Register New Household -->
+<button class="w-full h-12 rounded-full bg-surface-container-lowest text-[#1B3B6F] border border-[#1B3B6F]/25 font-title-md text-sm font-bold flex items-center justify-center gap-2 hover:bg-slate-50 active:scale-[0.98] transition-all shadow-sm" type="button">
+<svg class="w-4 h-4" fill="none" viewbox="0 0 24 24">
+<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke="#1B3B6F" stroke-linecap="round" stroke-width="1.8"></path>
+<circle cx="9" cy="7" r="4" stroke="#1B3B6F" stroke-width="1.8"></circle>
+<path d="M19 8v6M22 11h-6" stroke="#1B3B6F" stroke-linecap="round" stroke-width="1.8"></path>
+</svg>
+<span>Save &amp; register new household</span>
+</button>
+</div>
+<!-- Floating Pill Bottom Navigation Bar -->
+<nav class="fixed bottom-4 inset-x-4 max-w-[364px] mx-auto z-50 bg-white/95 backdrop-blur-md rounded-[30px] border border-slate-200/80 shadow-[0_12px_32px_rgba(13,17,23,0.12)] px-2.5 py-1.5">
+<div class="flex items-center justify-between">
+<!-- 1. Home (Inactive) -->
+<a class="flex-1 flex flex-col items-center justify-center py-1 text-slate-500 hover:text-primary transition-colors" href="#">
+<svg class="w-5 h-5 mb-0.5" fill="none" viewbox="0 0 24 24">
+<path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6a1 1 0 00-1-1h-4a1 1 0 00-1 1v6H4a1 1 0 01-1-1v-9.5z" stroke="#64748B" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span class="text-[10px] font-medium tracking-tight">Home</span>
+</a>
+<!-- 2. Search (Inactive) -->
+<a class="flex-1 flex flex-col items-center justify-center py-1 text-slate-500 hover:text-primary transition-colors" href="#">
+<svg class="w-5 h-5 mb-0.5" fill="none" viewbox="0 0 24 24">
+<circle cx="11" cy="11" r="7" stroke="#64748B" stroke-width="1.8"></circle>
+<path d="M16.5 16.5L21 21" stroke="#64748B" stroke-linecap="round" stroke-width="1.8"></path>
+</svg>
+<span class="text-[10px] font-medium tracking-tight">Search</span>
+</a>
+<!-- 3. Distribute (Active Pill Highlight) -->
+<a class="flex-[1.25] flex flex-col items-center justify-center py-1.5 px-3 rounded-full bg-[#8FB2E8]/20 border border-[#8FB2E8]/40 shadow-xs" href="#">
+<svg class="w-5 h-5 mb-0.5" fill="none" viewbox="0 0 24 24">
+<circle cx="12" cy="12" fill="#8FB2E8" fill-opacity="0.35" r="9" stroke="#1B3B6F" stroke-width="1.8"></circle>
+<path d="M12 8v8M8 12h8" stroke="#1B3B6F" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+<span class="text-[10px] font-bold text-[#1B3B6F] tracking-tight">Distribute</span>
+</a>
+<!-- 4. Sync (Inactive with Beacon Gold Badge) -->
+<a class="relative flex-1 flex flex-col items-center justify-center py-1 text-slate-500 hover:text-primary transition-colors" href="#">
+<div class="relative">
+<svg class="w-5 h-5 mb-0.5" fill="none" viewbox="0 0 24 24">
+<path d="M20 12a8 8 0 01-14.9 3.9M4 12a8 8 0 0114.9-3.9" stroke="#64748B" stroke-linecap="round" stroke-width="1.8"></path>
+<path d="M20 7v5h-5M4 17v-5h5" stroke="#64748B" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+<span class="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-1 rounded-full bg-[#F59E0B] text-slate-950 text-[9px] font-black flex items-center justify-center shadow-xs">1</span>
+</div>
+<span class="text-[10px] font-medium tracking-tight">Sync</span>
+</a>
+</div>
+</nav>
+</div>
+<script>
+  function increment(itemKey, step) {
+    const el = document.getElementById('qty-' + itemKey);
+    if (!el) return;
+    let val = parseInt(el.textContent, 10) || 0;
+    val += step;
+    el.textContent = val;
+    updateCardStyling(itemKey, val);
+  }
+
+  function decrement(itemKey, step) {
+    const el = document.getElementById('qty-' + itemKey);
+    if (!el) return;
+    let val = parseInt(el.textContent, 10) || 0;
+    val = Math.max(0, val - step);
+    el.textContent = val;
+    updateCardStyling(itemKey, val);
+  }
+
+  function updateCardStyling(itemKey, val) {
+    const el = document.getElementById('qty-' + itemKey);
+    const card = el.closest('.item-card');
+    if (!card) return;
+
+    if (val > 0) {
+      card.classList.remove('bg-surface-container-lowest', 'border-slate-100');
+      card.classList.add('bg-[#EFF6FF]', 'border-[#1B3B6F]', 'shadow-[0_4px_16px_rgba(27,59,111,0.06)]');
+      el.classList.remove('text-outline');
+      el.classList.add('text-primary');
+    } else {
+      card.classList.remove('bg-[#EFF6FF]', 'border-[#1B3B6F]', 'shadow-[0_4px_16px_rgba(27,59,111,0.06)]');
+      card.classList.add('bg-surface-container-lowest', 'border-slate-100');
+      el.classList.remove('text-primary');
+      el.classList.add('text-outline');
+    }
+  }
+
+  function triggerSaveAnimation() {
+    const btn = document.getElementById('save-btn');
+    if (!btn) return;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[22px] animate-spin">refresh</span><span>Saving to local queue...</span>';
+    btn.classList.add('opacity-80');
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined text-[22px]">done_all</span><span>Queued offline!</span>';
+      btn.classList.remove('bg-[#1B3B6F]');
+      btn.classList.add('bg-emerald-700');
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('bg-emerald-700', 'opacity-80');
+        btn.classList.add('bg-[#1B3B6F]');
+      }, 1800);
+    }, 600);
+  }
+</script></main></body></html>

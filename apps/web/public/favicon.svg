@@ -1,0 +1,12 @@
+<svg width="512" height="512" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fusion-pwa-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#224A8A" />
+      <stop offset="100%" stop-color="#132B52" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#fusion-pwa-bg)" />
+  <path d="M23.5 12.5H51.5V40.5H44.5V19.5H23.5V12.5Z" fill="#FFFFFF" />
+  <path d="M18.5 24.5H39.5V45.5H32.5V31.5H18.5V24.5Z" fill="#8FB2E8" />
+  <path d="M20 36L28 44L20 52L12 44L20 36Z" fill="#F59E0B" />
+</svg>

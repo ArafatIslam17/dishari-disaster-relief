@@ -53,14 +53,22 @@ interface Member {
   lockedUntil: string | null;
   organisationName: string | null;
   createdAt: string;
+  /** Set by the server: this viewer sits above the registration in the approval hierarchy. */
+  canApprove: boolean;
   devices: { id: string; label: string; status: string; lastSyncAt: string | null }[];
 }
 
-export function MembersPage({ admin = false }: { admin?: boolean }) {
+/**
+ * Members (coordinators), all users (System Administrator) or the approval queue (Operation
+ * Administrators: pending volunteers of organisations in their operations, nothing else).
+ */
+export function MembersPage({ admin = false, approvals = false }: { admin?: boolean; approvals?: boolean }) {
   const { t } = useTranslation();
-  const { user } = useSession();
+  const { user, role: viewerRole } = useSession();
   const [params, setParams] = useSearchParams();
-  const status = params.get('status') === 'pending' ? 'pending' : '';
+  const status = approvals || params.get('status') === 'pending' ? 'pending' : '';
+  const showOrg = admin || approvals;
+  const title = approvals ? t('approvals.title') : admin ? t('admin.usersTitle') : t('members.title');
   const data = useApiData((signal) => api.get<{ members: Member[] }>(`/api/members${status ? `?status=${status}` : ''}`, signal), [status]);
   const run = useAction(data.reload);
   const confirm = useConfirm();
@@ -94,16 +102,19 @@ export function MembersPage({ admin = false }: { admin?: boolean }) {
 
   return (
     <>
-      <PageHead title={admin ? t('admin.usersTitle') : t('members.title')} lead={admin ? t('admin.usersIntro') : t('members.intro')} />
-      <Segmented<'pending' | ''>
-        label={t('common.status')}
-        value={status}
-        onChange={(s) => setParams(s ? { status: s } : {})}
-        options={[
-          { value: '', label: t('members.all') },
-          { value: 'pending', label: t('members.pending') },
-        ]}
-      />
+      <PageHead title={title} lead={approvals ? t('approvals.intro') : admin ? t('admin.usersIntro') : t('members.intro')} />
+      {!approvals && (
+        <Segmented<'pending' | ''>
+          label={t('common.status')}
+          value={status}
+          onChange={(s) => setParams(s ? { status: s } : {})}
+          options={[
+            { value: '', label: t('members.all') },
+            { value: 'pending', label: t('members.pending') },
+          ]}
+        />
+      )}
+      {status === 'pending' && <p className="muted small approver-note">{t(approvals ? 'approvals.scope' : admin ? 'admin.approvalScope' : 'members.approvalScope')}</p>}
       {temp && (
         <Notice tone="warn">
           <p>{t('members.tempPasswordShown', { name: temp.name, password: '' })}</p>
@@ -119,14 +130,14 @@ export function MembersPage({ admin = false }: { admin?: boolean }) {
       {data.error ? <ErrorState error={data.error} onRetry={data.reload} /> : null}
       {data.data && data.data.members.length === 0 && <Empty title={status === 'pending' ? t('members.nonePending') : t('common.noResults')} mark="synced" />}
       {data.data && data.data.members.length > 0 && (
-        <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={admin ? t('admin.usersTitle') : t('members.title')}>
+        <div className="table-wrap stack-table" tabIndex={0} role="region" aria-label={title}>
           <table>
-            <caption className="visually-hidden">{admin ? t('admin.usersTitle') : t('members.title')}</caption>
+            <caption className="visually-hidden">{title}</caption>
             <thead>
               <tr>
                 <th scope="col">{t('common.name')}</th>
                 <th scope="col">{t('common.mobile')}</th>
-                {admin && <th scope="col">{t('common.organisation')}</th>}
+                {showOrg && <th scope="col">{t('common.organisation')}</th>}
                 <th scope="col">{t('common.role')}</th>
                 <th scope="col">{t('common.status')}</th>
                 <th scope="col">{t('members.devices')}</th>
@@ -143,7 +154,7 @@ export function MembersPage({ admin = false }: { admin?: boolean }) {
                     <td data-label={t('common.mobile')} className="tabular">
                       {m.mobile}
                     </td>
-                    {admin && <td data-label={t('common.organisation')}>{m.organisationName ?? '—'}</td>}
+                    {showOrg && <td data-label={t('common.organisation')}>{m.organisationName ?? '—'}</td>}
                     <td data-label={t('common.role')}>
                       {orgMember && (m.status === 'active' || m.status === 'locked') && !self ? (
                         <select aria-label={`${t('members.assignRole')}: ${m.fullName}`} value={m.role} onChange={(e) => void changeRole(m, e.target.value)} style={{ minHeight: 36 }}>
@@ -182,9 +193,10 @@ export function MembersPage({ admin = false }: { admin?: boolean }) {
                     </td>
                     <td data-label={t('common.actions')}>
                       <div className="table-actions">
-                        {m.status === 'pending' && (
+                        {m.status === 'pending' && !m.canApprove && <span className="muted small">{t('members.awaitingOther')}</span>}
+                        {m.status === 'pending' && m.canApprove && (
                           <>
-                            {orgMember && (
+                            {orgMember && viewerRole === 'GROUP_COORDINATOR' && (
                               <select
                                 aria-label={`${t('members.approveAs')}: ${m.fullName}`}
                                 value={approveRole[m.id] ?? 'FIELD_VOLUNTEER'}
@@ -202,7 +214,7 @@ export function MembersPage({ admin = false }: { admin?: boolean }) {
                             </button>
                           </>
                         )}
-                        {(m.status === 'active' || m.status === 'locked') && !self && (
+                        {!approvals && (m.status === 'active' || m.status === 'locked') && !self && (
                           <>
                             <button type="button" className="btn btn-secondary btn-sm" onClick={() => void issueTemp(m)}>
                               {t('members.tempPassword')}

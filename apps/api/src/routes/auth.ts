@@ -179,6 +179,15 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         { name: input.fullName },
         '/app/members',
       );
+      // Oversight: administrators of operations this organisation has joined may approve too.
+      const admins = await query<{ id: string }>(
+        ctx.db,
+        sql`select distinct u.user_id as id from operation_admin oa
+              join operation_membership m on m.operation_id = oa.operation_id and m.status = 'approved'
+              join app_user u on u.user_id = oa.user_id and u.status = 'active'
+             where m.organisation_id = ${organisationId}`,
+      );
+      await notify(ctx.db, admins.map((a) => a.id), 'member.pending', { name: input.fullName }, '/app/approvals');
     } else {
       await notify(
         ctx.db,
@@ -310,7 +319,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       throw unauthorized('invalid_credentials');
     }
 
-    if (user.status !== 'active') throw forbidden(`account_${user.status}`); // UC02 3.a shows the status
+    // UC02 3.a shows the status; a pending account is also told who approves it.
+    if (user.status === 'pending')
+      throw new AppError(403, 'account_pending', undefined, { approver: user.role === 'FIELD_VOLUNTEER' ? 'coordinator' : 'sysadmin' });
+    if (user.status !== 'active') throw forbidden(`account_${user.status}`);
 
     const dev = await registerDevice(ctx, user.id, input.device.id, input.device.label);
     await ctx.db.update(appUser).set({ failedAttempts: 0, updatedAt: now }).where(eq(appUser.id, user.id));

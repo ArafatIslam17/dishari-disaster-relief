@@ -15,6 +15,8 @@ import { adminRoutes } from './routes/admin.js';
 import { auditRoutes } from './routes/audit.js';
 import { authRoutes } from './routes/auth.js';
 import { coverageRoutes } from './routes/coverage.js';
+import { donationRoutes } from './routes/donations.js';
+import { publicRoutes } from './routes/public.js';
 import { householdRoutes } from './routes/households.js';
 import { memberRoutes } from './routes/members.js';
 import { notificationRoutes } from './routes/notifications.js';
@@ -49,7 +51,8 @@ export async function buildApp(ctx: AppContext, options: { logger?: boolean } = 
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
         styleSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'blob:'],
+        // Map tiles for the live operation map (OpenStreetMap, no API key).
+        imgSrc: ["'self'", 'data:', 'blob:', 'https://tile.openstreetmap.org'],
         fontSrc: ["'self'"],
         connectSrc: ["'self'"],
         workerSrc: ["'self'"],
@@ -120,6 +123,8 @@ export async function buildApp(ctx: AppContext, options: { logger?: boolean } = 
   await app.register(coverageRoutes);
   await app.register(auditRoutes);
   await app.register(reportRoutes);
+  await app.register(donationRoutes);
+  await app.register(publicRoutes);
 
   // Production: serve the built PWA from the same origin (strict CORS, one HTTPS endpoint).
   const webDist = ctx.config.WEB_DIST ? resolve(ctx.config.WEB_DIST) : null;

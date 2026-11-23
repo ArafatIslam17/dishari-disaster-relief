@@ -3,12 +3,18 @@ import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import {
   Bell,
+  ArrowRight,
+  CheckCircle2,
   ChevronRight,
   ClipboardList,
   Download,
+  HandCoins,
   HandHeart,
+  House,
   LayoutDashboard,
+  Map as MapIcon,
   MapPin,
+  Package,
   PencilLine,
   RefreshCw,
   Search as SearchIcon,
@@ -26,7 +32,7 @@ import { localStore, type HouseholdView, type SimilarMatch } from '../local/stor
 import { syncManager } from '../local/sync';
 import { SetPinPage } from './public';
 import { useNotificationText } from '../ui/notifications';
-import { Empty, Notice, PageHead, SelectField, ShortCode, StatusMark, StatusTag, Stepper, TextField, useConfirm, useErrorText, useToast } from '../ui/kit';
+import { Empty, Notice, PageHead, SelectField, ShortCode, StatusTag, Stepper, TextField, useConfirm, useErrorText, useToast } from '../ui/kit';
 
 /** Re-runs `load` whenever the local store changes. */
 function useLocalData<T>(load: () => Promise<T>, deps: unknown[]): T | undefined {
@@ -61,12 +67,20 @@ function itemLabel(item: ReliefItemDTO | undefined, lang: string): string {
   return lang === 'bn' && item.itemNameBn ? item.itemNameBn : item.itemName;
 }
 
-function MenuLink({ to, icon: Icon, label, end }: { to: string; icon: LucideIcon; label: string; end?: ReactNode }) {
+type Tone = 'navy' | 'sky' | 'teal' | 'gold' | 'rose' | 'slate';
+
+/** A home menu row: duotone icon tile, title, one-line description, chevron. */
+function MenuLink({ to, icon: Icon, label, sub, tone = 'navy', end }: { to: string; icon: LucideIcon; label: string; sub?: string; tone?: Tone; end?: ReactNode }) {
   return (
     <li>
       <Link to={to}>
-        <Icon size={22} aria-hidden />
-        <span className="menu-label">{label}</span>
+        <span className={`menu-icon tone-tile-${tone}`} aria-hidden>
+          <Icon size={22} />
+        </span>
+        <span className="menu-label">
+          {label}
+          {sub && <span className="menu-sub">{sub}</span>}
+        </span>
         {end}
         <ChevronRight size={18} className="chev" aria-hidden />
       </Link>
@@ -136,7 +150,9 @@ export function FieldHome() {
               {ops.map((o) => (
                 <li key={o.id}>
                   <button type="button" className="menu-button" onClick={() => void choose(o)}>
-                    <MapPin size={22} aria-hidden />
+                    <span className="menu-icon tone-tile-navy" aria-hidden>
+                      <MapPin size={22} />
+                    </span>
                     <span className="menu-label">{o.name}</span>
                     <ChevronRight size={18} className="chev" aria-hidden />
                   </button>
@@ -161,6 +177,9 @@ export function FieldHome() {
         <div>
           <dt className="visually-hidden">{t('field.stats.areas')}</dt>
           <dd className="figure">{formatNumber(counts?.areas ?? 0)}</dd>
+          <dd className="stat-icon" aria-hidden>
+            <MapIcon size={20} />
+          </dd>
           <dd className="figure-label" aria-hidden>
             {t('field.stats.areas')}
           </dd>
@@ -168,6 +187,9 @@ export function FieldHome() {
         <div>
           <dt className="visually-hidden">{t('field.stats.households')}</dt>
           <dd className="figure">{formatNumber(counts?.households ?? 0)}</dd>
+          <dd className="stat-icon" aria-hidden>
+            <House size={20} />
+          </dd>
           <dd className="figure-label" aria-hidden>
             {t('field.stats.households')}
           </dd>
@@ -175,8 +197,10 @@ export function FieldHome() {
         <div>
           <dt className="visually-hidden">{t('field.stats.waiting')}</dt>
           <dd className="figure">{formatNumber(status.pending)}</dd>
+          <dd className={`stat-icon${status.pending > 0 ? ' is-pending' : ' is-ok'}`} aria-hidden>
+            {status.pending > 0 ? <RefreshCw size={20} /> : <CheckCircle2 size={20} />}
+          </dd>
           <dd className="figure-label" aria-hidden>
-            <StatusMark kind={status.pending > 0 ? 'pending' : 'synced'} />
             {t('field.stats.waiting')}
           </dd>
         </div>
@@ -199,25 +223,31 @@ export function FieldHome() {
           {t('field.actions.newHousehold')}
           <span className="hoist-sub">{t('field.hoistSub')}</span>
         </span>
-        <ChevronRight size={22} aria-hidden />
+        <span className="hoist-cta" aria-hidden>
+          {t('field.hoistCta')}
+          <ArrowRight size={18} />
+        </span>
       </Link>
       <h2 className="menu-group-title">{t('field.groupWork')}</h2>
       <ul className="menu-list">
-        <MenuLink to="/field/search" icon={SearchIcon} label={t('field.actions.search')} />
-        <MenuLink to="/field/anonymous" icon={HandHeart} label={t('field.actions.anonymous')} />
-        <MenuLink to="/field/unserved" icon={ClipboardList} label={t('field.actions.unserved')} />
+        <MenuLink to="/field/search" icon={SearchIcon} tone="navy" label={t('field.actions.search')} sub={t('field.menuSub.search')} />
+        <MenuLink to="/field/anonymous" icon={HandHeart} tone="teal" label={t('field.actions.anonymous')} sub={t('field.menuSub.anonymous')} />
+        <MenuLink to="/field/unserved" icon={ClipboardList} tone="gold" label={t('field.actions.unserved')} sub={t('field.menuSub.unserved')} />
+        <MenuLink to="/donate" icon={HandCoins} tone="rose" label={t('donate.nav')} sub={t('donate.navSub')} />
       </ul>
       <h2 className="menu-group-title">{t('field.groupPhone')}</h2>
       <ul className="menu-list">
-        <MenuLink to="/field/areas" icon={Download} label={t('field.actions.areas')} />
+        <MenuLink to="/field/areas" icon={Download} tone="sky" label={t('field.actions.areas')} sub={t('field.menuSub.areas')} />
         <MenuLink
           to="/field/notifications"
           icon={Bell}
+          tone="rose"
           label={t('field.actions.notifications')}
+          sub={t('field.menuSub.notifications')}
           end={unreadNotices ? <span className="badge-count">{formatNumber(unreadNotices)}</span> : null}
         />
-        <MenuLink to="/field/settings" icon={SettingsIcon} label={t('field.actions.settings')} />
-        {role === 'GROUP_COORDINATOR' && <MenuLink to="/app/coverage" icon={LayoutDashboard} label={t('field.openDashboard')} />}
+        <MenuLink to="/field/settings" icon={SettingsIcon} tone="slate" label={t('field.actions.settings')} sub={t('field.menuSub.settings')} />
+        {role === 'GROUP_COORDINATOR' && <MenuLink to="/app/coverage" icon={LayoutDashboard} tone="navy" label={t('field.openDashboard')} sub={t('field.menuSub.dashboard')} />}
       </ul>
     </>
   );
@@ -335,7 +365,7 @@ export function AreasPage() {
         </ul>
       )}
       <div className="action-stack">
-        <button type="button" className="btn btn-signal btn-block btn-lg" disabled={busy || selected.size === 0 || !serverSession} onClick={() => void download()}>
+        <button type="button" className="btn btn-primary btn-block btn-lg" disabled={busy || selected.size === 0 || !serverSession} onClick={() => void download()}>
           <Download size={20} aria-hidden />
           {busy ? t('areas.downloading') : t('areas.download')}
         </button>
@@ -443,7 +473,7 @@ function NewHouseholdPage() {
           <p className="hh-meta">{t('household.writeCode')}</p>
         </article>
         <div className="action-stack">
-          <Link className="btn btn-signal btn-lg btn-block" to={`/field/households/${saved.id}/distribute`}>
+          <Link className="btn btn-primary btn-lg btn-block" to={`/field/households/${saved.id}/distribute`}>
             <HandHeart size={20} aria-hidden />
             {t('household.distribute')}
           </Link>
@@ -478,14 +508,14 @@ function NewHouseholdPage() {
         {consent === 'refused' ? (
           <>
             <Notice tone="warn">{t('household.refusedHelp')}</Notice>
-            <Link className="btn btn-signal btn-block btn-lg" to="/field/anonymous">
+            <Link className="btn btn-primary btn-block btn-lg" to="/field/anonymous">
               <HandHeart size={20} aria-hidden />
               {t('field.actions.anonymous')}
             </Link>
           </>
         ) : (
           <div className="action-stack">
-            <button type="button" className="btn btn-signal btn-lg btn-block" onClick={() => setConsent('given')}>
+            <button type="button" className="btn btn-primary btn-lg btn-block" onClick={() => setConsent('given')}>
               {t('household.consentGiven')}
             </button>
             <button type="button" className="btn btn-secondary btn-lg btn-block" onClick={() => setConsent('refused')}>
@@ -522,7 +552,7 @@ function NewHouseholdPage() {
           ))}
         </ul>
         <div className="action-stack mt-5">
-          <button type="button" className="btn btn-signal btn-block btn-lg" onClick={() => void save()}>
+          <button type="button" className="btn btn-primary btn-block btn-lg" onClick={() => void save()}>
             {t('household.confirmNew')}
           </button>
           <button type="button" className="btn btn-ghost btn-block" onClick={() => setMatches(null)}>
@@ -596,7 +626,7 @@ function NewHouseholdPage() {
           </span>
         </label>
         <div className="form-actions">
-          <button type="submit" className="btn btn-signal btn-block btn-lg">
+          <button type="submit" className="btn btn-primary btn-block btn-lg">
             {t('household.saveNew')}
           </button>
         </div>
@@ -736,7 +766,7 @@ export function HouseholdPage() {
       </article>
       {!h.redacted && (
         <div className="action-stack">
-          <Link className="btn btn-signal btn-lg btn-block" to={`/field/households/${h.id}/distribute`}>
+          <Link className="btn btn-primary btn-lg btn-block" to={`/field/households/${h.id}/distribute`}>
             <HandHeart size={20} aria-hidden />
             {t('household.distribute')}
           </Link>
@@ -843,7 +873,7 @@ export function EditHouseholdPage() {
           ))}
         </SelectField>
         <div className="action-stack mt-5">
-          <button type="submit" className="btn btn-signal btn-lg btn-block">
+          <button type="submit" className="btn btn-primary btn-lg btn-block">
             {t('common.save')}
           </button>
           <Link className="btn btn-secondary btn-block" to={`/field/households/${id}`}>
@@ -935,7 +965,10 @@ export function DistributePage({ anonymous = false }: { anonymous?: boolean }) {
           <legend>{t('distribution.items')}</legend>
           {items && items.length === 0 && <p className="muted">{t('distribution.noItems')}</p>}
           {items?.map((it) => (
-            <div key={it.id} className="item-row">
+            <div key={it.id} className="item-row" data-active={(qty[it.id] ?? 0) > 0}>
+              <span className="item-icon" aria-hidden>
+                <Package size={22} />
+              </span>
               <span className="item-name">
                 <strong>{itemLabel(it, i18n.language)}</strong>
                 <span className="item-unit">{it.unit}</span>
@@ -958,7 +991,7 @@ export function DistributePage({ anonymous = false }: { anonymous?: boolean }) {
           </label>
         )}
         <div className="form-actions">
-          <button type="submit" className="btn btn-signal btn-block btn-lg">
+          <button type="submit" className="btn btn-primary btn-block btn-lg">
             {t('distribution.confirm')}
           </button>
         </div>
@@ -1004,7 +1037,7 @@ export function SyncPage() {
           </span>
         </Notice>
       )}
-      <button type="button" className="btn btn-signal btn-block btn-lg" disabled={status.running || !serverSession} onClick={() => void run()}>
+      <button type="button" className="btn btn-primary btn-block btn-lg" disabled={status.running || !serverSession} onClick={() => void run()}>
         <RefreshCw size={20} aria-hidden />
         {status.running ? t('status.syncing') : t('sync.now')}
       </button>

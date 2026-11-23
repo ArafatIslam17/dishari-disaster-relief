@@ -1,6 +1,7 @@
 // Renders the PWA PNG icons from the SVG sources in public/ with headless Chromium.
 //   node apps/web/scripts/make-icons.mjs
-// icon.svg -> icon-192.png, icon-512.png, apple-touch-icon.png (180)
+// icon.svg -> icon-192.png, icon-512.png
+// icon-maskable.svg -> apple-touch-icon.png (180, full-bleed: iOS fills transparent corners black)
 // icon-maskable.svg (full-bleed, mark inside the 80 % safe zone) -> icon-maskable-512.png
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -11,7 +12,7 @@ const pub = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const jobs = [
   ['icon.svg', 'icon-192.png', 192],
   ['icon.svg', 'icon-512.png', 512],
-  ['icon.svg', 'apple-touch-icon.png', 180],
+  ['icon-maskable.svg', 'apple-touch-icon.png', 180],
   ['icon-maskable.svg', 'icon-maskable-512.png', 512],
 ];
 

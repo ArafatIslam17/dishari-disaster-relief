@@ -2,7 +2,7 @@ import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, createBrowserRouter, useLocation } from 'react-router';
 import { useSession } from './auth/session';
-import { DashboardLayout, FieldLayout, OperationProvider } from './layouts';
+import { DashboardLayout, FieldLayout, OperationProvider, PublicDashboardLayout } from './layouts';
 import {
   ChangePasswordPage,
   InvitePage,
@@ -14,7 +14,7 @@ import {
   UnlockPage,
 } from './pages/public';
 import { homePath } from './router-paths';
-import { Loading } from './ui/kit';
+import { Brand, Loading } from './ui/kit';
 
 /**
  * Field pages and dashboard pages load as separate chunks (UI audit F33), so a volunteer's phone
@@ -24,9 +24,13 @@ import { Loading } from './ui/kit';
 const fieldPages = () => import('./pages/field');
 const reviewPages = () => import('./pages/dash-review');
 const adminPages = () => import('./pages/dash-admin');
+const donatePages = () => import('./pages/donate');
 function pick<M, K extends keyof M>(load: () => Promise<M>, name: K) {
   return lazy(async () => ({ default: (await load())[name] as unknown as ComponentType<Record<string, unknown>> }));
 }
+
+const DonatePage = pick(donatePages, 'DonatePage');
+const GatewayPage = pick(donatePages, 'GatewayPage');
 
 const FieldHome = pick(fieldPages, 'FieldHome');
 const AreasPage = pick(fieldPages, 'AreasPage');
@@ -71,8 +75,7 @@ function Booting() {
   return (
     <main className="public-box" id="main" style={{ paddingTop: '20vh' }}>
       <p className="brand">
-        <img src="/icon.svg" alt="" width={32} height={32} />
-        {t('app.name')}
+        <Brand sub={t('app.tagline')} />
       </p>
       <Loading />
     </main>
@@ -102,15 +105,41 @@ function RequireDashboard({ children }: { children: ReactNode }) {
   return <OperationProvider>{children}</OperationProvider>;
 }
 
-function RootRedirect() {
+/** Where a visitor with a staff session (or a locked field vault) belongs; null for a member of the public. */
+function useSessionHome(): string | null {
   const { status, user, local } = useSession();
-  if (status === 'booting') return <Booting />;
   const role = user?.role ?? local?.role;
-  if (user && role && role !== 'FIELD_VOLUNTEER') return <Navigate to={homePath(role)} replace />;
-  if (status === 'locked') return <Navigate to="/unlock" replace />;
-  if (status === 'needs-pin') return <Navigate to="/set-pin" replace />;
-  if (status === 'ready' && role) return <Navigate to={homePath(role)} replace />;
-  return <Navigate to="/login" replace />;
+  if (user && role && role !== 'FIELD_VOLUNTEER') return homePath(role);
+  if (status === 'locked') return '/unlock';
+  if (status === 'needs-pin') return '/set-pin';
+  if (status === 'ready' && role) return homePath(role);
+  return null;
+}
+
+function RootRedirect() {
+  const { status } = useSession();
+  const home = useSessionHome();
+  if (status === 'booting') return <Booting />;
+  return <Navigate to={home ?? '/'} replace />;
+}
+
+/**
+ * Public observer portal at "/": live, area-level figures for donors and citizens without logging in.
+ * Staff with a session still land in their own workspace, so the field app and dashboard start as before.
+ */
+function PublicPortal() {
+  const { status } = useSession();
+  const home = useSessionHome();
+  const { pathname } = useLocation();
+  if (pathname === '/') {
+    if (status === 'booting') return <Booting />;
+    if (home) return <Navigate to={home} replace />;
+  }
+  return (
+    <OperationProvider publicView>
+      <PublicDashboardLayout />
+    </OperationProvider>
+  );
 }
 
 function RequireAnyUser({ children }: { children: ReactNode }) {
@@ -123,13 +152,22 @@ function RequireAnyUser({ children }: { children: ReactNode }) {
 const errorElement = <RouteErrorPage />;
 
 export const router = createBrowserRouter([
-  { path: '/', element: <RootRedirect />, errorElement },
+  {
+    element: <PublicPortal />,
+    errorElement,
+    children: [
+      { path: '/', element: l(<CoveragePage />) },
+      { path: '/public/reports', element: l(<ReportsPage />) },
+    ],
+  },
   { path: '/login', element: <LoginPage />, errorElement },
   { path: '/register', element: <RegisterPage />, errorElement },
   { path: '/register-organisation', element: <RegisterOrganisationPage />, errorElement },
   { path: '/invite/:token', element: <InvitePage />, errorElement },
   { path: '/unlock', element: <UnlockPage />, errorElement },
   { path: '/set-pin', element: <SetPinPage />, errorElement },
+  { path: '/donate', element: l(<DonatePage />), errorElement },
+  { path: '/donate/gateway/:id', element: l(<GatewayPage />), errorElement },
   {
     path: '/change-password',
     errorElement,
@@ -183,6 +221,7 @@ export const router = createBrowserRouter([
       { path: 'households', element: l(<HouseholdsPage />) },
       { path: 'households/:id', element: l(<HouseholdDetailPage />) },
       { path: 'members', element: l(<MembersPage />) },
+      { path: 'approvals', element: l(<MembersPage approvals />) },
       { path: 'operations', element: l(<OperationsPage />) },
       { path: 'operations/:id', element: l(<OperationDetailPage />) },
       { path: 'join', element: l(<JoinPage />) },

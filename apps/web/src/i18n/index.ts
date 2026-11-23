@@ -60,3 +60,25 @@ export function formatNumber(n: number | string): string {
 }
 
 export default i18next;
+
+/** A 0–1 ratio as a whole percentage in the active language. */
+export function formatPercent(ratio: number): string {
+  return new Intl.NumberFormat(i18next.language === 'bn' ? 'bn-BD' : 'en-GB', { style: 'percent', maximumFractionDigits: 0 }).format(Number.isFinite(ratio) ? ratio : 0);
+}
+
+/** Whole taka with the ৳ sign, Bangla digits in bn. */
+export function formatTaka(n: number): string {
+  return `৳${formatNumber(n)}`;
+}
+
+/** Full date and time (with year) for receipts. */
+export function formatDateTime(iso: string | Date): string {
+  const d = typeof iso === 'string' ? new Date(iso) : iso;
+  return new Intl.DateTimeFormat(i18next.language === 'bn' ? 'bn-BD' : 'en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(d);
+}

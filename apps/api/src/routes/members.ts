@@ -24,14 +24,55 @@ async function loadManagedUser(ctx: AppContext, auth: AuthInfo, userId: string) 
   throw forbidden('other_organisation');
 }
 
+/**
+ * Account approval hierarchy. A self-registered field volunteer is approved by a Group Coordinator of
+ * their own organisation, or (oversight) by an Operation Administrator of an operation that
+ * organisation has joined. Operation administrators, and coordinators who registered an
+ * organisation, are approved only by the System Administrator.
+ */
+const adminOrgs = (userId: string) =>
+  sql`(select m.organisation_id from operation_membership m
+         join operation_admin oa on oa.operation_id = m.operation_id
+        where oa.user_id = ${userId} and m.status = 'approved')`;
+
+/** SQL predicate: rows of app_user this caller may approve (status aside). */
+function approvableBy(auth: AuthInfo): SQL {
+  switch (auth.role) {
+    case 'SYSTEM_ADMINISTRATOR':
+      return sql`${appUser.role} in ('OPERATION_ADMINISTRATOR', 'GROUP_COORDINATOR')`;
+    case 'GROUP_COORDINATOR':
+      return sql`(${appUser.role} = 'FIELD_VOLUNTEER' and ${appUser.organisationId} = ${auth.organisationId as string})`;
+    case 'OPERATION_ADMINISTRATOR':
+      return sql`(${appUser.role} = 'FIELD_VOLUNTEER' and ${appUser.organisationId} in ${adminOrgs(auth.userId)})`;
+    default:
+      return sql`false`;
+  }
+}
+
+/** Loads a pending registration and checks the caller sits above it in the approval hierarchy. */
+async function loadApprovable(ctx: AppContext, auth: AuthInfo, userId: string) {
+  const [target] = await ctx.db.select().from(appUser).where(eq(appUser.id, userId));
+  if (!target) throw notFound('user_not_found');
+  const [ok] = await ctx.db
+    .select({ ok: sql<boolean>`true` })
+    .from(appUser)
+    .where(and(eq(appUser.id, userId), approvableBy(auth)));
+  if (!ok) {
+    const sameOrg = auth.role === 'GROUP_COORDINATOR' && target.organisationId === auth.organisationId;
+    throw forbidden(sameOrg || target.role !== 'FIELD_VOLUNTEER' ? 'role_not_allowed' : 'other_organisation');
+  }
+  return target;
+}
+
 const actorOf = (auth: AuthInfo) => ({ userId: auth.userId, organisationId: auth.organisationId, deviceId: auth.deviceId });
 
 export async function memberRoutes(app: FastifyInstance): Promise<void> {
   const ctx = app.ctx;
   const managers = requireAuth(ctx, 'GROUP_COORDINATOR', 'SYSTEM_ADMINISTRATOR');
+  const approvers = requireAuth(ctx, 'GROUP_COORDINATOR', 'OPERATION_ADMINISTRATOR', 'SYSTEM_ADMINISTRATOR');
 
   // UC05 step 1-2: members with role, status and devices.
-  app.get('/api/members', { preHandler: managers }, async (request) => {
+  app.get('/api/members', { preHandler: approvers }, async (request) => {
     const auth = authOf(request);
     const q = z
       .object({
@@ -49,6 +90,9 @@ export async function memberRoutes(app: FastifyInstance): Promise<void> {
       filters.push(or(ilike(appUser.fullName, pattern), ilike(appUser.mobileNumber, pattern)));
     }
     if (auth.role === 'GROUP_COORDINATOR') filters.push(eq(appUser.organisationId, auth.organisationId as string));
+    // The pending queue lists only registrations this caller may approve. Operation administrators
+    // see nothing else: their view is an approval queue, not the organisations' member lists.
+    if (q.status === 'pending' || auth.role === 'OPERATION_ADMINISTRATOR') filters.push(eq(appUser.status, 'pending'), approvableBy(auth));
     const users = await ctx.db
       .select({
         id: appUser.id,
@@ -60,6 +104,7 @@ export async function memberRoutes(app: FastifyInstance): Promise<void> {
         organisationId: appUser.organisationId,
         organisationName: organisation.name,
         createdAt: appUser.createdAt,
+        canApprove: sql<boolean>`(${appUser.status} = 'pending' and ${approvableBy(auth)})`,
       })
       .from(appUser)
       .leftJoin(organisation, eq(organisation.id, appUser.organisationId))
@@ -86,20 +131,20 @@ export async function memberRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // UC05 step 3-4 (members), C3 (operation administrators, by the System Administrator).
-  app.post('/api/members/:id/approve', { preHandler: managers }, async (request) => {
+  app.post('/api/members/:id/approve', { preHandler: approvers }, async (request) => {
     const auth = authOf(request);
     const { id } = idParams.parse(request.params);
-    const target = await loadManagedUser(ctx, auth, id);
+    const target = await loadApprovable(ctx, auth, id);
     if (target.status !== 'pending') throw conflictError('not_pending');
     let role = target.role as Role;
-    if (target.role === 'OPERATION_ADMINISTRATOR') {
-      if (auth.role !== 'SYSTEM_ADMINISTRATOR') throw forbidden('role_not_allowed');
-    } else {
+    if (target.role === 'FIELD_VOLUNTEER') {
       role = parse(approveMemberSchema, request.body).role;
-      if (target.organisationId) {
-        const [org] = await ctx.db.select({ s: organisation.status }).from(organisation).where(eq(organisation.id, target.organisationId));
-        if (org?.s !== 'approved') throw conflictError('organisation_not_approved');
-      }
+      // Only the organisation's own coordinator may make someone a coordinator.
+      if (role !== 'FIELD_VOLUNTEER' && auth.role !== 'GROUP_COORDINATOR') throw forbidden('role_not_allowed');
+    }
+    if (target.organisationId) {
+      const [org] = await ctx.db.select({ s: organisation.status }).from(organisation).where(eq(organisation.id, target.organisationId));
+      if (org?.s !== 'approved') throw conflictError('organisation_not_approved');
     }
     const now = ctx.now();
     await ctx.db.transaction(async (tx) => {
@@ -117,13 +162,12 @@ export async function memberRoutes(app: FastifyInstance): Promise<void> {
     return { ok: true };
   });
 
-  app.post('/api/members/:id/reject', { preHandler: managers }, async (request) => {
+  app.post('/api/members/:id/reject', { preHandler: approvers }, async (request) => {
     const auth = authOf(request);
     const { id } = idParams.parse(request.params);
     const { reason } = parse(reasonSchema, request.body);
-    const target = await loadManagedUser(ctx, auth, id);
+    const target = await loadApprovable(ctx, auth, id);
     if (target.status !== 'pending') throw conflictError('not_pending');
-    if (target.role === 'OPERATION_ADMINISTRATOR' && auth.role !== 'SYSTEM_ADMINISTRATOR') throw forbidden('role_not_allowed');
     await ctx.db.transaction(async (tx) => {
       await tx
         .update(appUser)

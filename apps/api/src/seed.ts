@@ -20,6 +20,7 @@ import {
   area,
   device,
   disasterType,
+  donation,
   operation,
   operationAdmin,
   operationKey,
@@ -54,6 +55,7 @@ export async function seedDemo(ctx: AppContext, opts: { demoPassword: string; ad
   const [existing] = await db.select({ id: organisation.id }).from(organisation).where(eq(organisation.nameKey, 'shapla relief team'));
   if (existing) {
     const [op] = await db.select({ id: operation.id }).from(operation).where(eq(operation.name, 'Feni Flash Flood 2024 (demo)'));
+    if (op) await seedDonations(ctx, op.id);
     return { created: false, operationId: op?.id ?? '', accounts: DEMO_ACCOUNTS.map((a) => ({ role: a.role, mobile: a.mobile, name: a.name })) };
   }
   const r = rng(20240824);
@@ -239,5 +241,39 @@ export async function seedDemo(ctx: AppContext, opts: { demoPassword: string; ad
   await push('volA2', [event(devices.volA2!, { type: 'household.update', entityId: target.id, baseVersion: 1, payload: { changes: { memberCount: target.members + 1 } } }, now)]);
   await push('volB1', [event(devices.volB1!, { type: 'household.update', entityId: target.id, baseVersion: 1, payload: { changes: { memberCount: target.members + 2 } } }, now)]);
 
+  await seedDonations(ctx, opId);
   return { created: true, operationId: opId, accounts: DEMO_ACCOUNTS.map((a) => ({ role: a.role, mobile: a.mobile, name: a.name })) };
+}
+
+/**
+ * Demo relief-fund donations (sandbox gateway). Runs on its own so databases seeded before the
+ * fund existed still get them; does nothing once any donation is recorded.
+ */
+export async function seedDonations(ctx: AppContext, operationId: string): Promise<number> {
+  const [any] = await ctx.db.select({ id: donation.id }).from(donation).limit(1);
+  if (any) return 0;
+  const now = ctx.now().getTime();
+  const rows: { name: string | null; amount: number; method: 'bkash' | 'nagad' | 'rocket' | 'visa' | 'mastercard'; hoursAgo: number; txn: string }[] = [
+    { name: 'Nusrat Jahan', amount: 5000, method: 'bkash', hoursAgo: 52, txn: 'NJ5K8Q' },
+    { name: null, amount: 2500, method: 'nagad', hoursAgo: 30, txn: 'AN2R7M' },
+    { name: 'Rahim Uddin Traders', amount: 25000, method: 'visa', hoursAgo: 20, txn: 'RU9T4X' },
+    { name: 'Farzana Akter', amount: 1000, method: 'rocket', hoursAgo: 9, txn: 'FA3H6W' },
+    { name: null, amount: 10000, method: 'mastercard', hoursAgo: 3, txn: 'AN8P2D' },
+  ];
+  for (const r of rows) {
+    const at = new Date(now - r.hoursAgo * 3_600_000);
+    await ctx.db.insert(donation).values({
+      id: uuidv7(at.getTime()),
+      operationId,
+      donorName: r.name,
+      isAnonymous: r.name === null,
+      amountBdt: r.amount,
+      paymentMethod: r.method,
+      transactionId: `DSH-${at.getUTCFullYear()}-${r.txn}`,
+      status: 'completed',
+      createdAt: new Date(at.getTime() - 4 * 60_000),
+      completedAt: at,
+    });
+  }
+  return rows.length;
 }

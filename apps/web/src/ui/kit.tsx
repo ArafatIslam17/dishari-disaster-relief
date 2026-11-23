@@ -13,11 +13,11 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
-import { AlertTriangle, ArrowLeft, CheckCircle2, Info, Minus, Monitor, Moon, Plus, Sun, WifiOff, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, Delete, Info, Minus, Moon, Plus, Sun, WifiOff, X } from 'lucide-react';
 import { formatShortCode, type CoverageLabel } from '@relief/shared';
 import { ApiError } from '../api/client';
 import { formatShortTime, setLang, type Lang } from '../i18n';
-import { getTheme, setTheme, subscribeTheme, type ThemeChoice } from '../theme';
+import { getTheme, resolvedTheme, setTheme, subscribeTheme, type ThemeChoice } from '../theme';
 
 /** Translates an API or validation error code into a sentence. */
 export function useErrorText() {
@@ -29,6 +29,9 @@ export function useErrorText() {
         const params: Record<string, string> = { ...(err.details as Record<string, string> | undefined) };
         if (err.code === 'account_locked' && params.lockedUntil) {
           params.time = formatShortTime(params.lockedUntil);
+        }
+        if (err.code === 'account_pending' && (params.approver === 'coordinator' || params.approver === 'sysadmin')) {
+          return t(`errors.account_pending_${params.approver}`);
         }
         return i18n.exists(key) ? t(key, params) : t(err.status === 0 ? 'errors.network' : 'errors.unexpected');
       }
@@ -394,27 +397,37 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
   );
 }
 
+/** EN | বাংলা segmented pill. Same control on every surface; `compact` only tightens it for the field header. */
 export function LangSwitch({ compact = false }: { compact?: boolean }) {
   const { i18n, t } = useTranslation();
   const choose = (l: Lang) => setLang(l);
-  if (compact) {
-    const next: Lang = i18n.language === 'bn' ? 'en' : 'bn';
-    return (
-      <button type="button" className="lang-toggle" onClick={() => choose(next)} title={next === 'bn' ? 'বাংলা' : 'English'}>
-        <span className="visually-hidden">{t('app.language')}: </span>
-        <span lang={next}>{next === 'bn' ? 'বাং' : 'EN'}</span>
-      </button>
-    );
-  }
+  const lang = i18n.language === 'bn' ? 'bn' : 'en';
   return (
-    <div className="lang-switch" role="group" aria-label={t('app.language')}>
-      <button type="button" aria-pressed={i18n.language === 'bn'} onClick={() => choose('bn')} lang="bn">
-        বাংলা
-      </button>
-      <button type="button" aria-pressed={i18n.language === 'en'} onClick={() => choose('en')} lang="en">
+    <div className={`lang-switch${compact ? ' lang-switch-sm' : ''}`} role="group" aria-label={t('app.language')}>
+      <button type="button" aria-pressed={lang === 'en'} onClick={() => choose('en')} lang="en">
         EN
       </button>
+      <button type="button" aria-pressed={lang === 'bn'} onClick={() => choose('bn')} lang="bn">
+        বাংলা
+      </button>
     </div>
+  );
+}
+
+/** Dishari lockup: the PWA mark and the wordmark in the active language (Dishari or দিশারী, never both). */
+export function Brand({ sub, size = 40 }: { sub?: string; size?: number }) {
+  const { i18n } = useTranslation();
+  const bn = i18n.language === 'bn';
+  return (
+    <span className="brand-lockup">
+      <img className="brand-mark" src="/icon.svg" alt="" width={size} height={size} />
+      <span className="brand-text">
+        <span className={`brand-word${bn ? ' brand-word-bn' : ''}`} lang={bn ? 'bn' : 'en'}>
+          {bn ? 'দিশারী' : 'Dishari'}
+        </span>
+        {sub && <span className="brand-sub">{sub}</span>}
+      </span>
+    </span>
   );
 }
 
@@ -422,17 +435,50 @@ export function useThemeChoice(): ThemeChoice {
   return useSyncExternalStore(subscribeTheme, getTheme, () => 'system' as ThemeChoice);
 }
 
-/** Cycles system → light → dark. The label names the current choice and what a press does. */
+const effectiveServer = () => 'light' as const;
+
+/**
+ * One press flips light and dark. Until the user picks, the app follows the system; the label still
+ * names that starting point ("system") so assistive tech knows where it came from.
+ */
 export function ThemeToggle({ onShell = false }: { onShell?: boolean }) {
   const { t } = useTranslation();
   const choice = useThemeChoice();
-  const next: ThemeChoice = choice === 'system' ? 'light' : choice === 'light' ? 'dark' : 'system';
-  const Icon = choice === 'dark' ? Moon : choice === 'light' ? Sun : Monitor;
+  const effective = useSyncExternalStore(subscribeTheme, resolvedTheme, effectiveServer);
+  const next = effective === 'dark' ? 'light' : 'dark';
+  const Icon = effective === 'dark' ? Moon : Sun;
   const label = t('theme.label', { current: t(`theme.${choice}`), next: t(`theme.${next}`) });
   return (
     <button type="button" className={`icon-btn${onShell ? ' on-shell' : ''}`} onClick={() => setTheme(next)} aria-label={label} title={label}>
       <Icon size={18} aria-hidden />
     </button>
+  );
+}
+
+const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
+
+/**
+ * On-screen 0–9 keypad for PIN entry. CSS shows it on phone-sized screens only; the field keeps
+ * focus (mousedown is cancelled) so a hardware or native keyboard still works alongside it.
+ */
+export function PinPad({ onDigit, onDelete }: { onDigit: (d: string) => void; onDelete: () => void }) {
+  const { t, i18n } = useTranslation();
+  const bn = i18n.language === 'bn';
+  const keep = (e: { preventDefault: () => void }) => e.preventDefault();
+  const key = (d: string) => (
+    <button key={d} type="button" className="pin-key" onMouseDown={keep} onClick={() => onDigit(d)}>
+      {bn ? BN_DIGITS[Number(d)] : d}
+    </button>
+  );
+  return (
+    <div className="pin-pad" role="group" aria-label={t('pin.keypad')}>
+      {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(key)}
+      <span aria-hidden />
+      {key('0')}
+      <button type="button" className="pin-key pin-key-del" onMouseDown={keep} onClick={onDelete} aria-label={t('pin.deleteDigit')}>
+        <Delete size={22} aria-hidden />
+      </button>
+    </div>
   );
 }
 

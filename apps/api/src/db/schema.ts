@@ -624,3 +624,29 @@ export const backupRun = pgTable('backup_run', {
   startedAt: ts('started_at').notNull().defaultNow(),
   finishedAt: ts('finished_at'),
 });
+
+/** Relief fund donations taken through the sandbox payment gateway (SSLCommerz / aamarPay style). */
+export const donation = pgTable(
+  'donation',
+  {
+    id: uuid('donation_id').primaryKey(),
+    operationId: uuid('operation_id').references(() => operation.id),
+    donorName: varchar('donor_name', { length: 80 }),
+    donorPhone: varchar('donor_phone', { length: 15 }),
+    donorEmail: varchar('donor_email', { length: 120 }),
+    isAnonymous: boolean('is_anonymous').notNull().default(false),
+    amountBdt: integer('amount_bdt').notNull(),
+    paymentMethod: varchar('payment_method', { length: 12 }),
+    transactionId: varchar('transaction_id', { length: 24 }).notNull(),
+    status: varchar('status', { length: 10 }).notNull().default('pending'),
+    createdAt: created(),
+    completedAt: ts('completed_at'),
+  },
+  (t) => [
+    uniqueIndex('donation_transaction_uq').on(t.transactionId),
+    index('donation_status_idx').on(t.status, t.completedAt),
+    check('donation_amount_ck', sql`${t.amountBdt} > 0 and ${t.amountBdt} <= 10000000`),
+    check('donation_status_ck', sql`${t.status} in ('pending','completed','failed','cancelled')`),
+    check('donation_method_ck', sql`${t.paymentMethod} is null or ${t.paymentMethod} in ('bkash','nagad','rocket','visa','mastercard')`),
+  ],
+);

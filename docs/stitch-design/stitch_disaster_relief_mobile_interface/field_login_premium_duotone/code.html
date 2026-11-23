@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<meta content="mobile_blank" name="shell-type"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700&amp;family=Roboto+Flex:opsz,wght@8..144,400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-highest": "#dfe2eb",
+            "on-error": "#ffffff",
+            "background": "#F9FAFC",
+            "surface-bright": "#f8f9ff",
+            "inverse-primary": "#acc7ff",
+            "surface-container": "#ebeef7",
+            "surface-container-low": "#f1f4fb",
+            "surface-dim": "#d7dae3",
+            "on-background": "#181c22",
+            "outline": "#747780",
+            "on-tertiary-fixed-variant": "#653e00",
+            "on-tertiary-container": "#e89500",
+            "on-primary-fixed": "#001a41",
+            "primary-fixed-dim": "#acc7ff",
+            "error-container": "#ffdad6",
+            "secondary-fixed": "#d4e3ff",
+            "on-surface-variant": "#43474f",
+            "inverse-surface": "#2d3137",
+            "on-secondary-container": "#2f5384",
+            "outline-variant": "#c4c6d1",
+            "on-surface": "#181c22",
+            "tertiary": "#3a2100",
+            "surface-container-lowest": "#ffffff",
+            "on-primary": "#ffffff",
+            "secondary-container": "#a5c8ff",
+            "secondary-fixed-dim": "#a5c8ff",
+            "primary-container": "#1b3b6f",
+            "primary-fixed": "#d8e2ff",
+            "on-secondary": "#ffffff",
+            "surface": "#F9FAFC",
+            "tertiary-container": "#573500",
+            "surface-container-high": "#e5e8f1",
+            "error": "#ba1a1a",
+            "surface-variant": "#dfe2eb",
+            "on-secondary-fixed": "#001c3a",
+            "on-error-container": "#93000a",
+            "on-secondary-fixed-variant": "#214877",
+            "inverse-on-surface": "#eef0f9",
+            "on-tertiary": "#ffffff",
+            "tertiary-fixed-dim": "#ffb95f",
+            "surface-tint": "#415e94",
+            "on-primary-container": "#8aa7e1",
+            "on-tertiary-fixed": "#2a1700",
+            "secondary": "#3c6090",
+            "on-primary-fixed-variant": "#28467b",
+            "tertiary-fixed": "#ffddb8",
+            "primary": "#002555"
+          },
+          fontFamily: {
+            "bangla": ["Baloo Da 2", "Roboto Flex", "sans-serif"],
+            "body": ["Roboto Flex", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    @layer base {
+      html, body {
+        width: 100vw;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        overscroll-behavior: none;
+        background-color: #F9FAFC;
+        font-family: 'Roboto Flex', sans-serif;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .pt-safe {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+      main > :first-child {
+        margin-top: 0 !important;
+      }
+      main > :last-child {
+        margin-bottom: 0 !important;
+      }
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+</head>
+<body class="bg-[#F9FAFC] text-on-surface flex flex-col min-h-screen antialiased select-none">
+<main class="flex-1 flex flex-col relative w-full pt-safe pb-safe bg-[#F9FAFC] min-h-screen">
+<div class="flex flex-col w-full relative overflow-hidden px-4 pb-8 space-y-5">
+<!-- Subtle ambient environmental glow highlights -->
+<div class="absolute -top-14 -left-14 w-72 h-72 rounded-full bg-blue-200/25 blur-3xl pointer-events-none -z-10"></div>
+<div class="absolute top-36 -right-10 w-64 h-64 rounded-full bg-amber-200/20 blur-3xl pointer-events-none -z-10"></div>
+<!-- Header Navigation: App Identity & Tactile Language Switcher -->
+<header class="flex items-center justify-between pt-2">
+<div class="flex items-center space-x-3">
+<!-- Official Dishari App Mark SVG -->
+<div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#002555] via-[#1B3B6F] to-[#0A192F] p-0.5 shadow-md shadow-primary/20 flex items-center justify-center shrink-0 border border-white/20">
+<svg class="w-full h-full" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<rect fill="url(#dishari-grad)" height="48" rx="14" width="48"></rect>
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="dishari-grad" x1="0" x2="48" y1="0" y2="48">
+<stop stop-color="#002555"></stop>
+<stop offset="0.6" stop-color="#1B3B6F"></stop>
+<stop offset="1" stop-color="#0c2040"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="sky-arc" x1="12" x2="36" y1="36" y2="12">
+<stop stop-color="#A5C8FF"></stop>
+<stop offset="1" stop-color="#D8E2FF"></stop>
+</lineargradient>
+</defs>
+<!-- Lighthouse / Compass Dynamic Rings -->
+<circle cx="24" cy="24" r="14" stroke="#ffffff" stroke-dasharray="3 3" stroke-opacity="0.18" stroke-width="1.5"></circle>
+<circle cx="24" cy="24" r="9" stroke="url(#sky-arc)" stroke-opacity="0.5" stroke-width="1.75"></circle>
+<!-- White Wave Overlay -->
+<path d="M14 27C17 24.5 20.5 25 24 27C27.5 29 31 29.5 34 27" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M17 31C19.5 29 21.5 29.5 24 31C26.5 32.5 28.5 33 31 31" stroke="#A5C8FF" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+<!-- Beacon Gold Diamond -->
+<path d="M24 13L27.5 18.5L24 24L20.5 18.5L24 13Z" fill="#FFB95F" stroke="#FFE082" stroke-width="0.8"></path>
+<circle cx="24" cy="18.5" fill="#FFFFFF" r="1.5"></circle>
+</svg>
+</div>
+<div class="flex flex-col">
+<div class="flex items-baseline space-x-1.5">
+<span class="font-bold text-[22px] tracking-tight text-[#002555] leading-none">Dishari</span>
+<span class="font-bangla font-semibold text-[#1B3B6F]/90 text-[15px] leading-none">দিশারী</span>
+</div>
+<span class="text-[10px] tracking-[0.16em] uppercase text-outline font-bold mt-1">Disaster Response PWA</span>
+</div>
+</div>
+<!-- Segmented Language Switcher with Command Navy Active Pill -->
+<div class="bg-surface-container-high/90 p-1 rounded-full flex items-center shadow-inner border border-outline-variant/40" id="lang-switch-container">
+<button class="px-3 py-1 rounded-full text-[11px] font-bold tracking-wider transition-all duration-200 bg-[#1B3B6F] text-white shadow-sm" id="btn-lang-en" type="button">
+            EN
+          </button>
+<button class="px-3 py-1 rounded-full text-[11px] font-bold tracking-wider transition-all duration-200 text-on-surface-variant font-bangla hover:text-primary" id="btn-lang-bn" type="button">
+            বাংলা
+          </button>
+</div>
+</header>
+<!-- Operational Sync & Readiness Status Banner -->
+<section class="bg-surface-container-low/90 border border-outline-variant/40 rounded-2xl px-3.5 py-2.5 flex items-center justify-between shadow-sm">
+<div class="flex items-center space-x-2.5">
+<span class="relative flex h-2.5 w-2.5 shrink-0">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500 shadow-sm"></span>
+</span>
+<span class="text-[12px] text-on-surface-variant font-medium tracking-tight">
+            Emergency Node <span class="font-bold text-[#002555]">Sylhet-04</span> Active
+          </span>
+</div>
+<div class="flex items-center space-x-1.5 text-secondary pl-2">
+<!-- Duotone Signal Strength SVG -->
+<svg class="w-4 h-4 shrink-0 text-[#1B3B6F]" fill="none" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#A5C8FF" height="4" rx="1" width="2.5" x="2" y="14"></rect>
+<rect fill="#A5C8FF" height="7" rx="1" width="2.5" x="6.5" y="11"></rect>
+<rect fill="#1B3B6F" height="11" rx="1" width="2.5" x="11" y="7"></rect>
+<rect fill="#1B3B6F" height="15" rx="1" width="2.5" x="15.5" y="3"></rect>
+</svg>
+<span class="text-[11px] font-bold tracking-wider uppercase text-secondary">Mesh Ready</span>
+</div>
+</section>
+<!-- Welcome & Headline Area -->
+<div class="space-y-1 pt-0.5">
+<h1 class="text-[32px] font-bold tracking-tight text-[#002555] leading-tight">
+          Log in
+        </h1>
+<p class="text-[14px] leading-relaxed text-on-surface-variant">
+          Use the registered mobile number and security credentials issued for field deployment.
+        </p>
+</div>
+<!-- Primary Interactive Login Card -->
+<div class="bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-outline-variant/30 space-y-4">
+<form class="space-y-4" id="field-login-form" onsubmit="event.preventDefault();">
+<!-- Mobile Number Input Group -->
+<div class="space-y-1.5">
+<label class="block text-[11px] uppercase tracking-wider text-outline font-bold" for="mobile-input">
+              Mobile Number / মোবাইল নম্বর
+            </label>
+<div class="relative flex items-center">
+<!-- Bespoke Duotone Phone / SIM Icon (Navy Stroke + Sky Signal Fill) -->
+<span class="absolute left-3.5 flex items-center pointer-events-none">
+<svg class="w-6 h-6" fill="none" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#E1ECFF" height="20" rx="3.5" stroke="#1B3B6F" stroke-width="1.75" width="14" x="5" y="2"></rect>
+<rect fill="#A5C8FF" height="9" rx="1.5" width="7" x="8.5" y="6"></rect>
+<circle cx="12" cy="18.25" fill="#1B3B6F" r="1.25"></circle>
+<line stroke="#1B3B6F" stroke-linecap="round" stroke-width="1.5" x1="10" x2="14" y1="4" y2="4"></line>
+</svg>
+</span>
+<input autocomplete="tel" class="w-full h-[52px] pl-12 pr-4 bg-surface-container-low text-on-surface rounded-2xl text-[16px] placeholder:text-outline-variant outline-none transition-all duration-200 focus:bg-surface-container-lowest focus:ring-2 focus:ring-[#1B3B6F] border border-transparent focus:border-[#1B3B6F]/30" id="mobile-input" inputmode="tel" placeholder="+880 / 01XXXXXXXXX" required="" type="tel"/>
+</div>
+</div>
+<!-- Password Input Group -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between">
+<label class="block text-[11px] uppercase tracking-wider text-outline font-bold" for="password-input">
+                Password / পাসওয়ার্ড
+              </label>
+<span class="text-[12px] text-secondary font-medium">Temporary or PIN</span>
+</div>
+<div class="relative flex items-center">
+<!-- Bespoke Duotone Lock Icon (Navy stroke + Sky Signal fill) -->
+<span class="absolute left-3.5 flex items-center pointer-events-none">
+<svg class="w-6 h-6" fill="none" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 10V7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7V10" stroke="#1B3B6F" stroke-linecap="round" stroke-width="1.75"></path>
+<rect fill="#D4E3FF" height="11" rx="3" stroke="#1B3B6F" stroke-width="1.75" width="15" x="4.5" y="10"></rect>
+<circle cx="12" cy="14.5" fill="#1B3B6F" r="1.5"></circle>
+<path d="M12 16V18" stroke="#1B3B6F" stroke-linecap="round" stroke-width="1.5"></path>
+</svg>
+</span>
+<input class="w-full h-[52px] pl-12 pr-12 bg-surface-container-low text-on-surface rounded-2xl text-[16px] placeholder:text-outline-variant outline-none transition-all duration-200 focus:bg-surface-container-lowest focus:ring-2 focus:ring-[#1B3B6F] border border-transparent focus:border-[#1B3B6F]/30 tracking-widest" id="password-input" placeholder="••••••••••••" required="" type="password"/>
+<button aria-label="Toggle password visibility" class="absolute right-3.5 text-secondary hover:text-primary p-1.5 flex items-center justify-center active:scale-90 transition-transform" id="toggle-pwd-btn" type="button">
+<span class="material-symbols-outlined text-[22px]" id="pwd-icon">visibility</span>
+</button>
+</div>
+</div>
+<!-- Submit Action Button -->
+<div class="pt-2">
+<button class="w-full h-[52px] bg-[#1B3B6F] hover:bg-[#152e57] text-white font-semibold text-[17px] rounded-2xl flex items-center justify-center space-x-2 transition-all duration-200 active:scale-[0.98] shadow-lg group" id="btn-login-submit" style="box-shadow: 0 8px 24px -4px rgba(27, 59, 111, 0.35);" type="submit">
+<span>Log in</span>
+<span class="material-symbols-outlined text-[20px] transition-transform duration-200 group-hover:translate-x-1">arrow_forward</span>
+</button>
+</div>
+</form>
+<!-- Contextual Assistance Callout with Soft Duotone Shield/Info Badge -->
+<div class="bg-surface-container-low/80 border border-outline-variant/30 rounded-2xl p-3.5 flex items-start space-x-3">
+<div class="shrink-0 mt-0.5 w-7 h-7 rounded-lg bg-[#D4E3FF] flex items-center justify-center">
+<svg class="w-4 h-4 text-[#1B3B6F]" fill="none" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path d="M10 2L3 5V9.5C3 13.8 6 17.6 10 18.8C14 17.6 17 13.8 17 9.5V5L10 2Z" fill="#A5C8FF" fill-opacity="0.6" stroke="#1B3B6F" stroke-linejoin="round" stroke-width="1.5"></path>
+<path d="M10 6.5V7.5M10 9.5V14" stroke="#1B3B6F" stroke-linecap="round" stroke-width="1.75"></path>
+</svg>
+</div>
+<p class="text-[13px] leading-relaxed text-on-surface-variant">
+            Forgot your password? Request your field coordinator or regional shelter administrator for a quick one-time offline reset token.
+          </p>
+</div>
+</div>
+<!-- Registration Pathways Bento -->
+<div class="bg-surface-container-lowest rounded-3xl p-4 shadow-sm border border-outline-variant/30 space-y-3">
+<div class="text-[11px] uppercase tracking-wider text-outline font-bold px-1">
+          Account Access &amp; Onboarding
+        </div>
+<!-- Volunteer Registration Option with Rich Duotone User Badge -->
+<a class="flex items-center justify-between p-3.5 rounded-2xl bg-surface-container-low hover:bg-surface-container active:scale-[0.99] transition-all group border border-outline-variant/20" href="#volunteer-register">
+<div class="flex items-center space-x-3.5">
+<div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#D4E3FF] to-[#A5C8FF]/50 border border-[#A5C8FF]/60 flex items-center justify-center shrink-0 shadow-sm">
+<!-- Duotone User Badge SVG -->
+<svg class="w-6 h-6" fill="none" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<circle cx="10" cy="8" fill="#A5C8FF" r="4" stroke="#1B3B6F" stroke-width="1.75"></circle>
+<path d="M3 19C3 15.6863 6.13401 13 10 13C13.866 13 17 15.6863 17 19" stroke="#1B3B6F" stroke-linecap="round" stroke-width="1.75"></path>
+<circle cx="18" cy="15" fill="#E1ECFF" r="4"></circle>
+<path d="M18 13.5V16.5M16.5 15H19.5" stroke="#1B3B6F" stroke-linecap="round" stroke-width="1.5"></path>
+</svg>
+</div>
+<div class="flex flex-col">
+<span class="text-[15px] text-[#002555] font-bold group-hover:text-[#1B3B6F] transition-colors">New volunteer?</span>
+<span class="text-[12px] text-on-surface-variant font-normal">Register individual field credential</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary/70 group-hover:text-primary group-hover:translate-x-1 transition-all text-[20px]">
+            chevron_right
+          </span>
+</a>
+<!-- Relief Group Registration Option with Rich Duotone Organization / Building SVG -->
+<a class="flex items-center justify-between p-3.5 rounded-2xl bg-surface-container-low hover:bg-surface-container active:scale-[0.99] transition-all group border border-outline-variant/20" href="#ngo-register">
+<div class="flex items-center space-x-3.5">
+<div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#FFDDB8]/70 to-[#FFB95F]/30 border border-[#FFB95F]/50 flex items-center justify-center shrink-0 shadow-sm">
+<!-- Duotone Organization SVG -->
+<svg class="w-6 h-6" fill="none" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#FFE2C4" height="15" rx="2" stroke="#653E00" stroke-width="1.75" width="11" x="3" y="6"></rect>
+<rect fill="#FFB95F" height="11" rx="1.5" stroke="#653E00" stroke-width="1.75" width="7" x="14" y="10"></rect>
+<line stroke="#653E00" stroke-linecap="round" stroke-width="1.5" x1="6" x2="8" y1="9.5" y2="9.5"></line>
+<line stroke="#653E00" stroke-linecap="round" stroke-width="1.5" x1="6" x2="8" y1="13.5" y2="13.5"></line>
+<line stroke="#653E00" stroke-linecap="round" stroke-width="1.5" x1="6" x2="8" y1="17.5" y2="17.5"></line>
+<line stroke="#653E00" stroke-linecap="round" stroke-width="1.5" x1="17" x2="18.5" y1="13.5" y2="13.5"></line>
+<line stroke="#653E00" stroke-linecap="round" stroke-width="1.5" x1="17" x2="18.5" y1="17" y2="17"></line>
+</svg>
+</div>
+<div class="flex flex-col">
+<span class="text-[15px] text-[#002555] font-bold group-hover:text-[#1B3B6F] transition-colors">Leading a relief group?</span>
+<span class="text-[12px] text-on-surface-variant font-normal">Register humanitarian organisation or NGO</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary/70 group-hover:text-primary group-hover:translate-x-1 transition-all text-[20px]">
+            chevron_right
+          </span>
+</a>
+</div>
+<!-- Offline Security Guarantee Micro-Badge with Duotone Shield/Lock Icon -->
+<div class="flex items-center justify-center pt-1">
+<div class="inline-flex items-center space-x-2.5 px-4 py-2 rounded-full bg-surface-container-lowest border border-outline-variant/40 shadow-sm">
+<svg class="w-4 h-4 shrink-0" fill="none" viewbox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 1.5L2.5 3.8V7.2C2.5 10.6 4.8 13.7 8 14.5C11.2 13.7 13.5 10.6 13.5 7.2V3.8L8 1.5Z" fill="#A5C8FF" fill-opacity="0.45" stroke="#1B3B6F" stroke-linejoin="round" stroke-width="1.25"></path>
+<path d="M6 7.8L7.3 9.1L10.3 6.1" stroke="#1B3B6F" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+</svg>
+<span class="text-[12px] text-on-surface-variant font-medium">
+            Encrypted offline sync • Zero telemetry leakage
+          </span>
+</div>
+</div>
+</div>
+<!-- Scripts for Password toggle and Bilingual Toggle -->
+<script>
+      // Password reveal toggle
+      const pwdInput = document.getElementById('password-input');
+      const togglePwdBtn = document.getElementById('toggle-pwd-btn');
+      const pwdIcon = document.getElementById('pwd-icon');
+
+      if (togglePwdBtn && pwdInput) {
+        togglePwdBtn.addEventListener('click', () => {
+          const isPassword = pwdInput.getAttribute('type') === 'password';
+          pwdInput.setAttribute('type', isPassword ? 'text' : 'password');
+          pwdIcon.textContent = isPassword ? 'visibility_off' : 'visibility';
+        });
+      }
+
+      // Language switcher interaction
+      const btnEn = document.getElementById('btn-lang-en');
+      const btnBn = document.getElementById('btn-lang-bn');
+
+      if (btnEn && btnBn) {
+        btnEn.addEventListener('click', () => {
+          btnEn.className = 'px-3 py-1 rounded-full text-[11px] font-bold tracking-wider transition-all duration-200 bg-[#1B3B6F] text-white shadow-sm';
+          btnBn.className = 'px-3 py-1 rounded-full text-[11px] font-bold tracking-wider transition-all duration-200 text-on-surface-variant font-bangla hover:text-primary';
+        });
+
+        btnBn.addEventListener('click', () => {
+          btnBn.className = 'px-3 py-1 rounded-full text-[11px] font-bold tracking-wider transition-all duration-200 bg-[#1B3B6F] text-white shadow-sm font-bangla';
+          btnEn.className = 'px-3 py-1 rounded-full text-[11px] font-bold tracking-wider transition-all duration-200 text-on-surface-variant hover:text-primary';
+        });
+      }
+    </script>
+</main>
+</body></html>

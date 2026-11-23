@@ -4,8 +4,8 @@ export type ThemeChoice = 'system' | 'light' | 'dark';
 const KEY = 'relief.theme';
 const listeners = new Set<() => void>();
 
-/** Browser chrome colour: the ink shell, matching the field status bar and the dashboard rail. */
-const CHROME = { light: '#012831', dark: '#020c11' } as const;
+/** Browser chrome colour: Crisp Daylight in light, Radar Slate in dark (matches the app bars). */
+const CHROME = { light: '#F9FAFC', dark: '#0D1117' } as const;
 
 function read(): ThemeChoice {
   try {

@@ -1,27 +1,31 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import {
   Archive,
   Bell,
   Building2,
   ClipboardList,
-  CloudUpload,
   Copy,
   FileText,
   GitCompareArrows,
   Home,
+  HandCoins,
   LayoutDashboard,
   ListChecks,
+  LogIn,
   LogOut,
   Map as MapIcon,
   Menu,
-  PlusCircle,
+  RefreshCw,
   Search,
+  Settings as SettingsIcon,
   ShieldAlert,
   Smartphone,
   Tags,
+  UserCheck,
   UserCog,
+  UserPlus,
   Users,
   UserRound,
   Wifi,
@@ -34,7 +38,7 @@ import { api } from './api/client';
 import { useSession } from './auth/session';
 import { formatNumber, formatShortTime } from './i18n';
 import { syncManager } from './local/sync';
-import { LangSwitch, StatusMark, ThemeToggle, useApiData, type MarkKind } from './ui/kit';
+import { Brand, LangSwitch, StatusMark, ThemeToggle, useApiData, type MarkKind } from './ui/kit';
 
 // ---------- field app shell ----------
 export function useSyncStatus() {
@@ -72,12 +76,20 @@ export function FieldLayout() {
       </a>
       <header className="status-bar">
         <div className="status-row">
-          <span className="net" data-online={status.online}>
-            {status.online ? <Wifi size={18} aria-hidden /> : <WifiOff size={18} aria-hidden />}
-            {status.online ? t('status.online') : t('status.offline')}
+          <Link to="/field" className="brand brand-link">
+            <Brand size={40} />
+          </Link>
+          <span className="status-actions">
+            <LangSwitch compact />
+            <ThemeToggle />
+            <ProfileMenu pending={status.pending} />
           </span>
+        </div>
+      </header>
+      <main id="main" className="field-main">
+        <div className="sync-strip">
           <Link to="/field/sync" className="sync-chip" data-state={state}>
-            <StatusMark kind={mark} size={14} />
+            <StatusMark kind={mark} size={12} />
             <span className="sync-chip-text">
               <span className="sync-chip-main">
                 {state === 'running' ? t('status.syncing') : status.pending > 0 ? t('status.pending', { count: status.pending }) : t('status.allSynced')}
@@ -85,9 +97,9 @@ export function FieldLayout() {
               <span className="sync-chip-sub">{status.lastSyncAt ? t('status.lastSyncShort', { time: formatShortTime(status.lastSyncAt) }) : t('status.neverSynced')}</span>
             </span>
           </Link>
-          <span className="status-actions">
-            <LangSwitch compact />
-            <ThemeToggle onShell />
+          <span className="net" data-online={status.online}>
+            {status.online ? <Wifi size={16} aria-hidden /> : <WifiOff size={16} aria-hidden />}
+            {status.online ? t('status.online') : t('status.offline')}
           </span>
         </div>
         {(!serverSession || status.needsLogin) && (
@@ -98,11 +110,88 @@ export function FieldLayout() {
         <span className="visually-hidden" role="status" aria-live="polite">
           {announcement}
         </span>
-      </header>
-      <main id="main" className="field-main">
         <Outlet />
       </main>
       <FieldBottomBar pending={status.pending} />
+    </div>
+  );
+}
+
+/**
+ * Field header profile: the volunteer's initials open a small panel with their name, role, a link
+ * to Settings and Sign out. A disclosure (not a menu role), rendered only while open, so its links
+ * never add to the page's link list.
+ */
+function ProfileMenu({ pending }: { pending: number }) {
+  const { t } = useTranslation();
+  const { local, user, logout } = useSession();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
+  const name = local?.fullName ?? user?.fullName ?? '';
+  const role = local?.role ?? user?.role;
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        trigger.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+  return (
+    <div className="profile" ref={wrap}>
+      <button
+        ref={trigger}
+        type="button"
+        className="profile-trigger"
+        aria-expanded={open}
+        aria-controls={panelId}
+        aria-label={t('profile.open', { name })}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {initials(name) || <UserRound size={18} aria-hidden />}
+      </button>
+      {open && (
+        <div id={panelId} className="profile-pop">
+          <div className="profile-head">
+            <span className="who-avatar" aria-hidden>
+              {initials(name)}
+            </span>
+            <div className="profile-id">
+              <p className="profile-name">{name}</p>
+              {role && <span className="role-badge">{t(`roles.${role}`)}</span>}
+            </div>
+          </div>
+          <Link to="/field/settings" className="profile-item" onClick={() => setOpen(false)}>
+            <SettingsIcon size={18} aria-hidden />
+            {t('field.actions.settings')}
+          </Link>
+          {pending > 0 && <p className="profile-warn">{t('settings.logoutPending', { n: pending })}</p>}
+          <button
+            type="button"
+            className="profile-item is-danger"
+            onClick={() => {
+              setOpen(false);
+              void logout().then(() => navigate('/unlock'));
+            }}
+          >
+            <LogOut size={18} aria-hidden />
+            {t('profile.signOut')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -112,21 +201,29 @@ function FieldBottomBar({ pending }: { pending: number }) {
   return (
     <nav className="bottom-bar" aria-label={t('nav.fieldMenu')}>
       <NavLink to="/field" end>
-        <Home size={22} aria-hidden />
+        <span className="nav-pill">
+          <Home size={22} aria-hidden />
+        </span>
         {t('nav.home')}
       </NavLink>
       <NavLink to="/field/search">
-        <Search size={22} aria-hidden />
+        <span className="nav-pill">
+          <Search size={22} aria-hidden />
+        </span>
         {t('nav.search')}
       </NavLink>
-      <NavLink to="/field/households/new" className="primary-action">
-        <PlusCircle size={22} aria-hidden />
+      <NavLink to="/field/households/new">
+        <span className="nav-pill">
+          <UserPlus size={22} aria-hidden />
+        </span>
         {t('nav.newHousehold')}
       </NavLink>
       <NavLink to="/field/sync">
-        <CloudUpload size={22} aria-hidden />
+        <span className="nav-pill">
+          <RefreshCw size={22} aria-hidden />
+          {pending > 0 && <span className="badge-count nav-badge">{formatNumber(pending)}</span>}
+        </span>
         {t('nav.sync')}
-        {pending > 0 && <span className="badge-count nav-badge">{formatNumber(pending)}</span>}
       </NavLink>
     </nav>
   );
@@ -148,6 +245,8 @@ export interface OperationSummary {
 interface OperationContextValue {
   operations: OperationSummary[];
   current: OperationSummary | null;
+  /** True on the public observer portal: no session, public aggregated endpoints only. */
+  publicView: boolean;
   select(id: string): void;
   reload(): void;
 }
@@ -160,8 +259,11 @@ export function useOperation(): OperationContextValue {
 
 const OP_KEY = 'relief.dashboard.operation';
 
-export function OperationProvider({ children }: { children: ReactNode }) {
-  const list = useApiData((signal) => api.get<{ operations: OperationSummary[] }>('/api/operations', signal), []);
+export function OperationProvider({ children, publicView = false }: { children: ReactNode; publicView?: boolean }) {
+  const list = useApiData(
+    (signal) => api.get<{ operations: OperationSummary[] }>(publicView ? '/api/public/operations' : '/api/operations', signal),
+    [publicView],
+  );
   const [selected, setSelected] = useState<string | null>(() => {
     try {
       return localStorage.getItem(OP_KEY);
@@ -175,6 +277,7 @@ export function OperationProvider({ children }: { children: ReactNode }) {
     () => ({
       operations: list.data?.operations ?? [],
       current,
+      publicView,
       select: (id) => {
         setSelected(id);
         try {
@@ -185,12 +288,23 @@ export function OperationProvider({ children }: { children: ReactNode }) {
       },
       reload: list.reload,
     }),
-    [list.data, current, list.reload],
+    [list.data, current, list.reload, publicView],
   );
   return <OperationContext.Provider value={value}>{children}</OperationContext.Provider>;
 }
 
 // ---------- dashboard shell ----------
+/** Two-letter avatar from a full name (Latin or Bangla). */
+function initials(name: string | undefined): string {
+  if (!name) return '';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts
+    .slice(0, 2)
+    .map((p) => Array.from(p)[0] ?? '')
+    .join('')
+    .toUpperCase();
+}
+
 type QueueKey = 'conflicts' | 'duplicates' | 'flags';
 interface NavItem {
   to: string;
@@ -207,7 +321,7 @@ const SA: Role = 'SYSTEM_ADMINISTRATOR';
 const OB: Role = 'OBSERVER';
 
 /** Open review items per queue, so the rail shows where decisions wait (UI audit F41). */
-function useQueueCounts(role: Role | null, operationId: string | undefined, path: string) {
+export function useQueueCounts(role: Role | null, operationId: string | undefined, path: string) {
   return useApiData(
     async (signal): Promise<Partial<Record<QueueKey, number>>> => {
       if (!operationId || (role !== GC && role !== OA)) return {};
@@ -234,10 +348,8 @@ function useQueueCounts(role: Role | null, operationId: string | undefined, path
   );
 }
 
-export function DashboardLayout() {
-  const { t } = useTranslation();
-  const { role, user, logout, isFieldUser } = useSession();
-  const { operations, current, select } = useOperation();
+/** Mobile drawer state for the dashboard sidebar: closes on navigation and on Escape, focuses the first link. */
+function useDrawer() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const navRef = useRef<HTMLElement>(null);
@@ -255,6 +367,122 @@ export function DashboardLayout() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
+  return { open, setOpen, navRef, toggleRef };
+}
+
+function MenuToggle({ open, setOpen, toggleRef }: Pick<ReturnType<typeof useDrawer>, 'open' | 'setOpen' | 'toggleRef'>) {
+  const { t } = useTranslation();
+  return (
+    <button
+      ref={toggleRef}
+      type="button"
+      className="icon-btn menu-toggle"
+      aria-expanded={open}
+      aria-label={open ? t('nav.closeMenu') : t('nav.menu')}
+      onClick={() => setOpen((v) => !v)}
+    >
+      {open ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
+    </button>
+  );
+}
+
+/** Operation picker in the dashboard header (staff and public portal). */
+function OperationSelect() {
+  const { t } = useTranslation();
+  const { operations, current, select } = useOperation();
+  const usable = operations.filter((o) => o.relation !== 'none');
+  return (
+    <div className="op-select" data-status={current?.status ?? 'none'}>
+      <span className="op-dot" aria-hidden />
+      <label htmlFor="op-select" className="visually-hidden">
+        {t('nav.operation')}
+      </label>
+      {usable.length > 0 ? (
+        <select id="op-select" value={current?.id ?? ''} onChange={(e) => select(e.target.value)}>
+          {usable.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.name}
+              {o.status === 'closed' ? ` (${t('statuses.closed')})` : ''}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <span className="muted small">{t('nav.noOperation')}</span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Public observer portal (no log-in): live area-level coverage, the operation report, the live map
+ * and the relief fund for donors and citizens. No account block, no notifications, no log-out;
+ * staff reach their workspace through "Staff login".
+ */
+export function PublicDashboardLayout() {
+  const { t } = useTranslation();
+  const { open, setOpen, navRef, toggleRef } = useDrawer();
+  const items: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
+    { to: '/', label: t('nav.coverage'), icon: MapIcon, end: true },
+    { to: '/public/reports', label: t('nav.reports'), icon: FileText },
+  ];
+  return (
+    <div className="dash dash-public">
+      <a className="skip-link" href="#main">
+        {t('app.skip')}
+      </a>
+      <aside className="dash-nav" data-open={open} aria-label={t('nav.menu')} ref={navRef}>
+        <div className="dash-nav-inner">
+          <Link to="/" className="brand">
+            <Brand size={40} />
+          </Link>
+          <nav aria-label={t('nav.sections')}>
+            <div>
+              <p className="group-title">{t('portal.group')}</p>
+              {items.map(({ to, label, icon: Icon, end }) => (
+                <NavLink key={to} to={to} end={end}>
+                  <Icon size={18} aria-hidden />
+                  <span className="nav-label">{label}</span>
+                </NavLink>
+              ))}
+            </div>
+          </nav>
+          <div className="nav-foot portal-foot">
+            <p className="portal-foot-text">{t('portal.donatePitch')}</p>
+            <Link to="/donate" className="btn btn-signal portal-donate">
+              <HandCoins size={18} aria-hidden />
+              {t('donate.nav')}
+            </Link>
+          </div>
+        </div>
+      </aside>
+      <button type="button" className="drawer-scrim" data-open={open} aria-label={t('nav.closeMenu')} tabIndex={-1} onClick={() => setOpen(false)} />
+      <div className="dash-body">
+        <header className="dash-top">
+          <MenuToggle open={open} setOpen={setOpen} toggleRef={toggleRef} />
+          <OperationSelect />
+          <span className="portal-chip">{t('portal.badge')}</span>
+          <span className="spacer" />
+          <ThemeToggle />
+          <LangSwitch />
+          <Link to="/login" className="btn btn-secondary btn-sm portal-login">
+            <LogIn size={16} aria-hidden />
+            <span>{t('portal.staffLogin')}</span>
+          </Link>
+        </header>
+        <main id="main" className="dash-main">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export function DashboardLayout() {
+  const { t } = useTranslation();
+  const { role, user, logout, isFieldUser } = useSession();
+  const { current } = useOperation();
+  const { open, setOpen, navRef, toggleRef } = useDrawer();
+  const location = useLocation();
   const unread = useApiData((signal) => api.get<{ unread: number }>('/api/notifications', signal), [location.pathname]);
   const queues = useQueueCounts(role ?? null, current?.id, location.pathname);
 
@@ -262,10 +490,12 @@ export function DashboardLayout() {
     { to: '/app/coverage', label: t('nav.coverage'), icon: MapIcon, roles: [GC, OA, OB, SA], group: 'main' },
     { to: '/app/households', label: t('nav.households'), icon: Users, roles: [GC, OA, SA], group: 'main' },
     { to: '/app/reports', label: t('nav.reports'), icon: FileText, roles: [GC, OA, OB], group: 'main' },
+    { to: '/donate', label: t('donate.nav'), icon: HandCoins, roles: [GC, OA, OB, SA], group: 'main' },
     { to: '/app/conflicts', label: t('nav.conflicts'), icon: GitCompareArrows, roles: [GC], group: 'review', queue: 'conflicts' },
     { to: '/app/duplicates', label: t('nav.duplicates'), icon: Copy, roles: [GC], group: 'review', queue: 'duplicates' },
     { to: '/app/flags', label: t('nav.flags'), icon: ShieldAlert, roles: [GC, OA], group: 'review', queue: 'flags' },
     { to: '/app/members', label: t('nav.members'), icon: UserCog, roles: [GC], group: 'setup' },
+    { to: '/app/approvals', label: t('nav.approvals'), icon: UserCheck, roles: [OA], group: 'setup' },
     { to: '/app/operations', label: t('nav.operations'), icon: LayoutDashboard, roles: [OA], group: 'setup' },
     { to: '/app/join', label: t('nav.join'), icon: ListChecks, roles: [GC], group: 'setup' },
     { to: '/app/audit', label: t('nav.audit'), icon: ClipboardList, roles: [OA, SA], group: 'admin' },
@@ -276,12 +506,11 @@ export function DashboardLayout() {
   ];
   const visible = items.filter((i) => role && i.roles.includes(role));
   const groups: [NavItem['group'], string | null][] = [
-    ['main', null],
+    ['main', t('nav.groupMain')],
     ['review', t('nav.groupReview')],
     ['setup', t('nav.groupSetup')],
     ['admin', t('nav.groupAdmin')],
   ];
-  const usable = operations.filter((o) => o.relation !== 'none');
   const unreadCount = unread.data?.unread ?? 0;
 
   return (
@@ -292,8 +521,7 @@ export function DashboardLayout() {
       <aside className="dash-nav" data-open={open} aria-label={t('nav.menu')} ref={navRef}>
         <div className="dash-nav-inner">
         <Link to="/app/coverage" className="brand">
-          <img src="/icon.svg" alt="" width={32} height={32} />
-          {t('app.name')}
+          <Brand size={40} />
         </Link>
         <nav aria-label={t('nav.sections')}>
           {groups.map(([g, title]) => {
@@ -322,19 +550,19 @@ export function DashboardLayout() {
           })}
         </nav>
         <div className="nav-foot">
-          <p className="who">
-            {user?.fullName}
-            <span>
-              {role ? t(`roles.${role}`) : ''}
-              {user?.organisationName ? `, ${user.organisationName}` : ''}
+          <div className="who">
+            <span className="who-avatar" aria-hidden>
+              {initials(user?.fullName)}
             </span>
-          </p>
+            <p className="who-text">
+              {user?.fullName}
+              <span>
+                {role ? t(`roles.${role}`) : ''}
+                {user?.organisationName ? `, ${user.organisationName}` : ''}
+              </span>
+            </p>
+          </div>
           <nav aria-label={t('nav.you')}>
-            <NavLink to="/app/notifications">
-              <Bell size={18} aria-hidden />
-              <span className="nav-label">{t('nav.notifications')}</span>
-              {unreadCount > 0 && <span className="nav-count">{formatNumber(unreadCount)}</span>}
-            </NavLink>
             <NavLink to="/app/account">
               <UserRound size={18} aria-hidden />
               <span className="nav-label">{t('nav.account')}</span>
@@ -352,39 +580,16 @@ export function DashboardLayout() {
       <button type="button" className="drawer-scrim" data-open={open} aria-label={t('nav.closeMenu')} tabIndex={-1} onClick={() => setOpen(false)} />
       <div className="dash-body">
         <header className="dash-top">
-          <button
-            ref={toggleRef}
-            type="button"
-            className="icon-btn menu-toggle"
-            aria-expanded={open}
-            aria-label={open ? t('nav.closeMenu') : t('nav.menu')}
-            onClick={() => setOpen((v) => !v)}
-          >
-            {open ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
-          </button>
-          <div className="op-select">
-            <label htmlFor="op-select">{t('nav.operation')}</label>
-            {usable.length > 0 ? (
-              <select id="op-select" value={current?.id ?? ''} onChange={(e) => select(e.target.value)}>
-                {usable.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                    {o.status === 'closed' ? ` (${t('statuses.closed')})` : ''}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span className="muted small">{t('nav.noOperation')}</span>
-            )}
-          </div>
+          <MenuToggle open={open} setOpen={setOpen} toggleRef={toggleRef} />
+          <OperationSelect />
           <span className="spacer" />
+          <ThemeToggle />
           <Link to="/app/notifications" className="icon-btn" aria-label={t('nav.notificationsCount', { count: unreadCount })}>
             <Bell size={20} aria-hidden />
             {unreadCount > 0 && <span className="badge-count">{formatNumber(unreadCount)}</span>}
           </Link>
-          <ThemeToggle />
           <LangSwitch />
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => void logout()}>
+          <button type="button" className="btn btn-secondary btn-sm btn-logout" onClick={() => void logout()}>
             <LogOut size={16} aria-hidden />
             <span className="logout-label">{t('auth.logout')}</span>
           </button>

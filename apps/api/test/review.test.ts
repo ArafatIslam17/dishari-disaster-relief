@@ -246,3 +246,32 @@ describe('NFR07 retention after closure (C8)', () => {
     expect(await query(db(), sql`select 1 from audit_log where action = 'retention.redacted'`)).toHaveLength(1);
   });
 });
+
+describe('Public observer portal (no log-in)', () => {
+  it('lists operations and serves area-level coverage with small cells suppressed, without any token', async () => {
+    const ops = await w.client.call<{ operations: { id: string; relation: string }[] }>('GET', '/api/public/operations');
+    expect(ops.status).toBe(200);
+    expect(ops.body.operations.map((o) => o.id)).toContain(w.operationId);
+    const r = await w.client.call<{ rows: { registered: number | string }[]; upazilas: { upazila: string; label: string }[]; totals: { areas: number } }>(
+      'GET',
+      `/api/public/operations/${w.operationId}/coverage`,
+    );
+    expect(r.status).toBe(200);
+    expect(r.body.rows.some((x) => x.registered === '<5')).toBe(true);
+    expect(r.body.upazilas.length).toBeGreaterThan(0);
+    expect(r.body.totals.areas).toBe(r.body.rows.length);
+    // Never a person, a phone number, an NID or a GPS point.
+    expect(r.raw).not.toMatch(/Rafiqul|Nasima|0171|0189|headName|mobile|nid|gps|household_id|householdId/i);
+  });
+  it('builds the public operation summary report without names or phones', async () => {
+    const report = await w.client.call('GET', `/api/public/reports/operation-summary?operationId=${w.operationId}&format=csv`);
+    expect(report.status).toBe(200);
+    expect(report.raw).toContain('coverage');
+    expect(report.raw).not.toMatch(/Rafiqul|Nasima|0171|0189/);
+  });
+  it('keeps staff endpoints behind log-in and rejects unknown operations', async () => {
+    expect((await w.client.call('GET', `/api/operations/${w.operationId}/coverage`)).status).toBe(401);
+    expect((await w.client.call('GET', '/api/operations')).status).toBe(401);
+    expect((await w.client.call('GET', '/api/public/operations/00000000-0000-4000-8000-000000000000/coverage')).status).toBe(404);
+  });
+});
