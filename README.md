@@ -240,7 +240,7 @@ The Content Security Policy allows map images from `tile.openstreetmap.org` only
 - Public Observer Portal (no-login dashboard) and the interactive Leaflet Live Operation Map
 - Role-based registration and approval UI flows
 
-**Meherin Khondoker Priya** (`@<github-username>`) *(update the username after accepting the GitHub collaborator invite)*
+**Meherin Khondoker Priya** ([Meherin Khandakar Priya](https://github.com/meher-priya)) 
 - Offline-first PWA data sync, local queue and ward coverage aggregation logic
 - Role-based access control (RBAC) and the account approval hierarchy endpoints
 - API validation, unit and integration testing, and system documentation (SRS and journal alignment)
