@@ -2,7 +2,7 @@
 <!-- impeccable:product-schema 1 -->
 
 ## Platform
-web
+Web
 
 ## Users
 - **Field Volunteer.** Registers consenting households and records relief on an Android phone (Chrome, 2 GB RAM, Android 8+), outdoors, often in sun or rain, usually one-handed, frequently with no signal. Works in Bangla first.
