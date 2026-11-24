@@ -18,3 +18,5 @@ Thumbs.db
 tmp/
 apps/web/test-results/
 tmp-*
+
+.vercel

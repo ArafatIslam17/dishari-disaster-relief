@@ -199,19 +199,19 @@ The Stitch reference designs are in [`docs/stitch-design/`](docs/stitch-design/)
 
 ### Vercel
 
-`vercel.json` deploys the repository as one Vercel project with two services:
-- **`web`** is the Vite build of `apps/web`. It is served for every path, with a fallback to `index.html` so client-side routes load.
-- **`api`** is the Fastify app in `apps/api`, served on `/api/*`. Its entrypoint is `apps/api/src/vercel.ts`, which runs the same app as `server.ts` but without its timers, backups and signal handling.
+`vercel.json` deploys the repository as one Vercel project:
+- **Web app:** the Vite build of `apps/web` is served as static files. Any path that is not a file and not under `/api/` falls back to `index.html`, so client-side routes load.
+- **API:** every `/api/*` request is rewritten to one Vercel Function, `api/index.ts`. It hands the request to the Fastify app through `apps/api/src/vercel.ts`, which builds the same app as `server.ts` once per warm instance. It runs without `listen()`, timers, backups or signal handling.
+- **Same domain:** the browser calls the API with relative `/api/...` paths on that domain, so the session cookie works without cross-site CORS.
 
-The browser calls the API with relative `/api/...` paths on the same domain, so the session cookie works without CORS. The services never call each other from the server, so no service bindings are needed. Run `vercel dev` to try both services together locally.
+**Environment variables (Project → Settings → Environment Variables):**
+- **Required:** `DATABASE_URL` for a hosted PostgreSQL with `pg_trgm` available, such as Neon.
+- **Required:** `JWT_SECRET` (`AUTH_JWT_SECRET` is accepted too), `PHONE_PEPPER` and `DATA_MASTER_KEY`. Each must be at least 32 random bytes, base64-encoded: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. `PHONE_PEPPER` and `DATA_MASTER_KEY` must match the values the database was seeded with, because phone lookups and encrypted fields depend on them.
+- **Set automatically:** `NODE_ENV=production`, `COOKIE_SECURE=true`, `TRUST_PROXY=true` and `BACKUP_DAILY=false` are applied by `vercel.ts` unless you set them yourself.
+- **CORS:** the deployment's own URLs (production, branch and per-deployment) are added to `CORS_ORIGINS` automatically. Add any custom domain to `CORS_ORIGINS`.
+- **Optional:** `CRON_SECRET` enables the cron routes below.
 
-**Environment variables for `api`:**
-- `NODE_ENV=production`, `COOKIE_SECURE=true` and `TRUST_PROXY=true`.
-- `CORS_ORIGINS=https://<your domain>`.
-- `DATABASE_URL` pointing to a hosted PostgreSQL with `pg_trgm` available.
-- `JWT_SECRET`, `PHONE_PEPPER` and `DATA_MASTER_KEY`.
-- `BACKUP_DAILY=false`. Backups are the database provider's job, because a function has no `pg_dump`.
-- `CRON_SECRET`.
+If a required variable is missing or invalid, every `/api/*` request answers `503 {"code":"service_unavailable"}`. The function log names the variables to fix; it never prints their values.
 
 **Migrations.** Run them against that database before the first deploy and after every schema change: `DATABASE_URL=... pnpm db:migrate`. Then run `pnpm admin:create`.
 
