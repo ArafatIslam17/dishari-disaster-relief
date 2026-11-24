@@ -60,11 +60,12 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
-    proxy: { '/api': { target: 'http://127.0.0.1:4000', changeOrigin: false } },
+    allowedHosts: true,
+    proxy: { '/api': { target: 'http://127.0.0.1:4000', changeOrigin: true } },
   },
   preview: {
     port: 5173,
-    proxy: { '/api': { target: 'http://127.0.0.1:4000', changeOrigin: false } },
+    proxy: { '/api': { target: 'http://127.0.0.1:4000', changeOrigin: true } },
   },
   build: { target: 'es2020', sourcemap: true, chunkSizeWarningLimit: 900 },
 });

@@ -37,6 +37,14 @@ const envSchema = z.object({
         .map((s) => s.trim())
         .filter(Boolean),
     ),
+  /**
+   * Also allow https://<name>.trycloudflare.com origins (Cloudflare quick tunnels, for demos on a
+   * phone). Defaults to on outside production and off in production.
+   */
+  CORS_ALLOW_TUNNELS: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === 'true')),
   COOKIE_SECURE: flag('false'),
   TRUST_PROXY: flag('false'),
   JWT_SECRET: base64Key,
@@ -52,7 +60,17 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().min(10).default(600),
 });
 
-export type AppConfig = z.infer<typeof envSchema>;
+export type AppConfig = Omit<z.infer<typeof envSchema>, 'CORS_ALLOW_TUNNELS'> & { CORS_ALLOW_TUNNELS: boolean };
+
+/** An https origin on a Cloudflare quick tunnel, such as https://calm-river-1234.trycloudflare.com. */
+export function isTunnelOrigin(origin: string): boolean {
+  try {
+    const u = new URL(origin);
+    return u.protocol === 'https:' && u.hostname.endsWith('.trycloudflare.com') && u.origin === origin;
+  } catch {
+    return false;
+  }
+}
 
 export function readConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const parsed = envSchema.safeParse(env);
@@ -60,7 +78,7 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     const lines = parsed.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`);
     throw new Error(`Invalid environment configuration (.env):\n${lines.join('\n')}`);
   }
-  const cfg = parsed.data;
+  const cfg = { ...parsed.data, CORS_ALLOW_TUNNELS: parsed.data.CORS_ALLOW_TUNNELS ?? parsed.data.NODE_ENV !== 'production' };
   if (cfg.NODE_ENV === 'production' && !cfg.COOKIE_SECURE) {
     throw new Error('COOKIE_SECURE must be true in production (the API must be served over HTTPS).');
   }

@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
 import { uuidv7 } from '@relief/shared';
+import { readConfig } from '../src/config.js';
 import { query } from '../src/db/client.js';
 import { PASSWORD, buildWorld, createTestEnv, insertUser, type Session, type TestEnv, type World } from './helpers.js';
 
@@ -187,6 +188,21 @@ describe('NFR01 role-based access on every protected route', () => {
     expect(ok.headers['access-control-allow-origin']).toBe('http://localhost:5173');
     const bad = await env.app.inject({ method: 'GET', url: '/api/health', headers: { origin: 'https://evil.example' } });
     expect(bad.statusCode).toBe(403);
+  });
+  it('accepts a Cloudflare quick tunnel origin outside production, and only that exact shape', async () => {
+    const tunnel = 'https://calm-river-1234.trycloudflare.com';
+    const ok = await env.app.inject({ method: 'POST', url: '/api/auth/login', headers: { origin: tunnel }, payload: {} });
+    expect(ok.statusCode).toBe(400); // reached validation: CORS let it through
+    expect(ok.headers['access-control-allow-origin']).toBe(tunnel);
+    for (const origin of ['http://calm-river-1234.trycloudflare.com', 'https://trycloudflare.com.evil.example', 'https://eviltrycloudflare.com']) {
+      expect((await env.app.inject({ method: 'GET', url: '/api/health', headers: { origin } })).statusCode).toBe(403);
+    }
+  });
+  it('turns tunnel origins off by default in production', () => {
+    const base = { DATABASE_URL: 'postgres://x/y', JWT_SECRET: 'a'.repeat(44), PHONE_PEPPER: 'b'.repeat(44), DATA_MASTER_KEY: 'c'.repeat(44) };
+    expect(readConfig({ ...base, NODE_ENV: 'development' }).CORS_ALLOW_TUNNELS).toBe(true);
+    expect(readConfig({ ...base, NODE_ENV: 'production', COOKIE_SECURE: 'true' }).CORS_ALLOW_TUNNELS).toBe(false);
+    expect(readConfig({ ...base, NODE_ENV: 'production', COOKIE_SECURE: 'true', CORS_ALLOW_TUNNELS: 'true' }).CORS_ALLOW_TUNNELS).toBe(true);
   });
 });
 

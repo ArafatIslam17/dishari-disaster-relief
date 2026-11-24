@@ -9,6 +9,7 @@ import fastifyStatic from '@fastify/static';
 import { sql } from 'drizzle-orm';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { ZodError } from 'zod';
+import { isTunnelOrigin } from './config.js';
 import type { AppContext } from './context.js';
 import { AppError } from './lib/errors.js';
 import { adminRoutes } from './routes/admin.js';
@@ -72,6 +73,7 @@ export async function buildApp(ctx: AppContext, options: { logger?: boolean } = 
     origin: (origin, cb) => {
       // Same-origin requests and non-browser clients send no Origin header.
       if (!origin || ctx.config.CORS_ORIGINS.includes(origin)) cb(null, true);
+      else if (ctx.config.CORS_ALLOW_TUNNELS && isTunnelOrigin(origin)) cb(null, true);
       else cb(new AppError(403, 'cors_origin_denied'), false);
     },
     credentials: true,
