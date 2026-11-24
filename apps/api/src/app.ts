@@ -5,7 +5,6 @@ import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-import fastifyStatic from '@fastify/static';
 import { sql } from 'drizzle-orm';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { ZodError } from 'zod';
@@ -131,6 +130,10 @@ export async function buildApp(ctx: AppContext, options: { logger?: boolean } = 
   // Production: serve the built PWA from the same origin (strict CORS, one HTTPS endpoint).
   const webDist = ctx.config.WEB_DIST ? resolve(ctx.config.WEB_DIST) : null;
   if (webDist && existsSync(resolve(webDist, 'index.html'))) {
+    // Loaded only when needed: @fastify/static is CommonJS and require()s the ESM-only
+    // content-disposition, which crashes runtimes without require(esm), such as Vercel's.
+    // Vercel serves the PWA itself and never sets WEB_DIST.
+    const { default: fastifyStatic } = await import('@fastify/static');
     await app.register(fastifyStatic, { root: webDist, wildcard: false, index: ['index.html'] });
     app.setNotFoundHandler((request, reply) => {
       if (request.url.startsWith('/api/')) return reply.status(404).send({ code: 'not_found' });

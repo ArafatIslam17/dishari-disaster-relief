@@ -1,4 +1,18 @@
+import { copyFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { defineConfig } from 'tsup';
+
+/** The PDF fonts (services/pdf.ts) are read from disk, so they ship beside the bundle in dist/vercel/fonts. */
+function copyFonts(): void {
+  const require = createRequire(import.meta.url);
+  const from = join(dirname(require.resolve('@fontsource/noto-sans-bengali/package.json')), 'files');
+  const to = 'dist/vercel/fonts';
+  mkdirSync(to, { recursive: true });
+  for (const f of readdirSync(from)) {
+    if (/^noto-sans-bengali-(bengali|latin)-(400|700)-normal\.woff$/.test(f)) copyFileSync(join(from, f), join(to, f));
+  }
+}
 
 /**
  * `pnpm build:vercel`: bundles the serverless entry (src/vercel.ts) into dist/vercel/vercel.js for
@@ -15,4 +29,5 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   noExternal: ['@relief/shared'],
+  onSuccess: async () => copyFonts(),
 });

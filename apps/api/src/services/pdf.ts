@@ -1,15 +1,32 @@
+import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import PDFDocument from 'pdfkit';
 
 const require = createRequire(import.meta.url);
-const fontDir = join(dirname(require.resolve('@fontsource/noto-sans-bengali/package.json')), 'files');
-const FONTS = {
-  bn: join(fontDir, 'noto-sans-bengali-bengali-400-normal.woff'),
-  bnBold: join(fontDir, 'noto-sans-bengali-bengali-700-normal.woff'),
-  latin: join(fontDir, 'noto-sans-bengali-latin-400-normal.woff'),
-  latinBold: join(fontDir, 'noto-sans-bengali-latin-700-normal.woff'),
+const FONT_FILES = {
+  bn: 'noto-sans-bengali-bengali-400-normal.woff',
+  bnBold: 'noto-sans-bengali-bengali-700-normal.woff',
+  latin: 'noto-sans-bengali-latin-400-normal.woff',
+  latinBold: 'noto-sans-bengali-latin-700-normal.woff',
 };
+
+let fontDir: string | null = null;
+/**
+ * Resolved on first use, not at import, so a missing font package can never stop the API from
+ * starting. The Vercel bundle ships the fonts in a `fonts` folder beside itself
+ * (tsup.vercel.config.ts); elsewhere they come from @fontsource/noto-sans-bengali.
+ */
+function fontPath(key: keyof typeof FONT_FILES): string {
+  if (!fontDir) {
+    const bundled = join(dirname(fileURLToPath(import.meta.url)), 'fonts');
+    fontDir = existsSync(join(bundled, FONT_FILES.bn))
+      ? bundled
+      : join(dirname(require.resolve('@fontsource/noto-sans-bengali/package.json')), 'files');
+  }
+  return join(fontDir, FONT_FILES[key]);
+}
 
 const BENGALI = /[ঀ-৿]/;
 
@@ -30,10 +47,10 @@ export class ReportPdf {
 
   constructor(title: string) {
     this.doc = new PDFDocument({ size: 'A4', margin: 48, info: { Title: title, Producer: 'Relief Coordination' } });
-    this.doc.registerFont('bn', FONTS.bn);
-    this.doc.registerFont('bnBold', FONTS.bnBold);
-    this.doc.registerFont('latin', FONTS.latin);
-    this.doc.registerFont('latinBold', FONTS.latinBold);
+    this.doc.registerFont('bn', fontPath('bn'));
+    this.doc.registerFont('bnBold', fontPath('bnBold'));
+    this.doc.registerFont('latin', fontPath('latin'));
+    this.doc.registerFont('latinBold', fontPath('latinBold'));
   }
 
   text(value: string, opts: { size?: number; bold?: boolean; color?: string; gap?: number } = {}): this {

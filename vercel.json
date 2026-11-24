@@ -7,7 +7,7 @@
   "functions": {
     "api/index.ts": {
       "maxDuration": 30,
-      "includeFiles": "node_modules/.pnpm/@fontsource+noto-sans-bengali@*/node_modules/@fontsource/noto-sans-bengali/files/noto-sans-bengali-*-normal.woff"
+      "includeFiles": "apps/api/dist/vercel/fonts/**"
     }
   },
   "rewrites": [
