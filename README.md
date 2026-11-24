@@ -10,11 +10,10 @@ The system supports human decisions. It never decides who receives aid.
 
 Dishari was built as an SE331 capstone project from the proposal in `Proposal.pdf`. Corrections to the proposal are in [`docs/SRS-addendum.md`](docs/SRS-addendum.md), and the reasoning behind design choices is in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
-## Live Demo
 
-[Live URL - Coming Soon / Update after deployment]
+Notion Link: https://app.notion.com/p/Dishari-Project-Journal-421e07232be08057af3be4c395b8f589?source=copy_link
 
-Until then, run it locally (see [Local setup](#local-setup)). The demo accounts are listed below.
+The demo accounts are listed below.
 
 ## Key features
 
