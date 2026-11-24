@@ -12,9 +12,11 @@ Dishari was built as an SE331 capstone project from the proposal in `Proposal.pd
 
 ## Live Demo
 
-[Live URL - Coming Soon / Update after deployment]
+[Live URL - https://dishari-disaster-relief.vercel.app/]
 
-Until then, run it locally (see [Local setup](#local-setup)). The demo accounts are listed below.
+Notion Link: https://dishari-disaster-relief.vercel.app/
+
+The demo accounts are listed below.
 
 ## Key features
 
