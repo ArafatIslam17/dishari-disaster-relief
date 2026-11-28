@@ -2,6 +2,9 @@
 
 **Offline-first disaster relief management and transparent donation platform.**
 
+
+
+
 After a flood or cyclone, volunteers in the field rarely have a reliable signal. Dishari lets them register consenting households and record relief on their phones **with no network at all**, then syncs everything when a connection returns. Coordinators from different organisations then work from one shared, household-level picture: what reached whom, which areas have no records yet, which families may be registered twice, and where two people entered different values.
 
 The same data feeds a public portal. Donors and citizens can open the site without an account and see how relief is progressing area by area, follow it on a live map, and give to the relief fund.
@@ -237,7 +240,7 @@ The Content Security Policy allows map images from `tile.openstreetmap.org` only
 - Public Observer Portal (no-login dashboard) and the interactive Leaflet Live Operation Map
 - Role-based registration and approval UI flows
 
-**Meherin Khondoker Priya** (`@<github-username>`) *(update the username after accepting the GitHub collaborator invite)*
+**Meherin Khondoker Priya** ([Meherin Khandakar Priya](https://github.com/meher-priya)) 
 - Offline-first PWA data sync, local queue and ward coverage aggregation logic
 - Role-based access control (RBAC) and the account approval hierarchy endpoints
 - API validation, unit and integration testing, and system documentation (SRS and journal alignment)
