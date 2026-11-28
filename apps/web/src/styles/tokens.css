@@ -143,8 +143,8 @@
   --dur-sheet: 360ms; /* drawers */
   --dur-enter: 560ms; /* page and section entrances */
   --dur-data: 820ms; /* charts drawing in */
-  --stagger: 70ms;
-  --rise: 16px;
+  --stagger: 90ms;
+  --rise: 24px;
 
   /* sizes */
   --target: 44px;

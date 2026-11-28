@@ -52,7 +52,7 @@ elevation:
   "1": "1px hairline border (tiles, inputs, tables)"
   "2": "surface-2 fill (hover, quiet band)"
   "3": "0 8px 24px -6px shadow tinted from ink — dialogs, toasts, the mobile nav drawer only"
-motion: "Tokens in tokens.css, rules in styles/motion.css, hooks in ui/motion.tsx. 160ms hover/press, 220ms menus, 280ms toasts/dialogs/indicator, 360ms drawer, 560ms page entrance, 820ms charts; 70ms stagger; 16px rise. Curves: --ease cubic-bezier(0.22, 1, 0.36, 1) to enter/settle, --ease-state (0.4, 0, 0.2, 1) for toggles, --ease-sheet (0.32, 0.72, 0, 1) for drawers, --ease-pop (0.34, 1.56, 0.64, 1) only for confirmations. Transform and opacity only. Reduced motion keeps colour/opacity changes, removes movement."
+motion: "Tokens in tokens.css, rules in styles/motion.css, hooks in ui/motion.tsx. 160ms hover/press, 220ms menus, 280ms toasts/dialogs/indicator, 360ms drawer, 560ms page entrance, 820ms charts; 90ms stagger; 24px rise. Curves: --ease cubic-bezier(0.22, 1, 0.36, 1) to enter/settle, --ease-state (0.4, 0, 0.2, 1) for toggles, --ease-sheet (0.32, 0.72, 0, 1) for drawers, --ease-pop (0.34, 1.56, 0.64, 1) only for confirmations. Transform and opacity only. Reduced motion keeps colour/opacity changes, removes movement."
 z: "base 0 · sticky 20 · rail 30 · bar 40 · drawer 50 · toast 60 · dialog 70 · skip 80"
 ---
 
@@ -103,7 +103,7 @@ Carbon's hairline-first rule: tiles separate with 1px lines and the surface-2 fi
 
 ## Motion
 Motion explains a change of state or place; it never decorates and never makes anyone wait for data or an action.
-- **Arrival:** a page's title focuses in (3px blur, 620ms) while its blocks rise 16px in reading order, 60ms apart, capped at 180ms. Groups (KPI tiles, dashboard columns, field stats) stagger their own children instead of moving as one. Shells (sidebar, top bar, field status bar, bottom bar) arrive once when a workspace opens, never on navigation. Skeletons wait 120ms, so fast answers never flash one.
+- **Arrival:** a page's title focuses in (4px blur, 620ms) while its blocks rise 24px in reading order, 90ms apart, capped at 270ms. Groups (KPI tiles, dashboard columns, field stats) stagger their own children instead of moving as one. Shells (sidebar, top bar, field status bar, bottom bar) arrive once when a workspace opens, never on navigation. Skeletons wait 120ms, so fast answers never flash one.
 - **Place:** one indicator travels to the current item (sidebar pill, field bottom-bar pill); the first placement and any resize snap, only navigation slides.
 - **Data:** summary figures count up once, on first view (final value given to screen readers); later changes show at once. Bars grow from the baseline, donut slices draw, meters fill: once, as the data arrives. Blocks arriving below the fold rise when scrolled to.
 - **Feedback:** toasts, dialogs, popovers and validation messages enter and leave on their own short curves; closing elements are inert at once. Counts and the sync mark pop (the only overshoot) when they appear or change.
