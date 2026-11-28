@@ -6,6 +6,7 @@ import type { CoverageLabel, DistributionDTO, HouseholdDTO } from '@relief/share
 import { api, downloadFile } from '../api/client';
 import { useSession } from '../auth/session';
 import { formatNumber, formatPercent, formatTaka, formatTime } from '../i18n';
+import { CountUp } from '../ui/motion';
 import { RecentDonations, useFundSummary } from '../ui/fund';
 import { Donut, PairedBars, type BarDatum } from '../ui/charts';
 import { pinKind, placeOf, type UpazilaFigure } from '../ui/map-places';
@@ -136,7 +137,7 @@ function FundCard({ operationId }: { operationId: string | null }) {
         <>
           <p className="fund-figure">
             <span className="visually-hidden">{t('donate.totalRaised')}: </span>
-            {formatTaka(fund.data.totalBdt)}
+            <CountUp value={Number(fund.data.totalBdt)} format={formatTaka} duration={1100} />
           </p>
           <p className="fund-count">{t('donate.donations', { count: fund.data.completedCount, n: formatNumber(fund.data.completedCount) })}</p>
           <RecentDonations items={fund.data.latest} limit={4} />
@@ -277,7 +278,9 @@ export function CoveragePage() {
                   <House size={20} />
                 </span>
               </div>
-              <p className="kpi-figure">{formatNumber(totals.registered)}</p>
+              <p className="kpi-figure">
+                <CountUp value={Number(totals.registered)} />
+              </p>
               <p className="kpi-foot tone-foot-sky">{t('coverage.kpiAreas', { count: Number(totals.areas), n: formatNumber(totals.areas) })}</p>
             </article>
             <article className="kpi">
@@ -287,7 +290,9 @@ export function CoveragePage() {
                   <PackageCheck size={20} />
                 </span>
               </div>
-              <p className="kpi-figure">{formatNumber(totals.served)}</p>
+              <p className="kpi-figure">
+                <CountUp value={Number(totals.served)} />
+              </p>
               <p className="kpi-foot tone-foot-ok">
                 <StatusMark kind="served" />
                 {t('coverage.kpiRate', { pct: formatPercent(servedRatio) })}
@@ -300,7 +305,9 @@ export function CoveragePage() {
                   <TriangleAlert size={20} />
                 </span>
               </div>
-              <p className="kpi-figure">{formatNumber(unservedTotal)}</p>
+              <p className="kpi-figure">
+                <CountUp value={unservedTotal} />
+              </p>
               <p className="kpi-foot tone-foot-gold">
                 <StatusMark kind="not_served" />
                 {t('coverage.kpiStillWaiting')}
@@ -313,7 +320,9 @@ export function CoveragePage() {
                   <MapPinOff size={20} />
                 </span>
               </div>
-              <p className="kpi-figure">{formatNumber(totals.noRecords)}</p>
+              <p className="kpi-figure">
+                <CountUp value={Number(totals.noRecords)} />
+              </p>
               <p className="kpi-foot tone-foot-slate">
                 <StatusMark kind="no_records" />
                 {t('coverage.kpiNoRecords')}

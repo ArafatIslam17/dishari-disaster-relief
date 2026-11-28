@@ -1356,17 +1356,7 @@ td .cell-sub {
 .toast-close:hover {
   opacity: 1;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .toast {
-    animation: toast-in var(--dur-3) var(--ease);
-  }
-}
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
+/* toast entrance and exit: styles/motion.css */
 @media (min-width: 64rem) {
   .toast-region {
     inset-inline: auto var(--s5);
@@ -1396,17 +1386,7 @@ dialog::backdrop {
   font-weight: 500;
   margin-bottom: var(--s4);
 }
-@media (prefers-reduced-motion: no-preference) {
-  dialog[open] {
-    animation: dialog-in var(--dur-3) var(--ease);
-  }
-}
-@keyframes dialog-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-}
+/* dialog and backdrop entrance: styles/motion.css */
 
 /* ---------- household card: the signature object ---------- */
 .hh-card {
@@ -2292,24 +2272,7 @@ dialog::backdrop {
   font-size: var(--t-xs);
   color: var(--on-shell-2);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .public-box > * {
-    animation: rise var(--dur-3) var(--ease) both;
-  }
-  .public-box > :nth-child(2) {
-    animation-delay: 40ms;
-  }
-  .public-box > :nth-child(n + 3) {
-    animation-delay: 80ms;
-  }
-}
-/* Movement only, no fade from zero: if the animation never runs (background tab),
-   the sign-in and unlock screens must still show their content. */
-@keyframes rise {
-  from {
-    transform: translateY(6px);
-  }
-}
+/* public page entrance: styles/motion.css (fill-mode only, so content shows if it never runs) */
 .lang-switch {
   display: inline-flex;
   border: 1px solid var(--line-strong);

@@ -7,6 +7,7 @@ import './theme';
 import './i18n';
 import './styles/app.css';
 import './styles/dishari.css';
+import './styles/motion.css';
 import { SessionProvider } from './auth/session';
 import { router } from './router';
 import { ToastProvider } from './ui/kit';

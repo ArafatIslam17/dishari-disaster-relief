@@ -16,12 +16,20 @@ const HIGHLIGHTS = [
   { key: 'donate', icon: HandCoins },
 ] as const;
 
+/** The promise panel animates in on the first public page of a visit only; moving between log in,
+ * register and PIN pages then changes just the task column. */
+let asideIntroPlayed = false;
+
 /** Public pages: an ink panel with what the product is for, and the task on paper beside it. */
 export function PublicFrame({ title, lead, children }: { title: string; lead?: ReactNode; children: ReactNode }) {
   const { t } = useTranslation();
+  const [intro] = useState(() => !asideIntroPlayed);
+  useEffect(() => {
+    asideIntroPlayed = true;
+  }, []);
   return (
     <div className="public">
-      <aside className="public-aside" aria-label={t('app.name')}>
+      <aside className={`public-aside${intro ? ' is-intro' : ''}`} aria-label={t('app.name')}>
         <span className="brand">
           <Brand sub={t('app.tagline')} size={48} />
         </span>

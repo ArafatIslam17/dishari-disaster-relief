@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { formatNumber } from '../i18n';
 
 /** Dishari charts: plain HTML/SVG, no library. Each chart carries a text alternative for screen readers. */
@@ -37,8 +38,8 @@ export function PairedBars({ data, label, aName, bName }: { data: BarDatum[]; la
           ))}
         </div>
         <div className="bars-cols" style={{ gridTemplateColumns: `repeat(${Math.max(1, data.length)}, minmax(0, 1fr))` }}>
-          {data.map((d) => (
-            <div className="bars-col" key={d.key}>
+          {data.map((d, i) => (
+            <div className="bars-col" key={d.key} style={{ '--i': i } as CSSProperties}>
               <div className="bars-pair">
                 <span className="bar bar-a" style={{ height: `${(d.a / max) * 100}%` }} />
                 <span className="bar bar-b" style={{ height: `${(d.b / max) * 100}%` }} />

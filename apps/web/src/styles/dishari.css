@@ -960,10 +960,16 @@ td .chip,
    ====================================================================== */
 .dash-nav {
   background: color-mix(in oklch, var(--surface) 72%, transparent);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
   color: var(--ink);
   border-right: 1px solid var(--card-line);
+}
+/* Frost only where the rail floats over content (the phone drawer). On desktop it sits over the
+   smooth page gradient, where a blur changes no pixels but was re-rendered on every animated frame. */
+@media (max-width: 64rem) {
+  .dash-nav {
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
 }
 .dash-nav-inner {
   padding: var(--s5) var(--s4) var(--s4);
@@ -2988,8 +2994,7 @@ p.brand {
   height: 9px;
   border-radius: 50%;
   background: var(--teal);
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--teal) 55%, transparent);
-  animation: dsh-live 2s var(--ease) infinite;
+  /* its ping lives in motion.css (a compositor transform, not an animated box-shadow) */
 }
 .map-legend {
   display: flex;
@@ -3086,17 +3091,8 @@ p.brand {
     opacity: 0;
   }
 }
-@keyframes dsh-live {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--teal) 55%, transparent);
-  }
-  100% {
-    box-shadow: 0 0 0 8px transparent;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
-  .dsh-pin-pulse,
-  .live-dot {
+  .dsh-pin-pulse {
     animation: none;
   }
 }

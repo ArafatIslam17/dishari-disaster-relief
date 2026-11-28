@@ -39,6 +39,7 @@ import { useSession } from './auth/session';
 import { formatNumber, formatShortTime } from './i18n';
 import { syncManager } from './local/sync';
 import { Brand, LangSwitch, StatusMark, ThemeToggle, useApiData, type MarkKind } from './ui/kit';
+import { useActiveIndicator, usePresence, useScrollReveal } from './ui/motion';
 
 // ---------- field app shell ----------
 export function useSyncStatus() {
@@ -65,6 +66,8 @@ export function FieldLayout() {
   const status = useSyncStatus();
   const { serverSession } = useSession();
   const announcement = useSyncAnnouncement();
+  const mainRef = useRef<HTMLElement>(null);
+  useScrollReveal(mainRef);
   useEffect(() => syncManager.start(() => serverSession), [serverSession]);
   const failed = !!status.lastResult && !status.lastResult.ok && status.pending > 0;
   const state: 'running' | 'failed' | 'pending' | 'synced' = status.running ? 'running' : failed ? 'failed' : status.pending > 0 ? 'pending' : 'synced';
@@ -86,10 +89,10 @@ export function FieldLayout() {
           </span>
         </div>
       </header>
-      <main id="main" className="field-main">
+      <main id="main" className="field-main" ref={mainRef}>
         <div className="sync-strip">
           <Link to="/field/sync" className="sync-chip" data-state={state}>
-            <StatusMark kind={mark} size={12} />
+            <StatusMark key={mark} kind={mark} size={12} />
             <span className="sync-chip-text">
               <span className="sync-chip-main">
                 {state === 'running' ? t('status.syncing') : status.pending > 0 ? t('status.pending', { count: status.pending }) : t('status.allSynced')}
@@ -110,7 +113,9 @@ export function FieldLayout() {
         <span className="visually-hidden" role="status" aria-live="polite">
           {announcement}
         </span>
-        <Outlet />
+        <div className="route-stage">
+          <Outlet />
+        </div>
       </main>
       <FieldBottomBar pending={status.pending} />
     </div>
@@ -130,6 +135,7 @@ function ProfileMenu({ pending }: { pending: number }) {
   const wrap = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const panelId = useId();
+  const panel = usePresence(open, 140);
   const name = local?.fullName ?? user?.fullName ?? '';
   const role = local?.role ?? user?.role;
   useEffect(() => {
@@ -163,8 +169,8 @@ function ProfileMenu({ pending }: { pending: number }) {
       >
         {initials(name) || <UserRound size={18} aria-hidden />}
       </button>
-      {open && (
-        <div id={panelId} className="profile-pop">
+      {panel.mounted && (
+        <div id={panelId} className="profile-pop" data-state={open ? 'open' : 'closed'} inert={panel.closing || undefined}>
           <div className="profile-head">
             <span className="who-avatar" aria-hidden>
               {initials(name)}
@@ -197,9 +203,13 @@ function ProfileMenu({ pending }: { pending: number }) {
 }
 
 function FieldBottomBar({ pending }: { pending: number }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { pathname } = useLocation();
+  const barRef = useRef<HTMLElement>(null);
+  useActiveIndicator(barRef, 'a[aria-current="page"] .nav-pill', [pathname, i18n.language]);
   return (
-    <nav className="bottom-bar" aria-label={t('nav.fieldMenu')}>
+    <nav className="bottom-bar" aria-label={t('nav.fieldMenu')} ref={barRef}>
+      <span className="bar-indicator" aria-hidden />
       <NavLink to="/field" end>
         <span className="nav-pill">
           <Home size={22} aria-hidden />
@@ -385,7 +395,10 @@ function MenuToggle({ open, setOpen, toggleRef }: Pick<ReturnType<typeof useDraw
       aria-label={open ? t('nav.closeMenu') : t('nav.menu')}
       onClick={() => setOpen((v) => !v)}
     >
-      {open ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
+      <span className="toggle-icons" aria-hidden>
+        <Menu size={20} className="ti-menu" />
+        <X size={20} className="ti-close" />
+      </span>
     </button>
   );
 }
@@ -422,9 +435,21 @@ function OperationSelect() {
  * and the relief fund for donors and citizens. No account block, no notifications, no log-out;
  * staff reach their workspace through "Staff login".
  */
+/** Sidebar motion shared by both dashboards: the travelling active pill and below-the-fold reveals. */
+function useDashMotion() {
+  const { i18n } = useTranslation();
+  const { pathname } = useLocation();
+  const sectionsRef = useRef<HTMLElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  useActiveIndicator(sectionsRef, 'a[aria-current="page"]', [pathname, i18n.language]);
+  useScrollReveal(mainRef);
+  return { sectionsRef, mainRef };
+}
+
 export function PublicDashboardLayout() {
   const { t } = useTranslation();
   const { open, setOpen, navRef, toggleRef } = useDrawer();
+  const { sectionsRef, mainRef } = useDashMotion();
   const items: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
     { to: '/', label: t('nav.coverage'), icon: MapIcon, end: true },
     { to: '/public/reports', label: t('nav.reports'), icon: FileText },
@@ -439,7 +464,8 @@ export function PublicDashboardLayout() {
           <Link to="/" className="brand">
             <Brand size={40} />
           </Link>
-          <nav aria-label={t('nav.sections')}>
+          <nav aria-label={t('nav.sections')} className="nav-sections" ref={sectionsRef}>
+            <span className="nav-indicator" aria-hidden />
             <div>
               <p className="group-title">{t('portal.group')}</p>
               {items.map(({ to, label, icon: Icon, end }) => (
@@ -459,7 +485,7 @@ export function PublicDashboardLayout() {
           </div>
         </div>
       </aside>
-      <button type="button" className="drawer-scrim" data-open={open} aria-label={t('nav.closeMenu')} tabIndex={-1} onClick={() => setOpen(false)} />
+      <button type="button" className="drawer-scrim" data-open={open} aria-hidden={!open} aria-label={t('nav.closeMenu')} tabIndex={-1} onClick={() => setOpen(false)} />
       <div className="dash-body">
         <header className="dash-top">
           <MenuToggle open={open} setOpen={setOpen} toggleRef={toggleRef} />
@@ -473,8 +499,10 @@ export function PublicDashboardLayout() {
             <span>{t('portal.staffLogin')}</span>
           </Link>
         </header>
-        <main id="main" className="dash-main">
-          <Outlet />
+        <main id="main" className="dash-main" ref={mainRef}>
+          <div className="route-stage">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
@@ -486,6 +514,7 @@ export function DashboardLayout() {
   const { role, user, logout, isFieldUser } = useSession();
   const { current } = useOperation();
   const { open, setOpen, navRef, toggleRef } = useDrawer();
+  const { sectionsRef, mainRef } = useDashMotion();
   const location = useLocation();
   const unread = useApiData((signal) => api.get<{ unread: number }>('/api/notifications', signal), [location.pathname]);
   const queues = useQueueCounts(role ?? null, current?.id, location.pathname);
@@ -527,7 +556,8 @@ export function DashboardLayout() {
         <Link to="/app/coverage" className="brand">
           <Brand size={40} />
         </Link>
-        <nav aria-label={t('nav.sections')}>
+        <nav aria-label={t('nav.sections')} className="nav-sections" ref={sectionsRef}>
+          <span className="nav-indicator" aria-hidden />
           {groups.map(([g, title]) => {
             const entries = visible.filter((i) => i.group === g);
             if (entries.length === 0) return null;
@@ -581,7 +611,7 @@ export function DashboardLayout() {
         </div>
         </div>
       </aside>
-      <button type="button" className="drawer-scrim" data-open={open} aria-label={t('nav.closeMenu')} tabIndex={-1} onClick={() => setOpen(false)} />
+      <button type="button" className="drawer-scrim" data-open={open} aria-hidden={!open} aria-label={t('nav.closeMenu')} tabIndex={-1} onClick={() => setOpen(false)} />
       <div className="dash-body">
         <header className="dash-top">
           <MenuToggle open={open} setOpen={setOpen} toggleRef={toggleRef} />
@@ -590,7 +620,11 @@ export function DashboardLayout() {
           <ThemeToggle />
           <Link to="/app/notifications" className="icon-btn" aria-label={t('nav.notificationsCount', { count: unreadCount })}>
             <Bell size={20} aria-hidden />
-            {unreadCount > 0 && <span className="badge-count">{formatNumber(unreadCount)}</span>}
+            {unreadCount > 0 && (
+              <span key={unreadCount} className="badge-count">
+                {formatNumber(unreadCount)}
+              </span>
+            )}
           </Link>
           <LangSwitch />
           <button type="button" className="btn btn-secondary btn-sm btn-logout" onClick={() => void logout()}>
@@ -598,8 +632,10 @@ export function DashboardLayout() {
             <span className="logout-label">{t('auth.logout')}</span>
           </button>
         </header>
-        <main id="main" className="dash-main">
-          <Outlet />
+        <main id="main" className="dash-main" ref={mainRef}>
+          <div className="route-stage">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

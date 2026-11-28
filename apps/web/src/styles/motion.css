@@ -1,0 +1,579 @@
+/* Dishari motion language. Loaded last (main.tsx), after app.css and dishari.css.
+ *
+ * Principles (DESIGN.md, Motion):
+ * - Motion explains a change of state or place: something arrived, moved, opened, was confirmed.
+ *   It never decorates, never loops (except the two "live" signals) and never delays data or actions.
+ * - Only transform and opacity move. Filters are limited to the page title's short focus-in.
+ * - Rest state is the real state: entrances hide only through animation-fill-mode, and keyframes
+ *   give only a `from`, so the end state is always the element's own style (hover transforms keep
+ *   working after an entrance, and if an animation never runs the content is simply there).
+ * - One family of curves and durations (tokens.css): enter on --ease, toggle on --ease-state,
+ *   drawers on --ease-sheet, confirmations on --ease-pop (the only overshoot).
+ * - prefers-reduced-motion: entrances are gated on no-preference, and the global reduced-motion
+ *   block in app.css neutralises the rest (colour and opacity changes stay, movement goes).
+ */
+
+/* ---------- vocabulary ---------- */
+@keyframes m-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--rise), 0);
+  }
+}
+@keyframes m-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes m-focus {
+  from {
+    filter: blur(3px);
+  }
+}
+@keyframes m-down {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0);
+  }
+}
+@keyframes m-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+}
+@keyframes m-slide {
+  from {
+    opacity: 0;
+    transform: translate3d(-12px, 0, 0);
+  }
+}
+@keyframes m-drop {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0);
+  }
+}
+@keyframes m-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes m-grow-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes m-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes m-draw {
+  from {
+    stroke-dasharray: 0 264;
+  }
+}
+@keyframes m-pop-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.96);
+  }
+}
+@keyframes m-pop-out {
+  to {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0) scale(0.97);
+  }
+}
+@keyframes m-sheet-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.97);
+  }
+}
+@keyframes m-toast-out {
+  to {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.98);
+  }
+}
+@keyframes m-turn {
+  from {
+    opacity: 0;
+    transform: rotate(-80deg) scale(0.6);
+  }
+}
+@keyframes m-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  75%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* The route outlet wrapper adds no box: layout stays exactly as before. */
+.route-stage {
+  display: contents;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---------- 1. page entrance: the title focuses in, blocks rise in reading order ---------- */
+  .route-stage > :not(.kpi-grid, .dash-grid, .home-stats, .grid-2, .visually-hidden) {
+    animation: m-rise var(--dur-enter) var(--ease) both;
+    animation-delay: var(--m-d, 0ms);
+  }
+  .route-stage > :nth-child(2) {
+    --m-d: 60ms;
+  }
+  .route-stage > :nth-child(3) {
+    --m-d: 120ms;
+  }
+  .route-stage > :nth-child(n + 4) {
+    --m-d: 180ms;
+  }
+  .route-stage > .page-head h1,
+  .route-stage > .home-head h1 {
+    animation: m-focus 620ms var(--ease) both;
+  }
+  /* Groups stagger their own children, so nothing rises twice. */
+  .route-stage > :is(.kpi-grid, .home-stats, .grid-2) > *,
+  .route-stage > .dash-grid > :not(.dash-side),
+  .route-stage > .dash-grid > .dash-side > * {
+    animation: m-rise var(--dur-enter) var(--ease) both;
+  }
+  .route-stage > :is(.kpi-grid, .home-stats, .grid-2) > :nth-child(2),
+  .route-stage > .dash-grid > .dash-side > :nth-child(1) {
+    animation-delay: var(--stagger);
+  }
+  .route-stage > :is(.kpi-grid, .home-stats, .grid-2) > :nth-child(3),
+  .route-stage > .dash-grid > .dash-side > :nth-child(2) {
+    animation-delay: calc(var(--stagger) * 2);
+  }
+  .route-stage > :is(.kpi-grid, .home-stats, .grid-2) > :nth-child(n + 4),
+  .route-stage > .dash-grid > .dash-side > :nth-child(n + 3) {
+    animation-delay: calc(var(--stagger) * 3);
+  }
+
+  /* A skeleton waits 120 ms before showing, so fast answers never flash a placeholder. */
+  .loading,
+  .route-stage > .loading {
+    animation: m-fade var(--dur-3) var(--ease-state) 120ms both;
+  }
+
+  /* ---------- 2. shells: arrive once when the workspace opens, then stay still ---------- */
+  .dash-top,
+  .status-bar {
+    animation: m-down 480ms var(--ease) both;
+  }
+  .bottom-bar {
+    animation: m-up var(--dur-enter) var(--ease) 120ms both;
+  }
+  @media (min-width: 64.0625rem) {
+    .dash-nav-inner > * {
+      animation: m-slide var(--dur-enter) var(--ease) both;
+    }
+    .dash-nav-inner > :nth-child(2) {
+      animation-delay: var(--stagger);
+    }
+    .dash-nav-inner > :nth-child(3) {
+      animation-delay: calc(var(--stagger) * 2);
+    }
+  }
+
+  /* public pages: the promise panel plays once per visit (PublicFrame), the task every time */
+  .public-box > * {
+    animation: m-rise var(--dur-enter) var(--ease) both;
+  }
+  .public-box > :nth-child(3) {
+    animation-delay: 100ms;
+  }
+  .public-box > :nth-child(n + 4) {
+    animation-delay: 160ms;
+  }
+  .public-box > h1 {
+    animation:
+      m-rise var(--dur-enter) var(--ease) 40ms both,
+      m-focus 620ms var(--ease) 40ms both;
+  }
+  .public-aside.is-intro > :not(.aside-highlights),
+  .public-aside.is-intro .aside-highlights > li {
+    animation: m-rise 720ms var(--ease) both;
+  }
+  .public-aside.is-intro > :nth-child(2) {
+    animation-delay: 120ms;
+  }
+  .public-aside.is-intro .aside-highlights > li:nth-child(1) {
+    animation-delay: 260ms;
+  }
+  .public-aside.is-intro .aside-highlights > li:nth-child(2) {
+    animation-delay: 340ms;
+  }
+  .public-aside.is-intro .aside-highlights > li:nth-child(3) {
+    animation-delay: 420ms;
+  }
+
+  /* ---------- 3. data: figures, charts and meters draw in once, as they arrive ---------- */
+  .bars .bar {
+    transform-origin: 50% 100%;
+    animation: m-grow-y var(--dur-data) var(--ease) both;
+    animation-delay: calc(140ms + var(--i, 0) * 55ms);
+  }
+  .bars .bar-b {
+    animation-delay: calc(200ms + var(--i, 0) * 55ms);
+  }
+  .donut-slice {
+    animation: m-draw var(--dur-data) var(--ease) 140ms both;
+  }
+  .donut figcaption {
+    animation: m-fade var(--dur-enter) var(--ease-state) 260ms both;
+  }
+  .signal-meter .bar > span {
+    transform-origin: 0 50%;
+    animation: m-grow-x var(--dur-data) var(--ease) 160ms both;
+  }
+
+  /* ---------- 4. feedback: things that appear because something happened ---------- */
+  .toast {
+    animation: m-sheet-in var(--dur-3) var(--ease) both;
+  }
+  .toast[data-leaving] {
+    animation: m-toast-out 180ms var(--ease-state) both;
+  }
+  dialog[open] {
+    animation: m-sheet-in var(--dur-3) var(--ease) both;
+  }
+  dialog[open]::backdrop {
+    animation: m-fade var(--dur-3) var(--ease-state) both;
+  }
+  .notice {
+    animation: m-rise var(--dur-3) var(--ease) both;
+  }
+  .field > .error {
+    animation: m-drop var(--dur-2) var(--ease) both;
+  }
+  .empty-mark {
+    animation: m-pop 520ms var(--ease-pop) 160ms both;
+  }
+  /* counts pop when they appear or change (keyed in layouts.tsx), never while steady */
+  .badge-count,
+  .nav-count {
+    animation: m-pop var(--dur-3) var(--ease-pop) both;
+  }
+  .sync-chip .mark {
+    animation: m-pop var(--dur-3) var(--ease-pop) both;
+  }
+  .theme-icon.is-turning {
+    animation: m-turn var(--dur-3) var(--ease) both;
+  }
+  details[open] > :not(summary) {
+    animation: m-drop var(--dur-3) var(--ease) both;
+  }
+
+  /* ---------- 5. map: pins land in sequence ---------- */
+  .dsh-pin-dot {
+    animation: m-pop 520ms var(--ease-pop) 200ms both;
+  }
+  .leaflet-marker-pane > :nth-child(2) .dsh-pin-dot {
+    animation-delay: 260ms;
+  }
+  .leaflet-marker-pane > :nth-child(3) .dsh-pin-dot {
+    animation-delay: 320ms;
+  }
+  .leaflet-marker-pane > :nth-child(4) .dsh-pin-dot {
+    animation-delay: 380ms;
+  }
+  .leaflet-marker-pane > :nth-child(n + 5) .dsh-pin-dot {
+    animation-delay: 440ms;
+  }
+
+  /* field profile panel: grows from its button, leaves faster than it came */
+  .profile-pop {
+    animation: m-pop-in var(--dur-2) var(--ease) both;
+  }
+  .profile-pop[data-state='closed'] {
+    animation: m-pop-out 140ms var(--ease-state) both;
+  }
+}
+
+/* ---------- scroll reveal (useScrollReveal): blocks that arrive below the fold ---------- */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+  animation: none !important;
+}
+.reveal.is-revealed {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 600ms var(--ease-state),
+    transform 720ms var(--ease);
+}
+
+/* ---------- navigation: one indicator that travels to the current place ---------- */
+.nav-sections {
+  position: relative;
+}
+.dash-nav .nav-sections a {
+  z-index: 1;
+  transition:
+    background-color var(--dur-1) var(--ease-state),
+    color var(--dur-3) var(--ease-state);
+}
+.dash-nav .nav-sections a svg {
+  transition:
+    color var(--dur-3) var(--ease-state),
+    transform var(--dur-1) var(--ease);
+}
+.nav-indicator,
+.bar-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  width: var(--ind-w, 0);
+  height: var(--ind-h, 0);
+  transform: translate3d(var(--ind-x, 0), var(--ind-y, 0), 0);
+  opacity: 0;
+  pointer-events: none;
+}
+.nav-indicator {
+  border-radius: 14px;
+  background: var(--teal);
+  box-shadow: 0 8px 18px -8px oklch(0.358 0.098 259.7 / 0.6);
+}
+.bar-indicator {
+  border-radius: var(--r-pill);
+  background: var(--sky-tint);
+}
+:is(.nav-sections, .bottom-bar):is([data-indicator='still'], [data-indicator='on']) :is(.nav-indicator, .bar-indicator) {
+  opacity: 1;
+}
+:is(.nav-sections, .bottom-bar)[data-indicator='on'] :is(.nav-indicator, .bar-indicator) {
+  transition:
+    transform var(--dur-3) var(--ease),
+    opacity var(--dur-2) var(--ease-state);
+}
+.nav-sections:is([data-indicator='still'], [data-indicator='on']) a[aria-current='page'] {
+  background: transparent;
+  box-shadow: none;
+}
+.bottom-bar:is([data-indicator='still'], [data-indicator='on']) a[aria-current='page'] .nav-pill {
+  background: transparent;
+}
+.bottom-bar a {
+  position: relative;
+  z-index: 1;
+}
+.nav-pill svg {
+  transition: transform var(--dur-1) var(--ease);
+}
+
+/* menu button: the bars turn into a cross */
+.toggle-icons {
+  display: grid;
+}
+.toggle-icons > svg {
+  grid-area: 1 / 1;
+  transition:
+    transform var(--dur-3) var(--ease),
+    opacity var(--dur-2) var(--ease-state);
+}
+.menu-toggle[aria-expanded='true'] .ti-menu {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.6);
+}
+.menu-toggle[aria-expanded='false'] .ti-close {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.6);
+}
+
+/* mobile drawer: a sheet with weight, a scrim that fades, contents that follow the edge */
+@media (max-width: 64rem) {
+  .dash-nav {
+    transition:
+      transform var(--dur-sheet) var(--ease-sheet),
+      visibility 0s linear var(--dur-sheet);
+  }
+  .dash-nav[data-open='true'] {
+    transition: transform var(--dur-sheet) var(--ease-sheet);
+  }
+  .drawer-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--z-drawer) - 1);
+    border: 0;
+    padding: 0;
+    background: var(--scrim);
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity var(--dur-sheet) var(--ease-state),
+      visibility 0s linear var(--dur-sheet);
+  }
+  .drawer-scrim[data-open='true'] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity var(--dur-sheet) var(--ease-state);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .dash-nav[data-open='true'] .dash-nav-inner > * {
+      animation: m-slide 420ms var(--ease) 60ms both;
+    }
+    .dash-nav[data-open='true'] .dash-nav-inner > :nth-child(2) {
+      animation-delay: 110ms;
+    }
+    .dash-nav[data-open='true'] .dash-nav-inner > :nth-child(3) {
+      animation-delay: 160ms;
+    }
+  }
+}
+
+.profile-pop {
+  transform-origin: calc(100% - 22px) 0;
+}
+.profile-pop[data-state='closed'] {
+  pointer-events: none;
+}
+.profile-trigger {
+  transition:
+    transform var(--dur-1) var(--ease),
+    box-shadow var(--dur-2) var(--ease-state);
+}
+
+/* sync chip: state colours cross-fade; the new mark pops in (keyed in layouts.tsx) */
+.sync-chip {
+  transition:
+    background-color var(--dur-3) var(--ease-state),
+    border-color var(--dur-3) var(--ease-state),
+    color var(--dur-3) var(--ease-state);
+}
+
+/* ---------- interaction: quick, small, tactile ---------- */
+.btn > svg:last-child:not(:first-child),
+.hoist-cta > svg,
+.chev {
+  transition: transform var(--dur-2) var(--ease);
+}
+.segmented button,
+.lang-switch button,
+.icon-btn {
+  transition:
+    background-color var(--dur-1) var(--ease-state),
+    color var(--dur-1) var(--ease-state),
+    border-color var(--dur-1) var(--ease-state),
+    transform var(--dur-1) var(--ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover:not(:disabled),
+  .btn-signal:hover:not(:disabled) {
+    transform: translate3d(0, -1px, 0);
+  }
+  .btn:hover:not(:disabled) > svg:last-child:not(:first-child),
+  .hoist:hover .hoist-cta > svg,
+  a:hover .chev,
+  button:hover .chev {
+    transform: translate3d(3px, 0, 0);
+  }
+  /* Only cards that are links lift: a lift promises a click. */
+  .hoist,
+  a.queue-item,
+  .onboard-link,
+  .method-tile,
+  .donate-banner {
+    transition:
+      transform var(--dur-2) var(--ease),
+      background-color var(--dur-1) var(--ease-state),
+      border-color var(--dur-1) var(--ease-state),
+      box-shadow var(--dur-2) var(--ease-state);
+  }
+  .hoist:hover,
+  a.queue-item:hover,
+  .onboard-link:hover,
+  .method-tile:hover,
+  .donate-banner:hover {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+/* Press states come after hover so they win while the pointer is down. */
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 90ms;
+}
+.hoist:active,
+a.queue-item:active,
+.onboard-link:active,
+.method-tile:active,
+.donate-banner:active,
+.menu-list a:active,
+.menu-button:active {
+  transform: scale(0.985);
+  transition-duration: 90ms;
+}
+.segmented button:active,
+.lang-switch button:active,
+.icon-btn:active,
+.profile-trigger:active {
+  transform: scale(0.94);
+}
+.bottom-bar a:active .nav-pill svg {
+  transform: scale(0.88);
+}
+.dash-nav .nav-sections a:active svg {
+  transform: scale(0.9);
+}
+
+/* forms: the label follows focus; the progress dots fill as steps complete */
+.field > label {
+  transition: color var(--dur-1) var(--ease-state);
+}
+.field:focus-within > label {
+  color: var(--teal);
+}
+.gateway-dots > span {
+  transition:
+    background-color var(--dur-3) var(--ease-state),
+    transform var(--dur-3) var(--ease);
+}
+
+/* live signal: one of two loops, kept on the compositor (was an animated box-shadow) */
+.live-dot {
+  position: relative;
+}
+.live-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--teal);
+  animation: m-ping 2.2s var(--ease-state) infinite;
+}
+
+/* Theme switch is an instant swap with the icon turning: a full-page cross-fade (View Transitions)
+   was measured at ~30 dropped frames per switch on software-rendered devices, too costly for decoration. */
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot::after {
+    animation: none;
+    opacity: 0;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media print {
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

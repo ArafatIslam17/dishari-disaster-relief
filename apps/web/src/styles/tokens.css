@@ -130,11 +130,21 @@
     radial-gradient(70rem 50rem at 50% 115%, oklch(0.758 0.087 258.9 / 0.12), transparent 60%);
   --scrim: oklch(0.176 0.014 258.4 / 0.5);
 
-  /* motion */
-  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
-  --dur-1: 120ms;
-  --dur-2: 180ms;
-  --dur-3: 240ms;
+  /* motion (styles/motion.css): one curve family, a few durations, one travel distance.
+     --ease is the house curve for anything entering or settling; --ease-state for colour/toggle
+     changes; --ease-sheet for drawers; --ease-pop is the only overshoot, kept for confirmations. */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-state: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-1: 160ms; /* hover, press, colour */
+  --dur-2: 220ms; /* menus, tooltips, small state changes */
+  --dur-3: 280ms; /* toasts, dialogs, indicator slides */
+  --dur-sheet: 360ms; /* drawers */
+  --dur-enter: 560ms; /* page and section entrances */
+  --dur-data: 820ms; /* charts drawing in */
+  --stagger: 70ms;
+  --rise: 16px;
 
   /* sizes */
   --target: 44px;

@@ -77,7 +77,20 @@ export async function unlock(page: Page): Promise<void> {
 }
 
 /** WCAG 2.2 AA automated checks: no serious or critical violations. */
+/**
+ * Waits for finite entrance/transition animations to finish (infinite live signals excluded), so
+ * axe measures the resting UI rather than a tile caught mid-fade (styles/motion.css).
+ */
+export async function settleMotion(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () => document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getComputedTiming().iterations === Infinity),
+    undefined,
+    { timeout: 5_000 },
+  );
+}
+
 export async function expectAccessible(page: Page): Promise<void> {
+  await settleMotion(page);
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
   const serious = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
   expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);

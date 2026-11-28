@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { ACCOUNTS, english, login } from './helpers';
+import { ACCOUNTS, english, login, settleMotion } from './helpers';
 
 /** Regression tests for the UI audit (docs/ui-audit/FINDINGS.md), at 1440 px unless stated. */
 test.describe.configure({ mode: 'serial' });
@@ -11,6 +11,7 @@ test.beforeEach(async ({ context }) => {
 
 /** Zero axe violations of any impact (the stricter bar set by the redesign brief). */
 async function expectNoViolations(page: Page): Promise<void> {
+  await settleMotion(page);
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
 }
@@ -66,6 +67,8 @@ test('F43: removing an area asks for confirmation first', async ({ page }) => {
   await page.getByRole('link', { name: /Feni Flash Flood 2024/ }).click();
   await expect(page.getByRole('heading', { name: 'Areas', exact: true })).toBeVisible();
   const rows = page.getByRole('region', { name: 'Areas table' }).locator('tbody tr');
+  // The heading is static and the table arrives with its own request: wait for it before counting.
+  await expect(rows.first()).toBeVisible();
   const before = await rows.count();
   expect(before).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Remove' }).first().click();

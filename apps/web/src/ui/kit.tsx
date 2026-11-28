@@ -18,6 +18,7 @@ import { formatShortCode, type CoverageLabel } from '@relief/shared';
 import { ApiError } from '../api/client';
 import { formatShortTime, setLang, type Lang } from '../i18n';
 import { getTheme, resolvedTheme, setTheme, subscribeTheme, type ThemeChoice } from '../theme';
+import { reducedMotion } from './motion';
 
 /** Translates an API or validation error code into a sentence. */
 export function useErrorText() {
@@ -458,9 +459,20 @@ export function ThemeToggle({ onShell = false }: { onShell?: boolean }) {
   const next = effective === 'dark' ? 'light' : 'dark';
   const Icon = effective === 'dark' ? Moon : Sun;
   const label = t('theme.label', { current: t(`theme.${choice}`), next: t(`theme.${next}`) });
+  // The icon turns only after a press, not every time a page mounts the toggle.
+  const [turned, setTurned] = useState(false);
   return (
-    <button type="button" className={`icon-btn${onShell ? ' on-shell' : ''}`} onClick={() => setTheme(next)} aria-label={label} title={label}>
-      <Icon size={18} aria-hidden />
+    <button
+      type="button"
+      className={`icon-btn${onShell ? ' on-shell' : ''}`}
+      onClick={() => {
+        setTurned(true);
+        setTheme(next);
+      }}
+      aria-label={label}
+      title={label}
+    >
+      <Icon key={effective} size={18} aria-hidden className={`theme-icon${turned ? ' is-turning' : ''}`} />
     </button>
   );
 }
@@ -521,14 +533,22 @@ interface Toast {
   id: number;
   text: string;
   tone: 'ok' | 'error';
+  /** Playing its exit; already out of the live region's reading order and not interactive. */
+  leaving?: boolean;
 }
+const TOAST_EXIT_MS = 180;
 const ToastContext = createContext<(text: string, tone?: 'ok' | 'error') => void>(() => undefined);
 export const useToast = () => useContext(ToastContext);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const dismiss = useCallback((id: number) => setToasts((ts) => ts.filter((x) => x.id !== id)), []);
+  const dismiss = useCallback((id: number) => {
+    const remove = () => setToasts((ts) => ts.filter((x) => x.id !== id));
+    if (reducedMotion()) return remove();
+    setToasts((ts) => ts.map((x) => (x.id === id ? { ...x, leaving: true } : x)));
+    setTimeout(remove, TOAST_EXIT_MS);
+  }, []);
   const push = useCallback(
     (text: string, tone: 'ok' | 'error' = 'ok') => {
       const id = Date.now() + Math.random();
@@ -541,7 +561,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     toasts
       .filter((x) => x.tone === tone)
       .map((x) => (
-        <div key={x.id} className={`toast toast-${x.tone}`}>
+        <div key={x.id} className={`toast toast-${x.tone}`} data-leaving={x.leaving || undefined} inert={x.leaving || undefined}>
           {x.tone === 'ok' ? <CheckCircle2 size={18} aria-hidden /> : <AlertTriangle size={18} aria-hidden />}
           <span className="toast-text">{x.text}</span>
           <button type="button" className="toast-close" aria-label={t('common.close')} onClick={() => dismiss(x.id)}>

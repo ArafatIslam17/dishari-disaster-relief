@@ -26,6 +26,7 @@ import { HEAD_NAME_RE, normalisePhone, type Gps, type ReliefItemDTO } from '@rel
 import { api } from '../api/client';
 import { useSession } from '../auth/session';
 import { formatNumber, formatTime } from '../i18n';
+import { CountUp } from '../ui/motion';
 import { useSyncStatus } from '../layouts';
 import type { DistributionRow, LocalArea, NoticeRow } from '../local/db';
 import { localStore, type HouseholdView, type SimilarMatch } from '../local/store';
@@ -176,7 +177,9 @@ export function FieldHome() {
       <dl className="home-stats">
         <div>
           <dt className="visually-hidden">{t('field.stats.areas')}</dt>
-          <dd className="figure">{formatNumber(counts?.areas ?? 0)}</dd>
+          <dd className="figure">
+            <CountUp value={counts?.areas ?? 0} duration={700} />
+          </dd>
           <dd className="stat-icon" aria-hidden>
             <MapIcon size={20} />
           </dd>
@@ -186,7 +189,9 @@ export function FieldHome() {
         </div>
         <div>
           <dt className="visually-hidden">{t('field.stats.households')}</dt>
-          <dd className="figure">{formatNumber(counts?.households ?? 0)}</dd>
+          <dd className="figure">
+            <CountUp value={counts?.households ?? 0} duration={700} />
+          </dd>
           <dd className="stat-icon" aria-hidden>
             <House size={20} />
           </dd>
@@ -196,7 +201,9 @@ export function FieldHome() {
         </div>
         <div>
           <dt className="visually-hidden">{t('field.stats.waiting')}</dt>
-          <dd className="figure">{formatNumber(status.pending)}</dd>
+          <dd className="figure">
+            <CountUp value={status.pending} duration={700} />
+          </dd>
           <dd className={`stat-icon${status.pending > 0 ? ' is-pending' : ' is-ok'}`} aria-hidden>
             {status.pending > 0 ? <RefreshCw size={20} /> : <CheckCircle2 size={20} />}
           </dd>
